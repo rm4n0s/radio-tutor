@@ -14,3 +14,16 @@ Both checks use throw-away data folders (`scripts/isolated.sh`), never your real
    `go run ./cmd/radio-tutor &`
    `go run ./cmd/radio-tutor; echo "exit $?"`
    The second run shows a small window "Radio Tutor is already running"; OK closes it, and the terminal prints "Radio Tutor is already running" and `exit 2`. Then close the first window and check that `jobs` shows nothing left.
+Checks that need a person (real sound, a real phone, a real AI provider). Each has the step that added it and the exact command. Tell the manager the result; the answer is recorded in the step's entry of `docs/IMPLEMENTED.md` and the item is removed from this list.
+
+## 5.1 Real sound through the audio server
+
+Needs a running PulseAudio or PipeWire (with `pipewire-pulse`) server on your desktop session.
+
+```
+go test -tags radiotutor_audio -run TestRealServerTone -count=1 -v ./internal/core/audio
+```
+
+You should hear a 1 s tone (440 Hz, quiet), with a gap of about 0.3 s in the middle where the test pauses and resumes it. The test passes when no server error occurs, the position never goes backwards, the pause holds the position, and the clip ends by itself after about 1.3 s of wall time. If no sound server answers, the test fails with the reason the app would show as "No sound device found".
+
+Also look at the volume control of your desktop while it runs: the stream is named "Radio Tutor".

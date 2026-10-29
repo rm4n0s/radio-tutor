@@ -259,12 +259,12 @@ On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark n
 ### 8.1 Audio
 
 - `internal/core/audio` decodes the whole Ogg Vorbis file into memory as 32-bit float samples when the lesson opens (on a goroutine, with a "loading" indicator). Narration is short (CASSETTE-FORMAT §6), so this is bounded.
-- The player writes samples to a **sink**. Sinks: `pulse` (the PulseAudio protocol through `PULSE_SERVER` or `$XDG_RUNTIME_DIR/pulse/native`), `silent` (a wall clock, no sound) and `fake` (tests).
+- The player gives its samples to a **sink**, which pulls them as the device wants more (the PulseAudio protocol asks for data; nothing is pushed). Sinks: `pulse` (the PulseAudio protocol through `PULSE_SERVER` or `$XDG_RUNTIME_DIR/pulse/native`), `silent` (a wall clock, no sound) and `fake` (tests).
 - If no PulseAudio server answers, the player uses the `silent` sink and shows "No sound device found. The lesson plays without sound." once per run; the lesson can still be completed.
 
 ### 8.2 The clock
 
-The lesson's time is the audio position: the number of samples the sink has actually played (the written samples minus the server's reported latency), divided by the sample rate. The `silent` sink advances by wall time. The UI reads the position once per frame; it never runs backwards except on Stop.
+The lesson's time is the audio position: the number of samples the sink has actually played (the samples the server has taken from the stream minus the latency it reports for the device), divided by the sample rate; between two answers of the server the position is extrapolated with the system clock. The `silent` sink advances by wall time. The UI reads the position once per frame; it never runs backwards except on Stop.
 
 ## 9. Exercises and worksheets
 

@@ -12,6 +12,14 @@
 // need not be seekable. The length is counted while decoding instead of read
 // from the Ogg container (which needs a seekable file and trusts the last
 // page's header), so it is the number of samples the player will really play.
+//
+// The rest of the package plays a Clip (SPEC §8): a Player (Load, Play, Pause,
+// Stop, Position, Ended) drives a Sink. The sinks are PulseSink (real sound
+// over the PulseAudio protocol, which PipeWire serves too), SilentSink (a wall
+// clock, no sound) and FakeSink (tests); OpenDefaultSink picks the first and
+// falls back to the second. A Clock (SystemClock, or a FakeClock in tests)
+// stands for time, so no test waits for real time and none makes a sound.
+// See Player and PulseSink for the goroutine rules.
 package audio
 
 import (
