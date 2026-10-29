@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "title": "Write the sum",
+  "prompt": "Add the fractions and write the result:\n1/4 + 2/4 = ?",
+  "reference_solution": "3/4",
+  "grading": "Correct: 3/4, or 0.75, or the words 'three quarters'. Partial: 3/8.",
+  "max_attempts": 5,
+  "hints": [
+    "Look at the bottom numbers. Are they the same?",
+    "When the bottom numbers are the same, add only the top numbers."
+  ]
+}

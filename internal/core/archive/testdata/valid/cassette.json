@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "org.example.archive-1",
+  "version": "1.0.0",
+  "title": "Fractions, part 1",
+  "description": "What a fraction is, and adding fractions with the same denominator.",
+  "language": "en",
+  "subject": "math",
+  "ages": [8, 10],
+  "authors": ["Radio Tutor tests"],
+  "source": "A test cassette",
+  "grader_instructions": "Speak warmly and simply. Praise effort.",
+  "items": [
+    {"type": "lesson", "id": "what-is-a-fraction"},
+    {"type": "exercise", "id": "shade-the-half"},
+    {"type": "exercise", "id": "name-the-fraction"},
+    {"type": "lesson", "id": "adding-fractions"},
+    {"type": "exercise", "id": "write-the-sum"}
+  ]
+}

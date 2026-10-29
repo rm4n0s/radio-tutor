@@ -120,6 +120,28 @@ func Load(ctx context.Context, fsys fs.FS) (*Cassette, []problem.Problem, error)
 	return c, l, nil
 }
 
+// LoadManifest reads only cassette.json of the cassette in fsys and applies
+// the manifest's own field rules (not the folders of its items). It is what
+// the store uses to list installed cassettes without reading every lesson. The
+// returned Manifest is nil when the file is missing, is not valid JSON of the
+// right shape, or has a newer format; otherwise it is returned even when a
+// field rule failed, so use it only when the problems have no errors. The
+// error is for failures that are not about the content (see Load).
+func LoadManifest(ctx context.Context, fsys fs.FS) (*Manifest, []problem.Problem, error) {
+	ld := &loader{ctx: ctx, fsys: fsys}
+	var m Manifest
+	root, ps, err := ld.document(manifestFile, manifestSchema, &m)
+	if err != nil {
+		return nil, nil, err
+	}
+	if root == nil {
+		return nil, ps, nil
+	}
+	var mp problem.List
+	m.validate(&mp)
+	return &m, append(ps, problem.InFile(manifestFile, mp)...), nil
+}
+
 // loader reads the files of one cassette from an fs.FS.
 type loader struct {
 	ctx  context.Context

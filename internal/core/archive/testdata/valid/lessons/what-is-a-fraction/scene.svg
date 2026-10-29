@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <defs>
+    <radialGradient id="crust"><stop offset="0" stop-color="#f6c667"/><stop offset="1" stop-color="#d98d2b"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="#cfe8ff"/>
+  <g id="pizza"><circle cx="800" cy="450" r="260" fill="url(#crust)"/></g>
+  <g id="slice"><path d="M800 450 L1060 450 A260 260 0 0 1 800 710 Z" fill="#e8553d"/></g>
+  <g id="label-half"><text x="800" y="800" font-size="72" font-family="sans-serif" text-anchor="middle">1/2</text></g>
+</svg>

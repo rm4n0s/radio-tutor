@@ -39,6 +39,20 @@ var (
 	cassetteIDPattern = regexp.MustCompile(`^[a-z0-9]+(\.[a-z0-9][a-z0-9-]*)+$`)
 )
 
+// ValidID reports whether s is a valid lesson or exercise id (the id rule of
+// CASSETTE-FORMAT §2). An id is also the name of the item's folder, so a valid
+// id never holds a slash or a dot.
+func ValidID(s string) bool {
+	return idPattern.MatchString(s)
+}
+
+// ValidCassetteID reports whether s is a valid cassette id (the reverse-domain
+// rule of CASSETTE-FORMAT §2). It holds no slash, no underscore and no
+// backslash, so it is safe as the name of a folder.
+func ValidCassetteID(s string) bool {
+	return cassetteIDPattern.MatchString(s)
+}
+
 // ItemType says what a manifest item is.
 type ItemType string
 

@@ -141,8 +141,8 @@ The format of a cassette (the zip, the manifest, lessons, timelines, captions, a
 
 - **Import** is a file chooser (Glutter's desktop file dialog) filtered to `*.cassette` (and "all files"). It runs on a goroutine with a progress indicator and can be cancelled.
 - The archive is read with the limits of CASSETTE-FORMAT §9 and fully validated (§10 there) before anything is written. An invalid cassette shows the list of problems (each `path: message`), and nothing is installed.
-- A valid cassette is extracted into `cassettes/<id>.tmp-<random>/`, then renamed to `cassettes/<id>/`.
-- **Same id, newer version:** the new version replaces the old one after a confirmation that names both versions; progress is kept (§7.5).
+- A valid cassette is extracted into `cassettes/<id>_tmp-<random>/` (an underscore is not allowed in a cassette id, so a temporary folder never looks like a cassette), then renamed to `cassettes/<id>/`. If the import is cancelled or fails, the temporary folder is deleted.
+- **Same id, newer version:** the new version replaces the old one after a confirmation that names both versions; progress is kept (§7.5). The old folder is renamed to `cassettes/<id>_old-<random>/`, the new one renamed in, and the old one deleted; if the second rename fails the first is undone. At start the app deletes leftover `_tmp-` folders and finishes or undoes an interrupted replacement (an `_old-` folder is renamed back when `cassettes/<id>/` is missing, deleted otherwise). A broken installed copy (see below) is replaced without asking.
 - **Same id, same version:** "This cassette is already installed." Nothing changes.
 - **Same id, older version:** refused with "A newer version (x.y.z) is installed."
 - **Remove** (admin only): confirmation; deletes `cassettes/<id>/`. Progress and photos stay until the admin also chooses "Delete the progress and photos of every student for this cassette" (an unchecked checkbox in the same dialog).
@@ -417,7 +417,7 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 `radio-tutor` with no arguments starts the app. Subcommands:
 
 - `radio-tutor validate [--json] <file.cassette|folder>`: validates (CASSETTE-FORMAT §10) including rendering each layer and prompt picture through Glutter's SVG parser and decoding the audio; prints each problem as `path: message` (or a JSON array of `{path, message}`); exits 0 when valid, 1 when not, 2 on usage errors.
-- `radio-tutor pack <folder> <out.cassette>`: validates the folder, then writes the zip (entries sorted, deflate, no extra fields), refuses to overwrite an existing file unless `--force`.
+- `radio-tutor pack <folder> <out.cassette>`: validates the folder, then writes the zip (entries sorted, deflate, no extra fields, every entry's modification time fixed to 1980-01-01 00:00:00 so that the same folder always gives the same file), refuses to overwrite an existing file unless `--force`.
 - `radio-tutor reset-password <username>`: reads the new password twice from the terminal without echo (echo is turned off with `golang.org/x/sys/unix` termios ioctls, restored on exit and on interrupt; when stdin is not a terminal it reads one line per password) and saves it. Works only while the app is not running (it takes the lock).
 - `radio-tutor version`: prints the version (from `runtime/debug.ReadBuildInfo`).
 

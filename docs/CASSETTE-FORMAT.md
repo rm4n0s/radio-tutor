@@ -261,7 +261,9 @@ So `grader_instructions` and `grading` should say *how to judge and how to talk*
 ## 9. Limits
 
 - Zip: at most 512 MiB, at most 2000 entries, at most 1 GiB uncompressed; each entry at most 200 MiB uncompressed and at most 100 times its compressed size.
-- Entry names: relative, `/` separated, only `a-z 0-9 . - _ /`, no `..`, no empty parts, no leading `/`, unique; no symlinks or other special files; folders may be listed as entries or not.
+- Entry names: relative, `/` separated, only `a-z 0-9 . - _ /`, no `..`, no empty parts, no leading `/`, unique; no symlinks or other special files; folders may be listed as entries or not. An entry that is not a file or folder of §1 is an error.
+- Compression: stored or deflate; encrypted entries are refused. The sizes in the zip's headers are not trusted: every entry is unpacked once while the real bytes are counted, and an entry whose real size differs from its header, or whose checksum is wrong, is an error. A zip whose list of entries is larger than 4 MiB is refused without being read.
+- A folder given to `validate` or `pack` follows the same rules (names, layout, counts and sizes); a symbolic link or special file in it is an error.
 - `cassette.json`, `lesson.json` and `exercise.json`: at most 1 MiB each. SVG files: at most 5 MiB each; a scene has at most 64 actors, elements nested at most 128 deep, and layers of at most 32 MiB together (§5.1).
 
 ## 10. Validation

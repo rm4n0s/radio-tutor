@@ -1,0 +1,16 @@
+{
+  "format": 1,
+  "title": "Adding fractions",
+  "tracks": [
+    {
+      "actor": "sum",
+      "keys": [
+        {"t": 0, "opacity": 0},
+        {"t": 1.0, "opacity": 1}
+      ]
+    }
+  ],
+  "captions": [
+    {"start": 0, "end": 2.9, "text": "When the bottom numbers are the same,\nwe add the top numbers."}
+  ]
+}
