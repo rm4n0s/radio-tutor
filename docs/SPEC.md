@@ -90,7 +90,7 @@ $XDG_STATE_HOME/radio-tutor/
 
 - Every JSON file has a `"format": 1` field. Files are written atomically: write to a temporary file in the same folder, `fsync`, rename, `fsync` the folder.
 - Folders are made with mode 0700, files with 0600.
-- One instance runs at a time: the app takes an exclusive `flock` on the lock file; a second instance says "Radio Tutor is already running" and exits with code 2.
+- One instance runs at a time: the app takes an exclusive `flock` on the lock file; a second instance says "Radio Tutor is already running" on stderr and exits with code 2; when it was started with a display (no terminal), a small window shows the same message first.
 - A JSON file that cannot be parsed is not overwritten: it is renamed to `<name>.broken-<time>`, the error is logged and shown to the admin, and the app starts with an empty value for it.
 
 ## 5. Architecture and packages
@@ -402,7 +402,7 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 
 ### 12.4 Settings
 
-`settings.json`: `language` (`en` or `el`, default from `LANG`, else `en`), `students_can_import` (default true), `phone.port` (default 8737), `phone.interface` (default automatic), `hidden_cassettes` (per username). The providers (§11.6) have their own screen.
+`settings.json`: `language` (`en` or `el`, default from `LANG`, else `en`), `students_can_import` (default true), `phone.port` (default 8737), `phone.interface` (default automatic: the empty string), `hidden_cassettes` (per username). A field missing from the file keeps its default; a missing file is the defaults (it is written by the first change). The providers (§11.6) have their own screen.
 
 ## 13. The student area
 

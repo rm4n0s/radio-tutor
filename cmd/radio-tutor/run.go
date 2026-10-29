@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"runtime/debug"
+
+	"github.com/rm4n0s/errors"
 )
 
 // Exit codes of the command.
@@ -26,10 +28,12 @@ Commands:
 `
 
 // run executes the command line args (without the program name) and returns the
-// exit code. With no args it calls startGUI, which opens the application window
-// and blocks until it is closed. Output goes to stdout and stderr; stdin is read
+// exit code. With no args it calls startGUI with ctx, which opens the application
+// window and blocks until it is closed; a startGUI failure with the tag
+// AlreadyRunning (another instance holds the lock, SPEC §4) prints "Radio Tutor
+// is already running" and exits with code 2. Output goes to stdout and stderr; stdin is read
 // by reset-password.
-func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, startGUI func() error) int {
+func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, startGUI func(ctx context.Context) error) int {
 	out, errOut := &printer{w: stdout}, &printer{w: stderr}
 	code := dispatch(ctx, args, stdin, out, errOut, startGUI)
 	if code == exitOK && (out.err != nil || errOut.err != nil) {
@@ -54,13 +58,17 @@ func (p *printer) printf(format string, a ...any) {
 }
 
 // dispatch runs the command and returns its exit code.
-func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stderr *printer, startGUI func() error) int {
+func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stderr *printer, startGUI func(ctx context.Context) error) int {
 	if len(args) == 0 {
 		if err := ctx.Err(); err != nil {
 			stderr.printf("radio-tutor: %v\n", err)
 			return exitError
 		}
-		if err := startGUI(); err != nil {
+		if err := startGUI(ctx); err != nil {
+			if appErr, ok := errors.FromError(err); ok && appErr.Tag == "AlreadyRunning" {
+				stderr.printf("Radio Tutor is already running\n")
+				return exitUsage
+			}
 			stderr.printf("radio-tutor: %v\n", err)
 			return exitError
 		}

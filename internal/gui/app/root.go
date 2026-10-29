@@ -1,12 +1,17 @@
-// Package app is the application shell of Radio Tutor: the root widget, the
-// navigation, the theme, login and first run. It grows with the later steps.
+// Package app is the application shell of Radio Tutor: startup, the root
+// widget, the theme, the navigation, the translations in use, the first-run and
+// login screens and the placeholder homes.
 package app
 
 import (
+	"context"
+
 	m "github.com/rm4n0s/glutter/material"
+	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
+	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 )
 
-// Title is the title of the application window and the text of the root screen.
+// Title is the title of the application window.
 const Title = "Radio Tutor"
 
 // The smallest size of the application window, in logical pixels.
@@ -15,36 +20,98 @@ const (
 	MinWindowHeight = 600
 )
 
-// Root is the root widget of the application: a Material app whose home shows
-// the name of the application, centered.
-type Root struct{ m.StatelessWidget }
-
-// NewRoot returns the root widget of the application.
-func NewRoot(opts ...m.WidgetOpts) *Root {
-	return &Root{StatelessWidget: m.NewStatelessWidgetBase(opts...)}
+// Root is the root widget of the application: the Scope with the Material app
+// and its navigator inside. It holds the language and the logged-in user.
+type Root struct {
+	m.StatefulWidget
+	env *Env
 }
 
-// Build builds the Material app with the home screen.
-func (r *Root) Build(bc m.BuildContext) m.Widget {
-	return m.NewMaterialApp(m.MaterialAppOpts{
+// NewRoot returns the root widget of the application for the environment.
+func NewRoot(env *Env, opts ...m.WidgetOpts) *Root {
+	return &Root{StatefulWidget: m.NewStatefulWidgetBase(opts...), env: env}
+}
+
+// Env is the environment the root was made with.
+func (r *Root) Env() *Env { return r.env }
+
+// CreateState creates the state.
+func (r *Root) CreateState() m.State { return &rootState{} }
+
+type rootState struct {
+	m.StateOf[*Root]
+	theme   *m.ThemeData
+	lang    i18n.Lang
+	session *profile.Profile
+}
+
+func (s *rootState) InitState() {
+	s.theme = NewTheme()
+	s.lang = s.Widget().env.Settings.Get().Language
+}
+
+// setLanguage shows the language at once and saves it in the background.
+func (s *rootState) setLanguage(l i18n.Lang) {
+	if !l.Valid() {
+		return
+	}
+	s.SetState(func() { s.lang = l })
+	env := s.Widget().env
+	s.Go(func(ctx context.Context) {
+		if err := env.Settings.SetLanguage(ctx, l); err != nil {
+			env.Log.Error("saving the language failed", "language", string(l), "err", err)
+		}
+	})
+}
+
+func (s *rootState) logIn(p profile.Profile) {
+	s.Widget().env.Log.Info("login", "username", p.Username, "role", string(p.Role))
+	s.SetState(func() { s.session = &p })
+}
+
+func (s *rootState) logOut() {
+	if s.session != nil {
+		s.Widget().env.Log.Info("logout", "username", s.session.Username)
+	}
+	s.SetState(func() { s.session = nil })
+}
+
+func (s *rootState) Build(m.BuildContext) m.Widget {
+	cat := i18n.For(s.lang)
+	app := m.NewMaterialApp(m.MaterialAppOpts{
 		Title:                      Title,
-		Theme:                      m.NewThemeData(m.ThemeDataOpts{ColorSchemeSeed: m.Some(m.Colors.Blue.Primary)}),
+		Theme:                      s.theme,
 		DebugShowCheckedModeBanner: m.Some(false),
-		Home: m.NewScaffold(m.ScaffoldOpts{
-			Body: m.NewCenter(m.NewText(Title, m.TextOpts{Style: m.ThemeOf(bc).TextTheme.HeadlineMedium})),
-		}),
+		Home:                       NewHome(),
 	})
+	return newScope(s.Widget().env, cat, s.session, actions{
+		setLanguage: s.setLanguage,
+		logIn:       s.logIn,
+		logOut:      s.logOut,
+	}, app)
 }
 
-// Run opens the application window and blocks until it is closed.
-func Run() error {
-	minSize := m.Size{Width: MinWindowWidth, Height: MinWindowHeight}
-	return m.RunApp(NewRoot(), m.RunAppOpts{
-		AppID: "dev.radiotutor.app",
-		Window: m.WindowConfig{
-			Title:   Title,
-			Size:    minSize,
-			MinSize: minSize,
-		},
-	})
+// Home is the first route: it shows the first-run screen when there is no
+// admin, the login screen when nobody is logged in, and the home of the
+// logged-in user.
+type Home struct{ m.StatelessWidget }
+
+// NewHome returns the home route's widget.
+func NewHome(opts ...m.WidgetOpts) *Home {
+	return &Home{StatelessWidget: m.NewStatelessWidgetBase(opts...)}
+}
+
+// Build picks the screen.
+func (h *Home) Build(bc m.BuildContext) m.Widget {
+	scope := ScopeOf(bc)
+	switch session := scope.Session(); {
+	case session != nil && session.Role == profile.RoleAdmin:
+		return NewAdminHome()
+	case session != nil:
+		return NewStudentHome()
+	case scope.Env().Profiles.NeedsFirstAdmin():
+		return NewFirstRun()
+	default:
+		return NewLogin()
+	}
 }

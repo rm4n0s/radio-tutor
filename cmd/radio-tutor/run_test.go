@@ -15,19 +15,21 @@ func TestRun(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
 	guiErr := errors.New("FakeGUIFailure", "no display")
+	alreadyRunning := errors.New("AlreadyRunning", "another instance holds the lock")
 
 	tests := []struct {
 		name       string
 		ctx        context.Context
 		args       []string
-		gui        func() error
+		gui        func(context.Context) error
 		wantCode   int
 		wantGUI    bool
 		wantStdout string
 		wantStderr string
 	}{
-		{name: "no arguments starts the gui", args: nil, gui: func() error { return nil }, wantCode: 0, wantGUI: true},
-		{name: "gui failure", args: nil, gui: func() error { return guiErr }, wantCode: 1, wantGUI: true, wantStderr: "no display"},
+		{name: "no arguments starts the gui", args: nil, gui: func(context.Context) error { return nil }, wantCode: 0, wantGUI: true},
+		{name: "gui failure", args: nil, gui: func(context.Context) error { return guiErr }, wantCode: 1, wantGUI: true, wantStderr: "no display"},
+		{name: "another instance is running", args: nil, gui: func(context.Context) error { return alreadyRunning }, wantCode: 2, wantGUI: true, wantStderr: "Radio Tutor is already running"},
 		{name: "cancelled context does not start the gui", ctx: cancelled, args: nil, wantCode: 1, wantStderr: "context canceled"},
 		{name: "validate is not implemented", args: []string{"validate", "x"}, wantCode: 2, wantStderr: "not implemented yet"},
 		{name: "pack is not implemented", args: []string{"pack", "a", "b"}, wantCode: 2, wantStderr: "not implemented yet"},
@@ -44,13 +46,13 @@ func TestRun(t *testing.T) {
 				ctx = context.Background()
 			}
 			started := false
-			gui := func() error {
+			gui := func(ctx context.Context) error {
 				started = true
 				if tt.gui == nil {
 					t.Error("the gui must not start")
 					return nil
 				}
-				return tt.gui()
+				return tt.gui(ctx)
 			}
 			var stdout, stderr bytes.Buffer
 			code := run(ctx, tt.args, strings.NewReader(""), &stdout, &stderr, gui)
