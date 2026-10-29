@@ -64,9 +64,29 @@ Tests:
 - No error Tags are introduced (validators return problems, not errors).
 
 Deviations from the spec: none. Two small readings of the spec: a caption text that is blank (only spaces or newlines) is an error, and more than two lines (more than one `\n`) is an error ("at most two short lines").
+## 0.2 Storage and logging
+Date: 2026-10-30.
+
+Built:
+- `internal/core/storage`: `Paths{Config, Data, State}` (the three `radio-tutor` folders of SPEC §4) with `Resolve()` (process environment) and `ResolveFrom(getenv)`; an empty or relative `XDG_*` value is ignored (XDG specification) and the default under `$HOME` is used; no usable `HOME` fails with `HomeUnknown`. Resolving creates nothing. File helpers on `Paths`: `SettingsFile`, `ProvidersFile`, `ProfilesFile`, `CassettesDir`, `ProgressDir`, `PhotosDir`, `LogFile`, `LockFile`. `DirMode` (0700) and `FileMode` (0600), `EnsureDir(path)` (`DirCreateFailed`).
+- `WriteJSONAtomic(ctx, path, v)`: indented JSON plus a newline; temporary file in the same folder (mode 0600), write, `fsync`, close, rename, `fsync` of the folder; the folder is created when missing; any failure removes the temporary file and leaves the old file. Tags: `WriteCancelled`, `JSONMarshalFailed`, `DirCreateFailed`, `TempFileCreateFailed`, `TempFileWriteFailed`, `TempFileSyncFailed`, `TempFileCloseFailed`, `RenameFailed`, `DirSyncFailed`. The file operations are an unexported `atomicOps` value passed as a parameter, so tests make each step fail (no global state).
+- `ReadJSON(path, v)`: tags `JSONNotFound` (also `errors.Is(err, fs.ErrNotExist)`, so callers start with an empty value without quarantining), `JSONReadFailed`, `JSONInvalid`. `QuarantineBroken(path, now)` renames to `<name>.broken-<20060102T150405Z>` (UTC), appending `-2`, `-3` when the name is taken, and returns the new path (`QuarantineFailed`). The caller logs and shows the error (SPEC §4); the `"format": 1` field belongs to the document types of later steps.
+- `Lock(paths)`: creates the state folder and the lock file, takes a non-blocking exclusive `syscall.Flock`, returns an idempotent unlock (closes the descriptor). A held lock, in this process or another, gives `AlreadyRunning`; `LockOpenFailed` and `LockFailed` are the other failures. The caller maps `AlreadyRunning` to the message and exit code 2 of SPEC §4 (not done here).
+- `internal/core/storage/storagetest`: `Isolate(t testing.TB) storage.Paths` sets `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` (the four variables `scripts/isolated.sh` sets) to separate `t.TempDir()` folders with `t.Setenv` and returns `storage.Resolve()`. It cannot be used by parallel tests.
+- `internal/core/logging`: `New(paths, debug) (*slog.Logger, io.Closer, error)` gives a JSON `slog` handler (Info, Debug when `debug`) on a `RotatingWriter` (`NewRotatingWriter(path, maxSize, files)`: appends, rotates before a write that would pass `maxSize` to `path.1` ... `path.<files-1>`, drops the oldest; 10 MiB and 3 files, the current one included, in `New`; a single write larger than the limit is not split; a mutex makes it safe for concurrent writes; a failed rotation or reopen is retried by the next write). Tags: `LogOpenFailed`, `LogWriteFailed`, `LogRotateFailed`, `LogCloseFailed`, `LogClosed`. Reading `RADIO_TUTOR_DEBUG` is left to the caller.
+- `scripts/isolated.sh` from step 0.1 already matches SPEC §16; checked (the variables are set, the exit code passes through, `--keep` keeps the folder); unchanged.
+
+Tests:
+- `storage`: table-driven paths (defaults, variables, mixed, empty/relative ignored, `HomeUnknown`, the real environment, file names); atomic write round trip with modes, failure injection at write, sync, close, rename and folder sync (old file intact, no temporary file left), cancelled context, unmarshalable value, parent that is a file, read-only folder, target that is a folder; `ReadJSON` cases; quarantine (names, collisions, errors); lock (second holder refused with a second `Lock` call in the same process, release, `LockOpenFailed`, `LockFailed`, `DirCreateFailed`).
+- `storagetest`: the variables point under the temp folder, are distinct, and match the returned `Paths`; each test gets fresh folders.
+- `logging`: levels, JSON lines, `*errors.Error` logged with its Tag, append across runs, rotation (1, 2, 3 files kept), oversized write, 16 concurrent writers and 8 concurrent loggers under `-race`, write after close, open, rotate, close and write failures with route tests.
+
+Deviations from the spec: none. `Isolate` takes a `testing.TB`. `ReadJSON` takes no `ctx`, as the step lists it.
 
 Manual checks: none.
 
 Later:
 - `Key.T`, `Caption.Start` and `Caption.End` are plain `float64` (absent reads as 0, as `encoding/json` cannot tell); if a missing `t` or `start` should be an error, the cassette package can check for the key during decoding (for example with a second pass into `map[string]json.RawMessage`).
 - Validate does not warn about a key that sets no property (allowed by the spec).
+- The `reset-password` command and the app start (step 6.1) map `AlreadyRunning` to "Radio Tutor is already running" and exit code 2.
+- `Paths` may gain more helpers (per cassette, per student) when the steps that need them are built.
