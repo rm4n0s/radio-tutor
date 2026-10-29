@@ -1,0 +1,76 @@
+{{define "page"}}<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{.Title}}</title>
+<link rel="stylesheet" href="/static/page.css">
+</head>
+<body>
+<main id="app" data-max="{{.MaxPhotos}}">
+<h1 class="cassette-title">{{.Title}}</h1>
+
+<section id="capture">
+<p class="instruction">{{index .Text "phone.write_labels"}}</p>
+
+<h2>{{index .Text "phone.heading"}}</h2>
+<ol class="exercises">
+{{- range .Exercises}}
+<li class="exercise">
+<span class="badge">{{.Label}}</span>
+<div class="exercise-body">
+<h3>{{.Title}}</h3>
+{{- if .Lines}}
+<p class="prompt">{{range $i, $line := .Lines}}{{if $i}}<br>{{end}}{{$line}}{{end}}</p>
+{{- end}}
+</div>
+</li>
+{{- end}}
+</ol>
+
+<div class="capture-box">
+<input id="file" class="visually-hidden" type="file" accept="image/*" capture="environment" multiple>
+<label id="take" class="big-button" for="file">{{index .Text "phone.take"}}</label>
+<p id="count" class="count" hidden></p>
+<ul id="thumbs" class="thumbs"></ul>
+<p id="message" class="message" role="alert" hidden></p>
+<progress id="progress" max="100" value="0" hidden></progress>
+<button id="send" class="big-button send" type="button" disabled>{{index .Text "phone.send"}}</button>
+</div>
+</section>
+
+<section id="sent" class="state" hidden>
+<p class="state-mark" aria-hidden="true">&#10003;</p>
+<p class="state-text">{{index .Text "phone.sent"}}</p>
+</section>
+
+<section id="expired" class="state" hidden>
+<h2>{{index .Text "phone.expired.title"}}</h2>
+<p>{{index .Text "phone.expired.body"}}</p>
+</section>
+</main>
+<script type="application/json" id="text">{{.Text}}</script>
+<script src="/static/page.js"></script>
+</body>
+</html>
+{{end}}
+{{define "message"}}<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{.Title}}</title>
+<link rel="stylesheet" href="/static/page.css">
+</head>
+<body>
+<main>
+<section class="state">
+<h1>{{.Title}}</h1>
+<p>{{.Body}}</p>
+</section>
+</main>
+</body>
+</html>
+{{end}}
