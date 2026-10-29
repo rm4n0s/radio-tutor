@@ -14,7 +14,7 @@ import (
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	code := run(ctx, os.Args[1:], os.Stdout, os.Stderr, app.Run)
+	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr, app.Run)
 	stop()
 	os.Exit(code)
 }

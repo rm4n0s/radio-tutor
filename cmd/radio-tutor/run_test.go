@@ -31,7 +31,7 @@ func TestRun(t *testing.T) {
 		{name: "cancelled context does not start the gui", ctx: cancelled, args: nil, wantCode: 1, wantStderr: "context canceled"},
 		{name: "validate is not implemented", args: []string{"validate", "x"}, wantCode: 2, wantStderr: "not implemented yet"},
 		{name: "pack is not implemented", args: []string{"pack", "a", "b"}, wantCode: 2, wantStderr: "not implemented yet"},
-		{name: "reset-password is not implemented", args: []string{"reset-password", "u"}, wantCode: 2, wantStderr: "not implemented yet"},
+		{name: "reset-password needs a username", args: []string{"reset-password"}, wantCode: 2, wantStderr: "usage: radio-tutor reset-password <username>"},
 		{name: "version", args: []string{"version"}, wantCode: 0, wantStdout: "\n"},
 		{name: "version with arguments", args: []string{"version", "x"}, wantCode: 2, wantStderr: "takes no arguments"},
 		{name: "help", args: []string{"help"}, wantCode: 0, wantStdout: "usage: radio-tutor"},
@@ -53,7 +53,7 @@ func TestRun(t *testing.T) {
 				return tt.gui()
 			}
 			var stdout, stderr bytes.Buffer
-			code := run(ctx, tt.args, &stdout, &stderr, gui)
+			code := run(ctx, tt.args, strings.NewReader(""), &stdout, &stderr, gui)
 			if code != tt.wantCode {
 				t.Errorf("exit code %d, want %d (stderr %q)", code, tt.wantCode, stderr.String())
 			}
@@ -72,7 +72,7 @@ func TestRun(t *testing.T) {
 
 func TestRunUsageGoesToStderr(t *testing.T) {
 	var stdout bytes.Buffer
-	if code := run(context.Background(), []string{"bogus"}, &stdout, io.Discard, nil); code != 2 {
+	if code := run(context.Background(), []string{"bogus"}, strings.NewReader(""), &stdout, io.Discard, nil); code != 2 {
 		t.Fatalf("exit code %d, want 2", code)
 	}
 	if stdout.Len() != 0 {
@@ -119,7 +119,7 @@ func TestRunWriteFailure(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if code := run(context.Background(), tt.args, failWriter{}, failWriter{}, nil); code != tt.want {
+			if code := run(context.Background(), tt.args, strings.NewReader(""), failWriter{}, failWriter{}, nil); code != tt.want {
 				t.Errorf("exit code %d, want %d", code, tt.want)
 			}
 		})

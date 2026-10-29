@@ -27,10 +27,11 @@ Commands:
 
 // run executes the command line args (without the program name) and returns the
 // exit code. With no args it calls startGUI, which opens the application window
-// and blocks until it is closed. Output goes to stdout and stderr.
-func run(ctx context.Context, args []string, stdout, stderr io.Writer, startGUI func() error) int {
+// and blocks until it is closed. Output goes to stdout and stderr; stdin is read
+// by reset-password.
+func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, startGUI func() error) int {
 	out, errOut := &printer{w: stdout}, &printer{w: stderr}
-	code := dispatch(ctx, args, out, errOut, startGUI)
+	code := dispatch(ctx, args, stdin, out, errOut, startGUI)
 	if code == exitOK && (out.err != nil || errOut.err != nil) {
 		return exitError
 	}
@@ -53,7 +54,7 @@ func (p *printer) printf(format string, a ...any) {
 }
 
 // dispatch runs the command and returns its exit code.
-func dispatch(ctx context.Context, args []string, stdout, stderr *printer, startGUI func() error) int {
+func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stderr *printer, startGUI func() error) int {
 	if len(args) == 0 {
 		if err := ctx.Err(); err != nil {
 			stderr.printf("radio-tutor: %v\n", err)
@@ -66,9 +67,11 @@ func dispatch(ctx context.Context, args []string, stdout, stderr *printer, start
 		return exitOK
 	}
 	switch args[0] {
-	case "validate", "pack", "reset-password":
+	case "validate", "pack":
 		stderr.printf("radio-tutor %s: not implemented yet\n", args[0])
 		return exitUsage
+	case "reset-password":
+		return resetPassword(ctx, args[1:], resetDeps{stdin: stdin, stdout: stdout, stderr: stderr, echo: terminalEcho})
 	case "version":
 		if len(args) > 1 {
 			stderr.printf("radio-tutor version: takes no arguments\n")
