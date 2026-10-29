@@ -13,7 +13,7 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 - Test the cgo-free path: `CGO_ENABLED=0 go test ./...`
 - Test one package: `go test ./internal/core/timeline -run TestName -v`
 - Tests that need a real display or a real audio server: `go test -tags radiotutor_display ./...`, `go test -tags radiotutor_audio ./...`
-- Update golden images: `go test ./... -run Golden -update-goldens`, then review every changed PNG
+- Update golden images: `go test <package> -run Golden -update-goldens` (per package: each package with goldens defines the flag, so `./...` would fail in the others), then review every changed golden
 - Heavy commands (full test runs, lint, release builds): through `scripts/heavy.sh -- <command>`, see "Memory (OOM)"
 - Vet: `go vet ./...`
 - Lint: `golangci-lint run`
