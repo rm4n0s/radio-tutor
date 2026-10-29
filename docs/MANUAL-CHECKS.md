@@ -14,7 +14,6 @@ Both checks use throw-away data folders (`scripts/isolated.sh`), never your real
    `go run ./cmd/radio-tutor &`
    `go run ./cmd/radio-tutor; echo "exit $?"`
    The second run shows a small window "Radio Tutor is already running"; OK closes it, and the terminal prints "Radio Tutor is already running" and `exit 2`. Then close the first window and check that `jobs` shows nothing left.
-Checks that need a person (real sound, a real phone, a real AI provider). Each has the step that added it and the exact command. Tell the manager the result; the answer is recorded in the step's entry of `docs/IMPLEMENTED.md` and the item is removed from this list.
 
 ## 5.1 Real sound through the audio server
 
