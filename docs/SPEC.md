@@ -351,7 +351,7 @@ exercises:
 Photos: 2 (in order).
 ```
 
-The values are the cassette's text as is (YAML-like, each value JSON-quoted so it cannot break the block). The ages and language come from the manifest.
+The block is YAML-like. Every text value (title, language, grader instructions, label, id, title, prompt, reference solution, grading) is written as a JSON string on one line (`encoding/json`, with `<`, `>` and `&` left as they are so mathematics stays readable), so a newline or a quote inside it cannot start a new field or end the block. A `<` that would start `<cassette` or `</cassette` (any case, white space allowed) is written as the JSON escape of `<`, so the text cannot close the block. `ages`, `show_work` and the number of photos come from the app and are written bare. The ages and language come from the manifest. The system prompt receives only the ages and the language's English name (for example `Greek (el)`), never cassette text.
 
 ### 11.5 The reply
 
