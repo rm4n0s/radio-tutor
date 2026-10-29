@@ -83,6 +83,10 @@ func TestChooseLAN(t *testing.T) {
 	downEth := Interface{Name: "enp2s0", Up: false, Addrs: ips("10.1.2.3")}
 	vpnPublic := Interface{Name: "tun0", Up: true, Addrs: ips("203.0.113.5", "169.254.3.4")}
 	v6only := Interface{Name: "wlp3s0", Up: true, Addrs: ips("fd00::5", "2001:db8::1")}
+	bridge0 := Interface{Name: "br0", Up: true, Addrs: ips("192.168.50.1")}
+	libvirt := Interface{Name: "virbr0", Up: true, Addrs: ips("192.168.122.1")}
+	veth := Interface{Name: "veth1a2b", Up: true, Addrs: ips("10.5.5.5")}
+	wg := Interface{Name: "wg0", Up: true, Addrs: ips("10.8.0.2")}
 	range172 := Interface{Name: "br0", Up: true, Addrs: ips("172.31.255.1")}
 	not172 := Interface{Name: "br1", Up: true, Addrs: ips("172.32.0.1", "172.15.0.1")}
 
@@ -101,7 +105,11 @@ func TestChooseLAN(t *testing.T) {
 		{"explicit interface without an address falls back", routeWifi, []Interface{wifi, eth}, "nosuch0", "wlp3s0", "192.168.1.20", false},
 		{"explicit interface that is down falls back", routeWifi, []Interface{wifi, downEth}, "enp2s0", "wlp3s0", "192.168.1.20", false},
 		{"default route interface is down", routeTwoDefaults, []Interface{wifi, downEth}, "", "wlp3s0", "192.168.1.20", false},
-		{"no route table: the first usable interface", "", []Interface{loopback, vpnPublic, docker, wifi}, "", "docker0", "172.17.0.1", false},
+		{"no route table: the first usable interface that is not virtual", "", []Interface{loopback, vpnPublic, docker, wifi}, "", "wlp3s0", "192.168.1.20", false},
+		{"no route table: a bridge named br0 is not virtual", "", []Interface{docker, bridge0, wifi}, "", "br0", "192.168.50.1", false},
+		{"no route table: only virtual interfaces", "", []Interface{docker, libvirt, veth, wg}, "", "", "", true},
+		{"the default route interface wins even when it looks virtual", "docker0\t00000000\t0101A8C0\t0003\t0\t0\t0\t00000000\t0\t0\t0\n", []Interface{wifi, docker}, "", "docker0", "172.17.0.1", false},
+		{"an explicit virtual interface is used", "", []Interface{wifi, docker}, "docker0", "docker0", "172.17.0.1", false},
 		{"a route to an interface without a private address", routeTwoDefaults, []Interface{vpnPublic, wifi}, "", "wlp3s0", "192.168.1.20", false},
 		{"172.16/12 edges", "", []Interface{not172, range172}, "", "br0", "172.31.255.1", false},
 		{"only loopback", routeWifi, []Interface{loopback}, "", "", "", true},
@@ -188,4 +196,20 @@ func TestDetectLANCanceled(t *testing.T) {
 	cancel()
 	_, err := DetectLAN(ctx, "")
 	wantRoute(t, err, "DetectLAN.PhoneDetectCanceled")
+}
+
+func TestVirtualInterface(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{"docker0", true}, {"br-1a2b3c", true}, {"veth9f", true}, {"virbr0", true}, {"lo", true},
+		{"tun0", true}, {"tap1", true}, {"wg0", true},
+		{"wlp3s0", false}, {"enp2s0", false}, {"wlan0", false}, {"eth0", false}, {"br0", false}, {"", false},
+	}
+	for _, tc := range tests {
+		if got := VirtualInterface(tc.name); got != tc.want {
+			t.Errorf("VirtualInterface(%q) = %v, want %v", tc.name, got, tc.want)
+		}
+	}
 }

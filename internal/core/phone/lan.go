@@ -88,8 +88,11 @@ func ParseDefaultRoutes(r io.Reader) ([]string, error) {
 // phone.interface, empty for automatic) is tried first when it has such an
 // address, then the interfaces of the default routes in route (the content of
 // /proc/net/route, may be nil) from the lowest metric, then the other
-// interfaces in the order given. A route table that cannot be read is ignored.
-// With no such address the error has the tag PhoneNoNetwork.
+// interfaces in the order given, skipping the virtual ones (see
+// VirtualInterface): with no default route, a Docker bridge must not win over
+// Wi-Fi. A virtual interface is still used when the admin names it or when it
+// has the default route. A route table that cannot be read is ignored. With no
+// such address the error has the tag PhoneNoNetwork.
 func ChooseLAN(route io.Reader, ifaces []Interface, preferred string) (LANAddr, error) {
 	var order []string
 	if preferred != "" {
@@ -100,13 +103,15 @@ func ChooseLAN(route io.Reader, ifaces []Interface, preferred string) (LANAddr, 
 			order = append(order, names...)
 		}
 	}
-	for _, ifc := range ifaces {
-		order = append(order, ifc.Name)
-	}
 	byName := make(map[string]Interface, len(ifaces))
 	for _, ifc := range ifaces {
 		if _, dup := byName[ifc.Name]; !dup {
 			byName[ifc.Name] = ifc
+		}
+	}
+	for _, ifc := range ifaces {
+		if !VirtualInterface(ifc.Name) {
+			order = append(order, ifc.Name)
 		}
 	}
 	for _, name := range order {
@@ -121,6 +126,22 @@ func ChooseLAN(route io.Reader, ifaces []Interface, preferred string) (LANAddr, 
 		}
 	}
 	return LANAddr{}, errors.New("PhoneNoNetwork", "this computer has no private IPv4 address on an interface that is up", "preferred", preferred)
+}
+
+// virtualPrefixes are the beginnings of the names of interfaces that never
+// reach a phone: containers, bridges, virtual machines, loopback and tunnels.
+var virtualPrefixes = []string{"docker", "br-", "veth", "virbr", "lo", "tun", "tap", "wg"}
+
+// VirtualInterface reports whether the interface name looks like a virtual
+// interface (Docker, bridges, veth pairs, libvirt, loopback, VPN tunnels):
+// its name starts with docker, br-, veth, virbr, lo, tun, tap or wg.
+func VirtualInterface(name string) bool {
+	for _, p := range virtualPrefixes {
+		if strings.HasPrefix(name, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // ListInterfaces returns the network interfaces of this computer.
