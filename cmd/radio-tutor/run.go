@@ -57,6 +57,16 @@ func (p *printer) printf(format string, a ...any) {
 	_, p.err = fmt.Fprintf(p.w, format, a...)
 }
 
+// Write lets a printer be an io.Writer; it remembers the first failure.
+func (p *printer) Write(b []byte) (int, error) {
+	if p.err != nil {
+		return 0, p.err
+	}
+	var n int
+	n, p.err = p.w.Write(b)
+	return n, p.err
+}
+
 // dispatch runs the command and returns its exit code.
 func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stderr *printer, startGUI func(ctx context.Context) error) int {
 	if len(args) == 0 {
@@ -75,9 +85,10 @@ func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stder
 		return exitOK
 	}
 	switch args[0] {
-	case "validate", "pack":
-		stderr.printf("radio-tutor %s: not implemented yet\n", args[0])
-		return exitUsage
+	case "validate":
+		return validateCommand(ctx, args[1:], cassetteDeps{stdout: stdout, stderr: stderr, render: defaultRender()})
+	case "pack":
+		return packCommand(ctx, args[1:], cassetteDeps{stdout: stdout, stderr: stderr, render: defaultRender()})
 	case "reset-password":
 		return resetPassword(ctx, args[1:], resetDeps{stdin: stdin, stdout: stdout, stderr: stderr, echo: terminalEcho})
 	case "version":

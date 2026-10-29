@@ -416,8 +416,8 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 
 `radio-tutor` with no arguments starts the app. Subcommands:
 
-- `radio-tutor validate [--json] <file.cassette|folder>`: validates (CASSETTE-FORMAT §10) including rendering each layer and prompt picture through Glutter's SVG parser and decoding the audio; prints each problem as `path: message` (or a JSON array of `{path, message}`); exits 0 when valid, 1 when not, 2 on usage errors.
-- `radio-tutor pack <folder> <out.cassette>`: validates the folder, then writes the zip (entries sorted, deflate, no extra fields, every entry's modification time fixed to 1980-01-01 00:00:00 so that the same folder always gives the same file), refuses to overwrite an existing file unless `--force`.
+- `radio-tutor validate [--json] <file.cassette|folder>`: validates (CASSETTE-FORMAT §10) including rendering each layer and prompt picture through Glutter's SVG parser and decoding the audio; prints each problem on stdout as `path: message` (a warning starts with `warning: `), or with `--json` a JSON array of `{path, message, warning}` (`[]` when there is none); a one-line summary goes to stderr (not with `--json`). Exits 0 when valid (warnings are allowed), 1 when not or when the path cannot be read, 2 on usage errors.
+- `radio-tutor pack [--force] <folder> <out.cassette>`: validates the folder as `validate` does (including the rendering; on errors the problems go to stderr, nothing is written and the exit code is 1), then writes the zip (entries sorted, deflate, no extra fields, every entry's modification time fixed to 1980-01-01 00:00:00 so that the same folder always gives the same file), refuses to overwrite an existing file unless `--force`.
 - `radio-tutor reset-password <username>`: reads the new password twice from the terminal without echo (echo is turned off with `golang.org/x/sys/unix` termios ioctls, restored on exit and on interrupt; when stdin is not a terminal it reads one line per password) and saves it. Works only while the app is not running (it takes the lock).
 - `radio-tutor version`: prints the version (from `runtime/debug.ReadBuildInfo`).
 

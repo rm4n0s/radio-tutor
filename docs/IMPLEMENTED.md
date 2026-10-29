@@ -421,3 +421,26 @@ Later:
 - Token usage and the app version in the provider's User-Agent (`providers.Build` takes no version yet).
 - The GUI maps `Failed.Err` tags to texts (`NoProvider`, `OpenAIAuth`, `OpenAINotFound`, `OpenAIRateLimited`, `PhoneNoNetwork`, `PhonePortInUse`) and posts the events to the UI thread.
 - Deleting the photos of a submission when the admin deletes it (step 6.x) is the progress/photos admin code's job; the service only writes them.
+
+## 1.6 Validate and pack commands
+
+Date: 2026-10-30.
+
+Built:
+- `internal/gui/svgcheck`: `Checker` (zero value, safe for concurrent use) implements `archive.RenderChecker`. `CheckSVG(ctx, name, data)` calls Glutter's `svg.Parse` (default theme and locale), refuses a document with no width or height to draw, and records `Document.Picture()` so that drawing the tree is exercised. It needs no window or binding (`svg.Parse` and the recording are plain Go; text is set in the bundled Roboto). Tags: `SvgCheckCanceled`, `SvgCheckParseFailed` (wraps Glutter's error: `SvgParseFailed`, `SvgNotSvg` or `SvgInvalidValue`), `SvgCheckNoSize`.
+- `cmd/radio-tutor/cassette.go`: `validate [--json] <file.cassette|folder>` and `pack [--force] <folder> <out.cassette>`, flags parsed with the standard `flag` package (the flags come before the positional arguments; `-h`/`--help` prints the usage on stdout and exits 0).
+  - `validate` runs `archive.ValidatePath` with the render checker; problems go to stdout (`path: message`, warnings prefixed `warning: ` by `problem.String`, or a JSON array of `{path, message, warning}`, `[]` when none); a summary line (`<path> is valid (0 errors, 1 warning)`) goes to stderr in text mode. Exit 0 valid (warnings allowed), 1 invalid or unreadable path, 2 usage.
+  - `pack` validates the folder with the render checker first; on errors it prints the problems to stderr and exits 1 without writing; otherwise it prints the warnings to stderr, calls `archive.Pack` (problems it returns are printed the same way) and prints `Packed <dir> into <out>` on stdout. Exit 0/1/2.
+  - `printer` got a `Write` method so the JSON encoder writes through it and a failing stdout gives a failing exit code.
+
+Tests:
+- `internal/gui/svgcheck`: valid SVGs (shapes, text, gradient, empty); malformed XML, a non-svg root, nested and marker `viewBox` with a negative size, a `viewBox` of no area, empty and non-XML input; a cancelled context; the Glutter tag kept as the original error; a scene (`testdata/negative-viewbox.svg`) that `scene.Split` accepts without errors and whose layer Glutter refuses (a nested `<svg viewBox="0 0 -50 50">`).
+- `cmd/radio-tutor` (calls `run`, no subprocess; a copy of the archive package's `testdata/valid` in a temp folder, broken one place at a time): valid, warning only (exit 0), missing file, extra file, an SVG the core accepts and Glutter cannot draw (reported as `... Radio Tutor cannot draw it: ...`), JSON output parsed back (fields, error and warning), usage errors, help, a missing path, a failing stdout, a cancelled context; pack: flags before the arguments, warnings printed, refusals (nothing written, no temporary file), existing output refused and `--force`, determinism, a packed zip validates, a zip given as the folder.
+- `run_test.go`: the two "not implemented" rows became usage-error rows.
+
+Deviations from the plan and spec (SPEC §14 edited on this branch): the JSON objects have a `warning` field (always present); `validate` prints a summary on stderr in text mode; `pack` takes `--force` in its usage line and validates with the renderer first, printing refusals on stderr.
+
+Manual checks: none.
+
+Later:
+- `Checker` could pass the app's text engine (`PictureWith`) when the player has one; the default Roboto path is enough to find drawing errors.
