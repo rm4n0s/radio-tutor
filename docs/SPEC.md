@@ -380,6 +380,8 @@ The block is YAML-like. Every text value (title, language, grader instructions, 
 
 `providers.json` (mode 0600) holds the list and the active provider's name. The admin screen has **Test**: it sends a small fixed test image (a handwritten-style "2 + 3 = 5" rendered by the app, embedded) with a one-exercise request and shows whether a valid reply came back, its verdict and the time it took.
 
+`providers.json` is `{"format": 1, "active": "<name>", "providers": [<provider of §11.1>, ...]}`. Names are unique; `protocol` defaults to `openai`, `timeout_seconds` to 180, `structured_output` to `json_schema`; `kind` is required. The file is written with mode 0600. A file that group or others can access is **not read**: the app reports `ProvidersFileTooOpen` and tells the admin to run `chmod 600 <path>`. The first provider added is not made active automatically; no active provider means grading is unavailable until the admin picks one. Deleting the active provider leaves none active. The presets of §11.1 only fill the form (base URL, an example vision model, `kind`, `structured_output`; the Anthropic preset uses `json_object` because that endpoint may not enforce `json_schema`); the models are suggestions the parent edits. **Test** also reports a `structured_output` downgrade (§11.2) so the parent can change the setting.
+
 ### 11.7 Privacy
 
 - The photos and the exercise data go only to the active provider. The admin screens show its `kind` (cloud or local) next to its name, and the first-run screen and the provider screen explain that a cloud provider receives the photos.
@@ -433,7 +435,7 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 - The fake audio sink records what was written and advances its position when the test says so.
 - UI tests use `gluttertest` with the fake clock; golden images for the shelf, the cassette screen, the player at fixed times, the worksheet, the QR dialog and the results screen.
 - An end-to-end test (core) imports the sample cassette, completes a lesson with the fake sink, makes a submission, uploads a photo through the real phone server on `127.0.0.1`, grades it with the fake provider, and checks that the next lesson unlocked.
-- Build tags: `radiotutor_display` (real windows), `radiotutor_audio` (real PulseAudio), `radiotutor_ai` (a real provider: `RADIO_TUTOR_AI_BASE_URL`, `RADIO_TUTOR_AI_MODEL`, `RADIO_TUTOR_AI_KEY`).
+- Build tags: `radiotutor_display` (real windows), `radiotutor_audio` (real PulseAudio), `radiotutor_ai` (a real provider: `RADIO_TUTOR_AI_BASE_URL`, `RADIO_TUTOR_AI_MODEL`, `RADIO_TUTOR_AI_KEY`, and optionally `RADIO_TUTOR_AI_KIND`, `cloud` or `local`, default `local`).
 
 ## 17. Languages of the UI
 

@@ -33,3 +33,14 @@ A real phone on the same Wi-Fi as this computer. The firewall must allow port 87
 1. **The page on Android Chrome and iOS Safari.**
    `go test -tags radiotutor_phone ./internal/core/phone -run TestServeForRealPhone -v` (set `RADIO_TUTOR_LANG=el` for Greek, `RADIO_TUTOR_INTERFACE=<name>` to pick the Wi-Fi interface)
    Type the printed URL on the phone. Does the page show the title (with the odd characters as text), both exercises with their badges, and the big button? Does the button open the camera? Take 2 photos, remove one with the ✕, take another, press Send: does the progress bar move, and does the page then say "Sent! Look at the computer." while the test log says "received 2 photos"? Reload the page afterwards: it must say the link has expired.
+
+## 3.3 A real provider answers the test image
+
+Needs an AI provider you trust with a picture of "2 + 3 = 5" (a local Ollama with a vision model, or a cloud key). Nothing of yours is sent besides that picture. For a local Ollama:
+
+```
+RADIO_TUTOR_AI_BASE_URL=http://localhost:11434/v1 RADIO_TUTOR_AI_MODEL=qwen2.5vl:7b \
+  go test -tags radiotutor_ai -run TestRealProvider -count=1 -v ./internal/core/providers
+```
+
+For a cloud provider add `RADIO_TUTOR_AI_KEY=<key>` and `RADIO_TUTOR_AI_KIND=cloud`. The test passes when a valid reply comes back; it prints the verdict (expected: `correct`), the model, the time and whether the app had to use a weaker structured output mode. It does not touch your Radio Tutor folders.
