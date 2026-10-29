@@ -169,7 +169,7 @@ Item *i* is unlocked when free navigation is on, or when for every item *j* befo
 - a lesson *j* is completed, or skip lessons is on, and
 - an exercise *j* is passed.
 
-So every exercise of a worksheet is available at once, and the next lesson unlocks when the whole worksheet is passed. An exercise in `needs_review` blocks what comes after it until a parent decides.
+For an exercise, only the items before its worksheet count (§7.1): the exercises of a worksheet do not wait for each other. So every exercise of a worksheet is available at once, and the next lesson unlocks when the whole worksheet is passed. An exercise in `needs_review` blocks what comes after it until a parent decides.
 
 ### 7.4 The save file
 
@@ -226,6 +226,7 @@ So every exercise of a worksheet is available at once, and the next lesson unloc
 
 - `last_item` is the item the child last opened; opening the cassette shows it (the child presses **Continue**).
 - Submission `status`: `waiting_photos`, `grading`, `graded`, `failed`, `cancelled`.
+- An override of a lesson has `lesson_id` instead of `exercise_id`; the action `reset_all` (see §7.7) has neither.
 - An exercise with no entry is `available` or `locked` by the unlock rule; the stored `state` is only `passed` or `needs_review` (or absent).
 
 ### 7.5 New versions of a cassette
@@ -238,11 +239,12 @@ When a newer version is imported, each save file of that cassette keeps the entr
 - `correct` passes the exercise (`passed_by: "ai"`).
 - After a counted attempt that did not pass, the next hint of the exercise (if any is left) is shown, and `hints_shown` grows.
 - When `attempts` reaches the exercise's `max_attempts` (CASSETTE-FORMAT §7.2; 0 means no limit) without a pass, the state becomes `needs_review` and the child sees "Ask a parent to look at this exercise."
-- Results of an exercise that is already passed are recorded in the submission but change nothing.
+- Results of an exercise that is already passed, or that is in `needs_review` (a parent decides), are recorded in the submission but change nothing.
+- The hint after a counted attempt is shown also when that attempt was the last one.
 
 ### 7.7 Parent overrides
 
-On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark not passed** (removes the pass; the state is computed again), **Reset attempts** (attempts and hints to 0, state cleared). On any lesson: **Mark completed**, **Mark not completed**. Each action appends to `overrides`. The admin can also set `skip_lessons` and `free_navigation` per student and cassette, and **Reset all progress** of a student in a cassette (photos kept unless also chosen).
+On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark not passed** (removes the pass; the state is computed again), **Reset attempts** (attempts and hints to 0, state cleared). On any lesson: **Mark completed**, **Mark not completed**. Each action appends to `overrides`. The admin can also set `skip_lessons` and `free_navigation` per student and cassette, and **Reset all progress** of a student in a cassette (photos kept unless also chosen): the lesson and exercise entries, `last_item` and `orphaned` are cleared, the settings and earlier overrides stay, a `reset_all` override is appended, and the submissions stay unless the photos are deleted too. **Mark not passed** removes `passed_by` and `passed_at` and computes the state again, so an exercise whose attempts have run out is `needs_review`.
 
 ## 8. The lesson player
 
