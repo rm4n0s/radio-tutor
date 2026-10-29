@@ -24,10 +24,20 @@ const (
 	LengthTolerance = 0.05
 )
 
+// LengthUnknown is the narration length to pass to Validate when the audio has
+// not been read yet: the rules that compare times with the length are skipped.
+// Any length that is not above 0 means the same (a narration is never empty).
+const LengthUnknown = 0
+
 // Validate checks the rules of CASSETTE-FORMAT §5.3 to §5.5 that need nothing
 // but the timeline and the narration's length (in seconds), and returns every
 // problem it finds (all errors), with paths such as "tracks[2].keys[5].opacity"
 // and "captions[1].end".
+//
+// With length LengthUnknown (or any length that is not above 0) the rules that
+// compare a time with the length are skipped. The cassette package validates a
+// lesson that way, because the narration is read later; the caller that knows
+// the length then adds CheckLength.
 //
 // Rules for tracks: the actor is not empty and has at most one track; origin
 // has two numbers and is present when a key sets scale or rotate; reveal_box
@@ -46,7 +56,7 @@ const (
 // box need the scene and are checked by the scene package.
 func Validate(tracks []Track, captions []Caption, length float64) []problem.Problem {
 	var l problem.List
-	limit := length + LengthTolerance
+	limit := limitOf(length)
 
 	seen := make(map[string]int, len(tracks))
 	for i, tr := range tracks {
@@ -62,6 +72,38 @@ func Validate(tracks []Track, captions []Caption, length float64) []problem.Prob
 
 	validateCaptions(&l, captions, limit)
 	return l
+}
+
+// CheckLength checks only the rules of Validate that compare a time with the
+// narration's length: every key's t and every caption's end is at most length +
+// LengthTolerance. Its problems have the same paths and messages as Validate's,
+// so Validate(..., LengthUnknown) followed by CheckLength reports exactly what
+// Validate(..., length) does. With an unknown length it reports nothing.
+func CheckLength(tracks []Track, captions []Caption, length float64) []problem.Problem {
+	var l problem.List
+	limit := limitOf(length)
+	for i, tr := range tracks {
+		for j, k := range tr.Keys {
+			if finite(k.T) && k.T > limit {
+				l.Errorf(problem.Index(problem.Index("tracks", i)+".keys", j)+".t", "%s is after the end of the narration (%s)", num(k.T), num(limit-LengthTolerance))
+			}
+		}
+	}
+	for i, c := range captions {
+		if finite(c.End) && c.End > limit {
+			l.Errorf(problem.Index("captions", i)+".end", "%s is after the end of the narration (%s)", num(c.End), num(limit-LengthTolerance))
+		}
+	}
+	return l
+}
+
+// limitOf returns the latest time a key or a caption end may have for a
+// narration of the given length: +Inf when the length is unknown.
+func limitOf(length float64) float64 {
+	if !(length > 0) {
+		return math.Inf(1)
+	}
+	return length + LengthTolerance
 }
 
 func validateTrack(l *problem.List, path string, tr Track, limit float64) {

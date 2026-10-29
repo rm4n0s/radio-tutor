@@ -23,10 +23,10 @@ Nothing else may be in the zip: the validator reports any other file (including 
 
 ## 2. Common rules
 
-- All text files are UTF-8 without a byte order mark. JSON files are objects; unknown fields are errors (catches typos).
+- All text files are UTF-8 without a byte order mark. JSON files are objects; unknown fields are errors (catches typos), and so is a field that appears twice. Text lengths count characters, not bytes.
 - **Ids** of lessons and exercises: `^[a-z0-9][a-z0-9-]{0,62}$`, unique across the whole cassette (a lesson and an exercise cannot share an id).
 - **The cassette id** is reverse-domain style: `^[a-z0-9]+(\.[a-z0-9][a-z0-9-]*)+$`, e.g. `org.family-smith.math.fractions-1`. Two different cassettes never share an id.
-- **The version** is `MAJOR.MINOR.PATCH` (numbers only). A cassette with a new version of the same id replaces the old one, and the child's progress is kept **by id**. Therefore:
+- **The version** is `MAJOR.MINOR.PATCH` (numbers only: digits, no leading zeros except `0` itself, at most 9 digits each). A cassette with a new version of the same id replaces the old one, and the child's progress is kept **by id**. Therefore:
   - **Never rename an id** in a new version.
   - **Never reuse an id for different content.** If an exercise changes so that an old answer would no longer be right, give it a new id.
   - Removing an item is allowed; its progress is ignored.
@@ -234,7 +234,7 @@ An exercise is solved **on paper**. The child writes the exercise's **label** ne
 |---|---|---|
 | `format` | yes | `1` |
 | `title` | yes | 1 to 80 characters |
-| `label` | no | 1 to 6 characters of letters, digits and `.` or `-`; unique in the cassette. Default: the exercise's position among all the exercises of the cassette, counting from 1 (`"1"`, `"2"`, ...). The child writes it next to the solution, so keep it short |
+| `label` | no | 1 to 6 characters, each a letter (of any alphabet), a digit, `.` or `-`; unique in the cassette. Default: the exercise's position among all the exercises of the cassette, counting from 1 (`"1"`, `"2"`, ...). The child writes it next to the solution, so keep it short |
 | `prompt` | yes | 1 to 2000 characters: what the child sees and does |
 | `reference_solution` | yes | 1 to 4000 characters: the right answer, with the working if `show_work` is true |
 | `grading` | yes | 1 to 4000 characters: instructions to the grader for this exercise (§7.3) |

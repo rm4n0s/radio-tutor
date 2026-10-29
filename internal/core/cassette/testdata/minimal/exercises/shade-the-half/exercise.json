@@ -1,0 +1,7 @@
+{
+  "format": 1,
+  "title": "Shade the half",
+  "prompt": "Draw a circle, cut it into 2 equal parts and shade 1 part.",
+  "reference_solution": "A circle cut in two equal halves with one half shaded.",
+  "grading": "Correct: two equal parts, one shaded. Partial: parts not equal but one of two is shaded."
+}

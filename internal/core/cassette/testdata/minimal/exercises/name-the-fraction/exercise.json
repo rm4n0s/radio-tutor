@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "title": "Name the fraction",
+  "label": "B2",
+  "prompt": "A pizza is cut into 4 equal slices and you eat 1. Write the fraction you ate.",
+  "reference_solution": "1/4",
+  "grading": "Correct: 1/4 or one quarter.",
+  "show_work": true,
+  "max_attempts": 0,
+  "hints": ["How many slices are there in all?"]
+}

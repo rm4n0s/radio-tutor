@@ -271,15 +271,53 @@ func TestValidateCollectsEveryProblem(t *testing.T) {
 	}
 }
 
-func TestValidateTimeBoundWithZeroLength(t *testing.T) {
-	// With a narration of length 0 only t <= 0.05 is allowed.
-	tracks := []Track{{Actor: "a", Keys: []Key{{T: 0.05, X: Float(1)}}}}
-	captions := []Caption{{Start: 0, End: 0.05, Text: "x"}}
-	if ps := Validate(tracks, captions, 0); len(ps) != 0 {
-		t.Errorf("unexpected problems: %v", ps)
+func TestValidateUnknownLength(t *testing.T) {
+	tracks, captions, _ := validTimeline()
+	tracks[0].Keys[1].T = 5000
+	captions[2].End = 6000
+	for _, length := range []float64{LengthUnknown, 0, -3, math.NaN()} {
+		if ps := Validate(tracks, captions, length); len(ps) != 0 {
+			t.Errorf("length %v: unexpected problems: %v", length, ps)
+		}
+		if ps := CheckLength(tracks, captions, length); len(ps) != 0 {
+			t.Errorf("length %v: CheckLength reported %v", length, ps)
+		}
 	}
-	tracks[0].Keys[0].T = 0.06
-	if ps := Validate(tracks, captions, 0); len(ps) != 1 {
-		t.Errorf("expected one problem, got %v", ps)
+	// Other rules still apply without a length.
+	tracks[0].Keys[1].Opacity = Float(7)
+	ps := Validate(tracks, captions, LengthUnknown)
+	if len(ps) != 1 || ps[0].Path != "tracks[0].keys[1].opacity" {
+		t.Errorf("got %v", ps)
+	}
+}
+
+func TestCheckLength(t *testing.T) {
+	tracks, captions, length := validTimeline()
+	if ps := CheckLength(tracks, captions, length); len(ps) != 0 {
+		t.Fatalf("valid timeline: %v", ps)
+	}
+	tracks[0].Keys[1].T = 12.05 // tolerance
+	captions[2].End = 12.05
+	if ps := CheckLength(tracks, captions, length); len(ps) != 0 {
+		t.Fatalf("tolerance not applied: %v", ps)
+	}
+	tracks[2].Keys[1].T = 12.06
+	captions[1].End = 12.5
+	ps := CheckLength(tracks, captions, length)
+	if len(ps) != 2 || ps[0].Path != "tracks[2].keys[1].t" || ps[1].Path != "captions[1].end" {
+		t.Fatalf("got %v", ps)
+	}
+	if !strings.Contains(ps[0].Message, "after the end of the narration (12)") {
+		t.Errorf("message = %q", ps[0].Message)
+	}
+	// Validate with the length reports the same length problems.
+	var fromValidate []problem.Problem
+	for _, p := range Validate(tracks, captions, length) {
+		if strings.Contains(p.Message, "end of the narration") {
+			fromValidate = append(fromValidate, p)
+		}
+	}
+	if len(fromValidate) != len(ps) || fromValidate[0] != ps[0] || fromValidate[1] != ps[1] {
+		t.Errorf("Validate says %v, CheckLength says %v", fromValidate, ps)
 	}
 }

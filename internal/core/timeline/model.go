@@ -10,9 +10,11 @@
 // that own those; this package never imports them.
 //
 // Required numbers (Key.T, Caption.Start, Caption.End) are plain float64:
-// encoding/json cannot tell an absent field from 0 for them, so a lesson that
-// leaves out "start" or the first "t" is read as 0. The optional key
-// properties are pointers so that "not set" and 0 differ.
+// encoding/json cannot tell an absent field from 0 for them. The cassette
+// package therefore checks that they are present in the JSON before decoding
+// (a missing "t" or "start" is an error there), so by the time Validate sees a
+// Key or Caption the zero is a real 0. The optional key properties are
+// pointers so that "not set" and 0 differ.
 package timeline
 
 // Ease is how the properties a key sets arrive from the previous key that set
