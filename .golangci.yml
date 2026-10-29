@@ -1,0 +1,32 @@
+version: "2"
+
+run:
+  timeout: 10m
+
+linters:
+  # The default set (errcheck, govet, ineffassign, staticcheck, unused) plus:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - misspell
+    - gocritic
+    - forbidigo
+    - depguard
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Errorf$
+          msg: use github.com/rm4n0s/errors (CLAUDE.md "Error handling")
+    depguard:
+      rules:
+        stdlib-errors:
+          list-mode: lax
+          files:
+            - $all
+          deny:
+            - pkg: errors
+              desc: import github.com/rm4n0s/errors instead of the standard library errors package

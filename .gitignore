@@ -31,3 +31,10 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Radio Tutor: the built binary
+/radio-tutor
+
+# Radio Tutor: cassettes made outside the test data folders
+*.cassette
+!**/testdata/**/*.cassette
