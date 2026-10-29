@@ -48,3 +48,25 @@ Manual checks: scanning the QR code of a real URL with a real phone is left to t
 
 Later:
 - The GUI widget that draws a `Matrix` (modules scaled to at least 280 logical pixels, quiet zone included).
+## 1.1 Timeline model and evaluation
+Date: 2026-10-30.
+
+Built:
+- `internal/core/problem`: `Problem{Path, Message string; Warning bool}` (JSON tags `path`, `message`, `warning,omitempty`, for `validate --json`), `String()` (`path: message`, `warning: ` prefix for warnings), `Errorf`/`Warnf` constructors, `List` (`[]Problem` with `Add`, `Errorf`, `Warnf`, `HasErrors`; zero value ready, assignable to `[]Problem`), `HasErrors`, `Errors`, `Warnings`, path helpers `Join` and `Index`, and `Prefixed(prefix, ps)` / `InFile(file, ps)` which return prefixed copies. Convention for later validators: a validator builds paths relative to what it validates (`tracks[2].keys[5].opacity`) and returns `[]problem.Problem`; the caller that knows the file applies `InFile`, which writes `lessons/l1/lesson.json#tracks[2].keys[5].opacity`, so the printed form is `file#field.path: message`. A cassette is valid when `HasErrors` is false.
+- `internal/core/timeline`: `Track`, `Key` (optional properties are `*float64`; `Float(v)` helper), `Caption`, `Ease` and `RevealFrom` string types with constants, `Valid()`, `RevealFrom.Or()`; `ActorState` and `DefaultState()`; `Ease.Apply(u)` (linear, cubic in/out/in-out, step); `Evaluator` (`NewEvaluator(tracks)`, `Len`, `Actor(i)`, `Evaluate(t, dst) []ActorState`) and the convenience `Evaluate(tracks, t) []ActorState` (track order); `CaptionAt(captions, t)`; `Validate(tracks, captions, length) []problem.Problem`.
+- Evaluation design: the player builds an `Evaluator` once per lesson; it splits every track's keys per property (with the key's ease), so a frame does a binary search per property and writes into a slice the caller owns and reuses (zero allocations, asserted with `testing.AllocsPerRun`). Per property: before the first key that sets it the first value, between two keys the later key's ease, after the last the last value, unset properties keep their defaults (opacity 1, x 0, y 0, scale 1, rotate 0, reveal 1). The Evaluator is immutable, so it is safe to share. The player applies the transforms in the spec's order (scale and rotate around `origin`, then move).
+- `CaptionAt` shows a caption for `start <= t < end` (end exclusive, so two touching captions never both match); captions must be ordered (binary search).
+- `Validate` rules: actor present and unique per track; `origin` two finite numbers and present when a key sets scale or rotate; `reveal_box` four finite numbers, positive width and height, present when a key sets reveal; `reveal_from` valid; 1 to 1000 keys with strictly increasing `t` in `[0, length+0.05]`; opacity and reveal in 0 to 1; scale in (0, 20]; x, y, rotate finite; ease valid; at least one caption; text 1 to 200 characters (runes), not blank, at most two lines; `start >= 0`, `start < end`, `end <= length+0.05`; ordered and not overlapping (touching is fine). Not here (they need other packages): the actor exists in the scene, `reveal_box` inside the view box.
+
+Tests:
+- `problem`: `String`, `Join`/`Index`, `List` and the filters, `Prefixed`/`InFile` (input unchanged), JSON.
+- `timeline`: easing values and monotonicity; table-driven evaluation (before first key, at the first key, linear and each ease between keys, the later key's ease only, step on both sides of the key, after the last key, properties set by different keys, zero versus absent, several tracks, all six properties); zero allocations and snapshot behavior of the Evaluator; 1000 keys; unordered keys do not panic; `CaptionAt` at every boundary; one test per validation rule with its path and message, all problems collected at once, the 0.05 s tolerance.
+- No error Tags are introduced (validators return problems, not errors).
+
+Deviations from the spec: none. Two small readings of the spec: a caption text that is blank (only spaces or newlines) is an error, and more than two lines (more than one `\n`) is an error ("at most two short lines").
+
+Manual checks: none.
+
+Later:
+- `Key.T`, `Caption.Start` and `Caption.End` are plain `float64` (absent reads as 0, as `encoding/json` cannot tell); if a missing `t` or `start` should be an error, the cassette package can check for the key during decoding (for example with a second pass into `map[string]json.RawMessage`).
+- Validate does not warn about a key that sets no property (allowed by the spec).
