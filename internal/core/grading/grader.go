@@ -34,6 +34,9 @@ type Grader struct {
 	Provider Provider
 	// Lenient makes the parser take the first JSON object in the answer
 	// (needed for providers with structured_output "none" or "json_object").
+	// It is also applied whenever the provider reports such a mode in
+	// Meta.StructuredOutput, so a downgrade during a call is handled; setting
+	// it from the configured mode is still advised.
 	Lenient bool
 	// Log receives the retry and the warnings. Nil discards them.
 	Log *slog.Logger
@@ -100,5 +103,5 @@ func (g *Grader) check(raw string, meta Meta, asked []string) (Reply, []string, 
 	if meta.FinishReason == finishLength {
 		return Reply{}, nil, errors.New("GradingReplyTruncated", "the answer was cut off (finish reason \"length\")", "model", meta.Model)
 	}
-	return ParseReply(raw, asked, g.Lenient)
+	return ParseReply(raw, asked, g.Lenient || meta.StructuredOutput.Lenient())
 }

@@ -170,6 +170,33 @@ type Reply struct {
 	Results []ExerciseResult `json:"results"`
 }
 
+// StructuredOutput says how a provider asks the model for a JSON reply (SPEC
+// §11.1 "structured_output").
+type StructuredOutput string
+
+// The structured output modes, from the strictest to the weakest.
+const (
+	// StructuredJSONSchema sends the reply schema (strict).
+	StructuredJSONSchema StructuredOutput = "json_schema"
+	// StructuredJSONObject only asks for some JSON object.
+	StructuredJSONObject StructuredOutput = "json_object"
+	// StructuredNone sends no response format at all.
+	StructuredNone StructuredOutput = "none"
+)
+
+// Valid reports whether m is one of the three modes.
+func (m StructuredOutput) Valid() bool {
+	return m == StructuredJSONSchema || m == StructuredJSONObject || m == StructuredNone
+}
+
+// Lenient reports whether the answers of a provider using mode m need the
+// lenient parser (the first JSON object in the text): every mode except
+// json_schema. The empty mode (a provider that does not say, such as the fake
+// one) is not lenient.
+func (m StructuredOutput) Lenient() bool {
+	return m == StructuredJSONObject || m == StructuredNone
+}
+
 // Meta describes one grading call.
 type Meta struct {
 	// Provider is the provider's Name (set by the Grader).
@@ -179,6 +206,14 @@ type Meta struct {
 	// FinishReason is the provider's finish reason of the last answer
 	// ("stop", "length", ...); "length" makes the answer invalid.
 	FinishReason string
+	// StructuredOutput is the mode the provider used for this answer, after
+	// any downgrade; empty when the provider does not report one. The Grader
+	// parses leniently when it is not json_schema.
+	StructuredOutput StructuredOutput
+	// Downgraded is not empty when the provider had to use a weaker mode than
+	// the one configured (SPEC §11.2): it holds the mode used. The UI tells
+	// the parent to change the provider's setting.
+	Downgraded StructuredOutput
 	// Duration is how long grading took, including the retry (set by the
 	// Grader).
 	Duration time.Duration

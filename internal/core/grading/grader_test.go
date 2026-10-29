@@ -273,6 +273,51 @@ func TestGraderLenientModeUnwrapsFences(t *testing.T) {
 	}
 }
 
+func TestGraderLenientFromMeta(t *testing.T) {
+	fenced := "```json\n" + goodReply() + "\n```"
+	tests := []struct {
+		mode        grading.StructuredOutput
+		wantRetried bool
+	}{
+		{"", true},
+		{grading.StructuredJSONSchema, true},
+		{grading.StructuredJSONObject, false},
+		{grading.StructuredNone, false},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.mode), func(t *testing.T) {
+			step := fake.Reply(fenced)
+			step.Meta.StructuredOutput = tt.mode
+			g := &grading.Grader{Provider: fake.New("p", step, fake.Reply(goodReply()))}
+			got, err := g.Grade(context.Background(), request())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Meta.Retried != tt.wantRetried {
+				t.Errorf("Retried = %v, want %v", got.Meta.Retried, tt.wantRetried)
+			}
+		})
+	}
+}
+
+func TestStructuredOutputModes(t *testing.T) {
+	tests := []struct {
+		mode           grading.StructuredOutput
+		valid, lenient bool
+	}{
+		{grading.StructuredJSONSchema, true, false},
+		{grading.StructuredJSONObject, true, true},
+		{grading.StructuredNone, true, true},
+		{"", false, false},
+		{"xml", false, false},
+	}
+	for _, tt := range tests {
+		if tt.mode.Valid() != tt.valid || tt.mode.Lenient() != tt.lenient {
+			t.Errorf("%q: valid %v lenient %v", tt.mode, tt.mode.Valid(), tt.mode.Lenient())
+		}
+	}
+}
+
 func TestGraderDefaultClock(t *testing.T) {
 	g := &grading.Grader{Provider: fake.New("p", fake.Reply(goodReply()))}
 	got, err := g.Grade(context.Background(), request())
