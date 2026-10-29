@@ -26,3 +26,25 @@ Manual checks: none. The window itself was not opened on a display; it is covere
 Later:
 - `radiotutor_display` test that really opens the window.
 - `run` takes the GUI starter as a parameter; later steps pass the storage paths and logger to it.
+
+## 4.2 QR codes
+Date: 2026-10-30.
+
+Built:
+- `go.mod`: `rsc.io/qr v0.2.0` (SPEC D14).
+- `internal/core/qrcode`: `Encode(text string, level Level) (Matrix, error)`. `Level` is the package's own type (`LevelL`, `LevelM`, `LevelQ`, `LevelH`, `DefaultLevel = LevelM`) mapped to the library's levels inside `Encode`. `Matrix` holds `Size` (modules per side, without the quiet zone) and a private row-major `[]bool`; `Dark(x, y)` is false outside the matrix, `Total()` is `Size + 2*QuietZone` (`QuietZone = 4`), `DarkQuiet(x, y)` addresses the matrix with the quiet zone included, and `String()` renders `#`/`.` rows. No `rsc.io/qr` type appears in the API. The library always picks the smallest version that fits, with mask 0 (its own TODO), and its codes carry no quiet zone, so the quiet zone is explicit here.
+- Error tags: `QRTextEmpty`, `QRLevelInvalid`, `QRTextTooLong` (text longer than version 40 holds).
+
+Tests (`go test ./internal/core/qrcode`):
+- Matrix size for the phone URL shape (`http://192.168.100.200:8737/s/<26-char token>`, 56 bytes: version 4, 33 modules, at L and M; 41 at H) and for numeric text; size is always 17+4v.
+- All three 7x7 finder patterns, their separators and the timing row at every level.
+- Determinism; `Dark` and `DarkQuiet` bounds and an all-light quiet zone; zero `Matrix`; `String` agrees with `Dark`; `Level.String`.
+- Route tests for the three tags.
+- `TestGoldenMatrix`: the fixed URL at M and H against `testdata/goldens/phone_url_{m,h}.txt`. Update with `go test ./internal/core/qrcode -run Golden -update-goldens` (the package defines the `-update-goldens` flag itself; `go test ./... -run Golden -update-goldens` fails in packages that do not define it, so every package with goldens must).
+
+Deviations from the spec: none. `Encode` returns the module matrix (the plan allowed this or an `*image.Gray`).
+
+Manual checks: scanning the QR code of a real URL with a real phone is left to the step that shows the dialog (M6/M7); no scanner was available here.
+
+Later:
+- The GUI widget that draws a `Matrix` (modules scaled to at least 280 logical pixels, quiet zone included).

@@ -5,6 +5,7 @@ go 1.27
 require (
 	github.com/rm4n0s/errors v0.2.0
 	github.com/rm4n0s/glutter v1.9.5
+	rsc.io/qr v0.2.0
 )
 
 require (
