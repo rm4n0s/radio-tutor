@@ -77,7 +77,7 @@ Nothing else may be in the zip: the validator reports any other file (including 
 
 ## 4. The cover: `cover.svg`
 
-An SVG picture for the shelf, with a `viewBox` of aspect ratio 3:4 (e.g. `0 0 300 400`). Same SVG rules as §5.2.
+An SVG picture for the shelf, with a `viewBox` of aspect ratio 3:4 (e.g. `0 0 300 400`; any other aspect ratio is a warning). Same SVG rules as §5.2.
 
 ## 5. Lessons
 
@@ -101,9 +101,11 @@ An ordinary SVG document. The parts that move are **actors**: each actor is a **
 </svg>
 ```
 
-- The root has a `viewBox` with an aspect ratio between 4:3 and 21:9; use `0 0 1600 900` unless there is a reason not to. Coordinates in the timeline are in view box units.
+- The root is an `<svg>` in the SVG namespace (`xmlns="http://www.w3.org/2000/svg"`) with a `viewBox` of four numbers (separated by spaces and/or commas, width and height greater than 0) with an aspect ratio between 4:3 and 21:9; use `0 0 1600 900` unless there is a reason not to. Coordinates in the timeline are in view box units.
 - Top-level children are drawn in document order. Each top-level `<g id>` is an actor; every other top-level element (and a `<g>` without an id) is static. Elements inside an actor do not move separately: to move something on its own, make it its own top-level group.
-- The `<defs>` and `<style>` elements (top-level) are shared by all actors: gradients, patterns, clip paths, markers and symbols defined there can be used by any actor through `url(#id)` and `<use href="#id">`.
+- The `<defs>` and `<style>` elements (top-level) are shared by all actors: gradients, patterns, clip paths, markers and symbols defined there can be used by any actor through `url(#id)` and `<use href="#id">`. Put every definition inside `<defs>`: a gradient, pattern, clip path, mask, marker, symbol or filter directly under the root belongs to the static elements around it, and an actor cannot use it (the validator warns).
+- Top-level `<title>`, `<desc>`, `<metadata>` and elements of other namespaces (an editor's own data, such as Inkscape's `sodipodi:namedview`) are not drawn and are dropped.
+- Elements are nested at most 128 levels deep. Because the shared `<defs>` and `<style>` are copied into every layer (one per actor, and one per run of static elements), all layers together may take at most 32 MiB: keep the shared part small.
 - Actor ids follow the id rule of §2 and are unique in the scene. At most 64 actors and 5 MiB per scene.
 - Text: use `font-family="sans-serif"`, `serif` or `monospace` (the app's own fonts; they cover Latin, Greek and Cyrillic). Make text large (at least 40 units in a 1600×900 scene) because children read it from a distance.
 
@@ -111,7 +113,9 @@ An ordinary SVG document. The parts that move are **actors**: each actor is a **
 
 Shapes, paths, strokes and dashes, fills, linear and radial gradients, patterns, clip paths, masks, opacity, transforms, `<use>`, markers, text (`<text>`, `<tspan>`), `<style>` with CSS selectors, `<image>` only with a `data:image/png` or `data:image/jpeg` URL, and the common filters (`feGaussianBlur`, `feOffset`, `feFlood`, `feComposite`, `feMerge`, `feColorMatrix`, `feBlend`, `feDropShadow`).
 
-Not allowed (the validator rejects them): `<script>`, event attributes (`onclick`, ...), SMIL animation (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`), CSS animations and transitions, `<foreignObject>`, references to external files or URLs (`href` must be `#id` or a `data:` image), `textLength`, vertical text, and the filter primitives `feImage`, `feTile`, `feTurbulence`, `feConvolveMatrix`, `feDisplacementMap` and the lighting filters.
+Not allowed (the validator rejects them): `<script>`, event attributes (`onclick`, ...), SMIL animation (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `<discard>`), CSS animations and transitions (`animation*`, `transition*` properties and `@keyframes`, in `style` attributes and in `<style>`), `<foreignObject>`, references to external files or URLs (`href` and `xlink:href` must be `#id` or a `data:image/png` or `data:image/jpeg` URL; every `url(...)` in an attribute or in CSS must be `url(#id)` or such a data URL; `@import` is refused), `textLength`, vertical text (`writing-mode` `vertical-*`, `tb`, `tb-rl`), and the filter primitives `feImage`, `feTile`, `feTurbulence`, `feConvolveMatrix`, `feDisplacementMap` and the lighting filters (`feDiffuseLighting`, `feSpecularLighting`, `feDistantLight`, `fePointLight`, `feSpotLight`).
+
+The file must be well-formed XML in UTF-8 without a byte order mark. A `<!DOCTYPE>` (or any `<!...>` declaration other than comments and CDATA) is rejected, because it can define entities that load files; so are processing instructions other than the `<?xml ...?>` declaration (for example `<?xml-stylesheet?>`). Only the five predefined entities (`&amp;` `&lt;` `&gt;` `&quot;` `&apos;`) and numeric ones (`&#x41;`) can be used. An attribute may not appear twice on an element. Names are compared without regard to case, so `<SCRIPT>` is rejected too.
 
 ### 5.3 The lesson file: `lesson.json`
 
@@ -258,7 +262,7 @@ So `grader_instructions` and `grading` should say *how to judge and how to talk*
 
 - Zip: at most 512 MiB, at most 2000 entries, at most 1 GiB uncompressed; each entry at most 200 MiB uncompressed and at most 100 times its compressed size.
 - Entry names: relative, `/` separated, only `a-z 0-9 . - _ /`, no `..`, no empty parts, no leading `/`, unique; no symlinks or other special files; folders may be listed as entries or not.
-- `cassette.json`, `lesson.json` and `exercise.json`: at most 1 MiB each. SVG files: at most 5 MiB each.
+- `cassette.json`, `lesson.json` and `exercise.json`: at most 1 MiB each. SVG files: at most 5 MiB each; a scene has at most 64 actors, elements nested at most 128 deep, and layers of at most 32 MiB together (§5.1).
 
 ## 10. Validation
 
