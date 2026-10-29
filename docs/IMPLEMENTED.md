@@ -90,3 +90,24 @@ Later:
 - Validate does not warn about a key that sets no property (allowed by the spec).
 - The `reset-password` command and the app start (step 6.1) map `AlreadyRunning` to "Radio Tutor is already running" and exit code 2.
 - `Paths` may gain more helpers (per cassette, per student) when the steps that need them are built.
+
+## 1.4 Ogg Vorbis decoding
+Date: 2026-10-30.
+
+Built:
+- Dependency `github.com/jfreymuth/oggvorbis@v1.0.5` (with `github.com/jfreymuth/vorbis@v1.0.2`); both are pure Go (no `import "C"`, checked in the module cache).
+- `internal/core/audio`: `Clip{SampleRate, Channels int; Samples []float32}` (interleaved, -1..1) with `Frames()`, `Seconds()`, `Duration()`; `Info{SampleRate, Channels int; Frames, Bytes int64}` with `Seconds()`, `Duration()`; `Decode(ctx, r) (*Clip, error)`; `DecodeLimit(ctx, r, maxSeconds)` (Decode that fails with `AudioTooLong` as soon as the audio is longer than the limit, so an unprobed file cannot fill memory); `Probe(ctx, r) (Info, error)`; `CheckNarration(info, maxSeconds) []problem.Problem` with the constants `MaxNarrationSeconds` (600), `MaxPromptSeconds` (60) and `MaxBytes` (20 MiB). Problems have an empty path: the caller applies `problem.InFile` (for example `lessons/l1/narration.ogg`), and passes `MaxPromptSeconds` for `prompt.ogg`.
+- Design: one internal `stream` function decodes block by block (4096 frames) and hands each block to a sink; `Decode` appends the blocks, `Probe` drops them (constant memory). The length is counted while decoding, not taken from the container: the library's `Length()` needs a seekable reader and trusts the last page's granule position, while the count is what the player will really play (and works for any `io.Reader`; the reader is hidden behind a struct so the library never seeks). `Probe` also reads the bytes after the last page so `Info.Bytes` is the file size (CheckNarration's 20 MiB rule). The context is checked before every block. The library panics on some hostile input (an Ogg page with no segments, found by hand); `stream` recovers and returns `AudioDecoderPanic`.
+- Error tags: `AudioHeaderInvalid` (not Ogg Vorbis, bad or truncated headers), `AudioFormatInvalid` (no sample rate or channels), `AudioDataCorrupt` (bad checksum, truncated data; the original error is kept for `errors.Is`), `AudioDecoderPanic`, `AudioTooLong`, `AudioCanceled` (keeps the context error: `errors.Is(err, context.Canceled)`), `AudioReadFailed` (reading after the last page).
+- `CheckNarration` rules: rate 22050/44100/48000, 1 or 2 channels, not empty, at most `maxSeconds`, at most 20 MiB when `Bytes` is known. Every problem is reported.
+- Test data in `internal/core/audio/testdata/` (4 to 8 KB each): 1 s tones mono 44100, stereo 48000, mono 22050, mono 16000 (unsupported), a corrupted copy and a truncated copy of the first; `README.md` has the exact ffmpeg commands.
+
+Tests: durations, channels, rates and exact frame counts of every file through `Probe` and `Decode` (and that the two agree); sample content (440 Hz zero crossings, peak in range); a one-byte-at-a-time and half-reader (non-seekable); trailing bytes counted; every error tag with its route (empty input, not Ogg, truncated headers, corrupt page, truncated data, page with no segments, zero rate, zero channels); `DecodeLimit`; cancellation (already cancelled, in the middle, deadline, while reading the trailing bytes); `CheckNarration` for every rule and for the probed files with `InFile`.
+
+Deviations from the spec: none. `DecodeLimit` and the `Bytes` field of `Info` are additions to the plan.
+
+Manual checks: none (no sound is played in this step).
+
+Later:
+- Step 5.1 adds the player and the sinks to this package; they take a `*Clip`.
+- A truncated file whose cut falls exactly on a page boundary decodes without error (the library cannot tell it from a finished stream without the end-of-stream flag); it is just shorter, and the narration length is the lesson length, so nothing else breaks.
