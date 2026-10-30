@@ -7,7 +7,7 @@ import "io"
 // console build has working standard input and output in every terminal, so the
 // commands belong to radio-tutor-cli.exe (SPEC §4, scripts/build-windows.sh).
 const guiCommandMessage = "radio-tutor.exe opens the application window and takes no command.\n" +
-	"For the commands (validate, pack, reset-password, setup-desktop, version) use radio-tutor-cli.exe,\n" +
+	"For the commands (validate, pack, reset-password, version) and the flag -setup-desktop use radio-tutor-cli.exe,\n" +
 	"which is next to it.\n"
 
 // guiExit is the exit code of a GUI program given a command (a usage mistake).

@@ -362,9 +362,9 @@ func TestWineSmoke(t *testing.T) {
 				}
 			}
 		})
-		out, code := e.wine(t, nil, cli, "setup-desktop")
+		out, code := e.wine(t, nil, cli, "-setup-desktop")
 		if code != 0 || !strings.Contains(out, "Radio Tutor.lnk") {
-			t.Fatalf("setup-desktop exit %d, output:\n%s", code, out)
+			t.Fatalf("-setup-desktop exit %d, output:\n%s", code, out)
 		}
 		links := shortcuts()
 		if len(links) != 1 {
@@ -378,12 +378,12 @@ func TestWineSmoke(t *testing.T) {
 		if !bytes.Contains(data, []byte("radio-tutor.exe")) {
 			t.Errorf("the shortcut does not name radio-tutor.exe")
 		}
-		out, code = e.wine(t, nil, cli, "setup-desktop", "--remove")
+		out, code = e.wine(t, nil, cli, "-setup-desktop", "-remove")
 		if code != 0 || !strings.Contains(out, "Radio Tutor.lnk") {
-			t.Fatalf("setup-desktop --remove exit %d, output:\n%s", code, out)
+			t.Fatalf("-setup-desktop -remove exit %d, output:\n%s", code, out)
 		}
 		if left := shortcuts(); len(left) != 0 {
-			t.Errorf("the shortcut is still there after --remove: %v", left)
+			t.Errorf("the shortcut is still there after -remove: %v", left)
 		}
 	})
 	t.Run("cli exe prints its version", func(t *testing.T) {

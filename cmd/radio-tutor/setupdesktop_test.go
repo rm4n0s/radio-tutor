@@ -57,10 +57,13 @@ func TestSetupDesktop(t *testing.T) {
 	}{
 		{name: "install", args: nil, wantCode: 0, wantStdout: "Added Radio Tutor to the application menu:\n"},
 		{name: "install again", args: nil, wantCode: 0, wantStdout: "Added Radio Tutor to the application menu:\n"},
-		{name: "remove", args: []string{"--remove"}, wantCode: 0, wantStdout: "Removed Radio Tutor from the application menu:\n"},
-		{name: "remove again", args: []string{"--remove"}, wantCode: 0, wantStdout: "nothing to remove"},
+		{name: "remove", args: []string{"-remove"}, wantCode: 0, wantStdout: "Removed Radio Tutor from the application menu:\n"},
+		{name: "remove again", args: []string{"-remove"}, wantCode: 0, wantStdout: "nothing to remove"},
+		{name: "install once more", args: nil, wantCode: 0, wantStdout: "Added Radio Tutor to the application menu:\n"},
+		{name: "remove, double-dash spelling", args: []string{"--remove"}, wantCode: 0, wantStdout: "Removed Radio Tutor from the application menu:\n"},
 		{name: "unknown flag", args: []string{"--delete"}, wantCode: 2, wantStderr: setupDesktopUsage},
-		{name: "two arguments", args: []string{"--remove", "--remove"}, wantCode: 2, wantStderr: setupDesktopUsage},
+		{name: "extra argument", args: []string{"now"}, wantCode: 2, wantStderr: setupDesktopUsage},
+		{name: "two arguments", args: []string{"-remove", "-remove"}, wantCode: 2, wantStderr: setupDesktopUsage},
 	}
 	env := testMenuEnv(t, testProgramFiles(t))
 	var written []string
@@ -88,6 +91,9 @@ func TestSetupDesktop(t *testing.T) {
 					paths = append(paths, strings.TrimPrefix(line, "  "))
 				}
 			}
+			if tt.wantCode != 0 {
+				return
+			}
 			install := len(tt.args) == 0
 			if install && len(paths) == 0 {
 				t.Fatal("an install printed no path")
@@ -100,7 +106,7 @@ func TestSetupDesktop(t *testing.T) {
 					t.Errorf("%s: stat error %v after an install=%v", p, err, install)
 				}
 			}
-			if len(tt.args) == 1 && tt.args[0] == "--remove" && len(paths) != 0 && len(paths) != len(written) {
+			if !install && len(paths) != 0 && len(paths) != len(written) {
 				t.Errorf("removed %v, installed %v", paths, written)
 			}
 		})
@@ -122,7 +128,7 @@ func TestSetupDesktopFailures(t *testing.T) {
 		{
 			name:       "no running program",
 			executable: func() (string, error) { return "", os.ErrNotExist },
-			wantStderr: "radio-tutor setup-desktop:",
+			wantStderr: "radio-tutor -setup-desktop:",
 		},
 	}
 	goRun := filepath.Join(t.TempDir(), "go-build42", "b001", "exe")

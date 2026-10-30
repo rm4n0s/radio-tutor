@@ -12,7 +12,7 @@ import (
 
 // ID is the application ID of Radio Tutor: the app_id of its windows on Wayland, the
 // class of its windows on X11, the AppUserModelID on Windows, and the name of its
-// icon and desktop entry (radio-tutor setup-desktop, SPEC §14).
+// icon and desktop entry (radio-tutor -setup-desktop, SPEC §14).
 const ID = "dev.radiotutor.app"
 
 // Run starts the application and blocks until its window is closed or ctx is

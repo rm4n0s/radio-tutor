@@ -1,5 +1,5 @@
 // Package menuentry adds Radio Tutor to the application menu of the desktop and
-// removes it again (SPEC §14, "radio-tutor setup-desktop"). On Linux it writes the
+// removes it again (SPEC §14, "radio-tutor -setup-desktop"). On Linux it writes the
 // icon pictures under $XDG_DATA_HOME/icons/hicolor and a Desktop Entry file under
 // $XDG_DATA_HOME/applications; on Windows it makes a shortcut in the per-user
 // Start menu. The code that differs between the systems lives in the files ending

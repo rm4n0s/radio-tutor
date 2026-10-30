@@ -43,10 +43,10 @@ A build from a clone prints `(devel)` as its version; `go install` of a release 
 To add Radio Tutor to the application menu (with its icon), run this once from the installed program:
 
 ```
-radio-tutor setup-desktop
+radio-tutor -setup-desktop
 ```
 
-It writes the icon and a desktop entry under `~/.local/share` (`$XDG_DATA_HOME`) for the file it was started from, so run it from the installed or built program and not with `go run` (that is refused). Run it again after you move the program; `radio-tutor setup-desktop --remove` takes the entry out again.
+It writes the icon and a desktop entry under `~/.local/share` (`$XDG_DATA_HOME`) for the file it was started from, so run it from the installed or built program and not with `go run` (that is refused). Run it again after you move the program; `radio-tutor -setup-desktop -remove` takes the entry out again.
 
 ## First run
 
@@ -125,12 +125,12 @@ The script (`-o dir` for another folder, `-arch amd64,arm64` for more architectu
 | File | Is |
 |---|---|
 | `radio-tutor.exe` | the application: double-click it. It has no console window. Given a command it only says that the commands are in the other file |
-| `radio-tutor-cli.exe` | the same program as a console program, for the commands `validate`, `pack`, `reset-password`, `setup-desktop` and `version`; run it in PowerShell or `cmd.exe`, for example `radio-tutor-cli.exe validate my.cassette` |
+| `radio-tutor-cli.exe` | the same program as a console program, for the commands `validate`, `pack`, `reset-password` and `version` and the flag `-setup-desktop`; run it in PowerShell or `cmd.exe`, for example `radio-tutor-cli.exe validate my.cassette` |
 
 Copy both to a folder of your choice, for example `C:\Users\<you>\RadioTutor\`. Everything else on this page applies, with these differences:
 
 - **Data folders.** Everything is under `%LOCALAPPDATA%\radio-tutor` (usually `C:\Users\<you>\AppData\Local\radio-tutor`): `config\` (`settings.json`, `providers.json` with the API keys), `data\` (`profiles.json`, `cassettes\`, `progress\`, `photos\`) and `state\` (`radio-tutor.log`, the lock file). It is the local folder, not the roaming one, so that keys and photos do not sync to a server or to OneDrive. To back up, close Radio Tutor and copy the `config` and `data` folders.
-- **Start menu.** To add Radio Tutor to the Start menu (a shortcut with its icon, for your account only), run `radio-tutor-cli.exe setup-desktop` once from the folder that holds both files; `radio-tutor-cli.exe setup-desktop --remove` deletes the shortcut. Run it again if you move the folder.
+- **Start menu.** To add Radio Tutor to the Start menu (a shortcut with its icon, for your account only), run `radio-tutor-cli.exe -setup-desktop` once from the folder that holds both files; `radio-tutor-cli.exe -setup-desktop -remove` deletes the shortcut. Run it again if you move the folder.
 - **SmartScreen.** The program is not signed, so Windows shows "Windows protected your PC" the first time. Press **More info**, then **Run anyway**.
 - **Firewall.** The first time the phone page starts, Windows Defender Firewall asks whether to let Radio Tutor communicate on the network. Allow it on **private networks** (your home Wi-Fi); without that the phone cannot open the page. If you pressed Cancel, allow `radio-tutor.exe` in Windows Security, Firewall and network protection, Allow an app through firewall. Nothing needs to be opened by hand as on Linux.
 - **Sound** goes to the default playback device of Windows. Without a device the lessons play silently.

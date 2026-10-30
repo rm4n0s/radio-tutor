@@ -17,7 +17,7 @@ const (
 	exitUsage = 2
 )
 
-const usage = `usage: radio-tutor [command]
+const usage = `usage: radio-tutor [command | flag]
 
 With no command the application window opens.
 
@@ -25,8 +25,10 @@ Commands:
   validate [--json] <file.cassette|folder>   validate a cassette
   pack [--force] <folder> <out.cassette>     validate a folder and pack it
   reset-password <username>                  set a new password for a user
-  setup-desktop [--remove]                   add Radio Tutor to the application menu (or remove it)
   version                                    print the version
+
+Flags:
+  -setup-desktop [-remove]                   add Radio Tutor to the application menu (or remove it)
 `
 
 // run executes the command line args (without the program name) and returns the
@@ -93,7 +95,7 @@ func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stder
 		return packCommand(ctx, args[1:], cassetteDeps{stdout: stdout, stderr: stderr, render: defaultRender()})
 	case "reset-password":
 		return resetPassword(ctx, args[1:], resetDeps{stdin: stdin, stdout: stdout, stderr: stderr, echo: terminalEcho})
-	case "setup-desktop":
+	case "-setup-desktop", "--setup-desktop":
 		return setupDesktop(ctx, args[1:], setupDeps{stdout: stdout, stderr: stderr, env: menuentry.DefaultEnv()})
 	case "version":
 		if len(args) > 1 {

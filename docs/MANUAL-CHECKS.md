@@ -201,23 +201,23 @@ The Wine smoke test (`go test -tags radiotutor_wine ./cmd/radio-tutor`) proves t
 6. **Grading.** With an AI provider set up, a photo of a solved exercise is graded and the next lesson unlocks.
 7. **The commands.** In PowerShell: `.\radio-tutor-cli.exe validate sample.cassette` prints the result; `.\radio-tutor.exe version` prints the message that points to `radio-tutor-cli.exe` (in the same terminal, not a message box), and a double click on a shortcut with an argument shows the message box.
 
-## 14.1 `radio-tutor setup-desktop` on a real desktop (Linux)
+## 14.1 `radio-tutor -setup-desktop` on a real desktop (Linux)
 
-Needs a real GNOME or KDE session. It writes under your `~/.local/share` (five small files), so do it only when you want the entry; `--remove` undoes it.
+Needs a real GNOME or KDE session. It writes under your `~/.local/share` (five small files), so do it only when you want the entry; `-remove` undoes it.
 
 1. Build or install the program: `go install ./cmd/radio-tutor` (it lands in `$(go env GOPATH)/bin`, usually `~/go/bin`).
-2. `~/go/bin/radio-tutor setup-desktop` prints the five files it wrote (four icons and the `.desktop` file) and exits 0. Running it with `go run ./cmd/radio-tutor setup-desktop` instead must be refused with a message about `go install`, and write nothing.
+2. `~/go/bin/radio-tutor -setup-desktop` prints the five files it wrote (four icons and the `.desktop` file) and exits 0. Running it with `go run ./cmd/radio-tutor -setup-desktop` instead must be refused with a message about `go install`, and write nothing.
 3. Open the application menu or the Activities search and type "Radio": the entry "Radio Tutor" appears with the cassette icon (it can take a moment, or a log-out, on some desktops). Launch it from the menu: the window opens.
 4. While it runs, look at the dock or task bar: the window is grouped under the entry's icon (this is `StartupWMClass`), not shown as a second, generic icon. Say which desktop and whether it is Wayland or X11.
 5. With Greek as the session language the entry still reads "Radio Tutor" and its tooltip or description is the Greek comment.
-6. `~/go/bin/radio-tutor setup-desktop --remove` prints the five files it deleted; the entry leaves the menu. Running it again says there is nothing to remove.
+6. `~/go/bin/radio-tutor -setup-desktop -remove` prints the five files it deleted; the entry leaves the menu. Running it again says there is nothing to remove.
 
-## W.3 `radio-tutor-cli.exe setup-desktop` on a real Windows PC
+## W.3 `radio-tutor-cli.exe -setup-desktop` on a real Windows PC
 
 Needs a real Windows 10 (1809 or later) or 11 PC and `radio-tutor.exe` and `radio-tutor-cli.exe` in one folder (`scripts/build-windows.sh -release`). Do not use an account with data you care about.
 
-1. In PowerShell, in that folder: `.\radio-tutor-cli.exe setup-desktop` prints the path of `Radio Tutor.lnk` (in `%APPDATA%\Microsoft\Windows\Start Menu\Programs`) and exits 0. Run it again: it replaces the shortcut, no second one appears.
+1. In PowerShell, in that folder: `.\radio-tutor-cli.exe -setup-desktop` prints the path of `Radio Tutor.lnk` (in `%APPDATA%\Microsoft\Windows\Start Menu\Programs`) and exits 0. Run it again: it replaces the shortcut, no second one appears.
 2. Press the Windows key and type "Radio Tutor": the entry shows with the cassette icon. Start it from there: the application opens without a console window, and its data folders are the usual ones.
 3. While it runs, the taskbar shows one icon for the window; pin it, close the app, start it from the pinned icon and from the Start menu entry: both are the same icon (this is the AppUserModelID `dev.radiotutor.app`, which Wine cannot check). Optionally, in PowerShell: `(New-Object -ComObject Shell.Application).NameSpace("$env:APPDATA\Microsoft\Windows\Start Menu\Programs").ParseName("Radio Tutor.lnk").ExtendedProperty("System.AppUserModel.ID")` prints `dev.radiotutor.app`.
-4. Move the two files to another folder and run `setup-desktop` there: the shortcut now starts the program in the new folder. With `radio-tutor.exe` missing from the folder, the command fails with `GUIProgramMissing` and changes nothing.
-5. `.\radio-tutor-cli.exe setup-desktop --remove` deletes the shortcut; the Start-menu entry disappears.
+4. Move the two files to another folder and run `-setup-desktop` there: the shortcut now starts the program in the new folder. With `radio-tutor.exe` missing from the folder, the command fails with `GUIProgramMissing` and changes nothing.
+5. `.\radio-tutor-cli.exe -setup-desktop -remove` deletes the shortcut; the Start-menu entry disappears.

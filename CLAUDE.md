@@ -22,7 +22,7 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 - Lint: `golangci-lint run`
 - Format: `gofmt -w cmd internal`
 - Run the app: `go run ./cmd/radio-tutor` (it uses your real data folders)
-- Add the app to the application menu (Windows: Start menu): `radio-tutor setup-desktop [--remove]`, from an installed or built program, never `go run`; only ever inside `scripts/isolated.sh` or a test (it writes under `$XDG_DATA_HOME`)
+- Add the app to the application menu (Windows: Start menu): `radio-tutor -setup-desktop [-remove]`, from an installed or built program, never `go run`; only ever inside `scripts/isolated.sh` or a test (it writes under `$XDG_DATA_HOME`)
 - Run the app isolated from your data: `scripts/isolated.sh -- go run ./cmd/radio-tutor`
 - Validate a cassette: `go run ./cmd/radio-tutor validate <file.cassette|dir>`; pack one: `go run ./cmd/radio-tutor pack <dir> <out.cassette>`
 - Rebuild the sample cassette: `scripts/make-sample-cassette.sh`

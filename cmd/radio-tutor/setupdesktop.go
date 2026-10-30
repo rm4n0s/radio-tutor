@@ -7,7 +7,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 )
 
-const setupDesktopUsage = "usage: radio-tutor setup-desktop [--remove]\n"
+const setupDesktopUsage = "usage: radio-tutor -setup-desktop [-remove]\n"
 
 // menuEntry describes Radio Tutor's entry in the application menu (SPEC §14).
 func menuEntry() menuentry.Entry {
@@ -31,16 +31,17 @@ type setupDeps struct {
 	env            menuentry.Env
 }
 
-// setupDesktop runs `radio-tutor setup-desktop [--remove]` (SPEC §14): it adds
-// the running program to the application menu of the current user, or with
-// --remove deletes what it added, prints the files it wrote or deleted and
+// setupDesktop runs `radio-tutor -setup-desktop [-remove]` (SPEC §14); args are
+// what follows -setup-desktop on the command line, and -remove may also be
+// written --remove. It adds the running program to the application menu of the
+// current user, or with -remove deletes what it added, prints the files it wrote or deleted and
 // returns the exit code. It does not open the window, the log or the data
 // folders.
 func setupDesktop(ctx context.Context, args []string, d setupDeps) int {
 	remove := false
 	switch {
 	case len(args) == 0:
-	case len(args) == 1 && args[0] == "--remove":
+	case len(args) == 1 && (args[0] == "-remove" || args[0] == "--remove"):
 		remove = true
 	default:
 		d.stderr.printf("%s", setupDesktopUsage)
@@ -50,7 +51,7 @@ func setupDesktop(ctx context.Context, args []string, d setupDeps) int {
 	if remove {
 		removed, err := menuentry.Remove(ctx, menuEntry(), d.env)
 		if err != nil {
-			d.stderr.printf("radio-tutor setup-desktop: %v\n", err)
+			d.stderr.printf("radio-tutor -setup-desktop: %v\n", err)
 			return exitError
 		}
 		if len(removed) == 0 {
@@ -66,7 +67,7 @@ func setupDesktop(ctx context.Context, args []string, d setupDeps) int {
 
 	written, err := menuentry.Install(ctx, menuEntry(), d.env)
 	if err != nil {
-		d.stderr.printf("radio-tutor setup-desktop: %v\n", err)
+		d.stderr.printf("radio-tutor -setup-desktop: %v\n", err)
 		return exitError
 	}
 	d.stdout.printf("Added Radio Tutor to the application menu:\n")
