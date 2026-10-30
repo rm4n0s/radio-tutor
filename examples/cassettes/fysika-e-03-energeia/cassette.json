@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "id": "dev.radiotutor.examples.fysika-e.03-energeia",
+  "version": "1.0.0",
+  "title": "Φυσική Ε΄ Δημοτικού: Ενέργεια",
+  "description": "Πέντε μαθήματα με αφήγηση και πέντε φύλλα εργασίας για την ενέργεια: οι μορφές της, οι αποθήκες της, οι μετατροπές της, η υποβάθμισή της και η ενέργεια από τις τροφές. Βασισμένο στην ύλη του κεφαλαίου «Ενέργεια» του βιβλίου «Φυσικά Ε΄ Δημοτικού – Ερευνώ και Ανακαλύπτω» (ΙΤΥΕ Διόφαντος). Τα κείμενα και τα σχέδια είναι δικά μας.",
+  "language": "el",
+  "subject": "Φυσική",
+  "ages": [
+    10,
+    11
+  ],
+  "authors": [
+    "Claude, ως παράδειγμα για το Radio Tutor"
+  ],
+  "source": "Φυσικά Ε΄ Δημοτικού – Ερευνώ και Ανακαλύπτω (ΙΤΥΕ Διόφαντος), κεφάλαιο «Ενέργεια»: Βιβλίο Μαθητή σ. 24–31, Τετράδιο Εργασιών σ. 40–55",
+  "grader_instructions": "Μίλα στο παιδί στα ελληνικά, στον ενικό, με απλά λόγια και ζεστό τόνο, όπως μια φιλική δασκάλα. Επαίνεσε πρώτα την προσπάθεια, ακόμα και όταν η απάντηση δεν είναι σωστή, και μετά πες με μία ή δύο προτάσεις τι να ξανακοιτάξει, χωρίς να δώσεις ολόκληρη τη σωστή απάντηση. Το παιδί είναι δέκα έως έντεκα ετών και γράφει με το χέρι: μη μετράς τα ορθογραφικά λάθη και τους τόνους, αρκεί να καταλαβαίνεις τι εννοεί. Δέξου ισοδύναμες διατυπώσεις: «θερμότητα» ή «θερμική ενέργεια», «φωτεινή» ή «ενέργεια του φωτός», «δυναμική» ή «δυναμική (ελαστική)». Στις ερωτήσεις με «γιατί» αρκεί η σωστή ιδέα με δικά του λόγια. Μην ζητάς από το παιδί να κάνει πείραμα και μη συστήσεις ποτέ κάτι επικίνδυνο, ούτε δίαιτα ή νηστεία: οι ασκήσεις είναι μόνο με χαρτί και μολύβι.",
+  "items": [
+    {
+      "type": "lesson",
+      "id": "energeia-morfes"
+    },
+    {
+      "type": "exercise",
+      "id": "morfes-onomata"
+    },
+    {
+      "type": "exercise",
+      "id": "morfes-antistoixisi"
+    },
+    {
+      "type": "exercise",
+      "id": "morfes-symplirose"
+    },
+    {
+      "type": "exercise",
+      "id": "morfes-fyllo"
+    },
+    {
+      "type": "lesson",
+      "id": "energeia-apothikes"
+    },
+    {
+      "type": "exercise",
+      "id": "apothikes-pinakas"
+    },
+    {
+      "type": "exercise",
+      "id": "apothikes-mpataria"
+    },
+    {
+      "type": "exercise",
+      "id": "apothikes-piges"
+    },
+    {
+      "type": "exercise",
+      "id": "apothikes-metro"
+    },
+    {
+      "type": "lesson",
+      "id": "energeia-metatropes"
+    },
+    {
+      "type": "exercise",
+      "id": "metatropes-syskeues"
+    },
+    {
+      "type": "exercise",
+      "id": "metatropes-elatirio"
+    },
+    {
+      "type": "exercise",
+      "id": "metatropes-kyklwma"
+    },
+    {
+      "type": "exercise",
+      "id": "metatropes-diatirisi"
+    },
+    {
+      "type": "lesson",
+      "id": "energeia-ypovathmisi"
+    },
+    {
+      "type": "exercise",
+      "id": "ypovathmisi-thermotita"
+    },
+    {
+      "type": "exercise",
+      "id": "ypovathmisi-podilato"
+    },
+    {
+      "type": "exercise",
+      "id": "ypovathmisi-fotovoltaika"
+    },
+    {
+      "type": "exercise",
+      "id": "ypovathmisi-metritis"
+    },
+    {
+      "type": "lesson",
+      "id": "energeia-trofes"
+    },
+    {
+      "type": "exercise",
+      "id": "trofes-imera"
+    },
+    {
+      "type": "exercise",
+      "id": "trofes-seira"
+    },
+    {
+      "type": "exercise",
+      "id": "trofes-poios"
+    },
+    {
+      "type": "exercise",
+      "id": "trofes-perissotera"
+    }
+  ]
+}
