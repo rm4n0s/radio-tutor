@@ -98,9 +98,10 @@ Use `github.com/rm4n0s/errors` for all errors. Never use `fmt.Errorf`, and never
 
 ## Git and GitHub
 - Never commit or push directly to `main`; work on a branch named `feat/...` or `fix/...`
+- **No pull requests** (the user, 2026-10-30: "no pull requests only merges"). A finished branch (all Definition-of-done checks passing on it, after rebasing it onto `main`) is fast-forward merged into the local `main`, `main` is pushed, and the branch is deleted. Feature branches are not pushed to GitHub
 - **Exception:** if `docs/IMPLEMENTATION.md` exists, follow its Rules section for the steps it lists. Each step is done on its own branch. A finished step (all Definition-of-done checks passing, its entry added to `docs/IMPLEMENTED.md` on that branch) is fast-forward merged into the local `main`, without a PR, and tagged `step-<id>` locally. **GitHub gets milestones, not steps:** `main` and the tags are pushed once, when the last step of a milestone (a `## M<n>` section of `docs/IMPLEMENTATION.md`) is merged (rule 14). Never commit work for a step directly on `main`. Everything not covered by that file still follows the rule above
 - Commit messages: imperative mood, e.g. "Add retry to client"
-- PRs: short description, link the issue (`Closes #123`), keep them small
+- Keep each branch small; a commit that fixes a GitHub issue links it (`Closes #123`)
 - No `.github/` directory and no GitHub Actions workflows: never add them. The Definition-of-done checks are run locally
 
 ## Working through the steps
