@@ -1,3 +1,9 @@
+//go:build !windows
+
+// These tests talk to the fake PulseAudio server of pulsetest over a Unix socket.
+// Radio Tutor plays through winmm on Windows (SPEC D23), so the PulseAudio client is
+// not used there, and Wine's AF_UNIX sockets reset the connection of this server.
+
 package pulse
 
 import (
