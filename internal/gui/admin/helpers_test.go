@@ -188,12 +188,6 @@ func goBack(t *testing.T, a *testutil.App) {
 	a.PumpAndSettle()
 }
 
-// waitProfile waits until cond is true for the profiles.
-func waitProfiles(t *testing.T, a *testutil.App, what string, cond func(ps []profile.Profile) bool) {
-	t.Helper()
-	a.WaitFor(t, what, func() bool { return cond(a.Env.Profiles.List()) })
-}
-
 // tillTrue polls cond in real time for a short while (state saved by a
 // goroutine).
 func tillTrue(t *testing.T, a *testutil.App, what string, cond func() bool) {

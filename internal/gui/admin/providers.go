@@ -38,9 +38,6 @@ func (w *Providers) CreateState() m.State { return &providersState{} }
 
 type providersState struct{ m.StateOf[*Providers] }
 
-// refresh shows the list again.
-func (s *providersState) refresh() { s.SetState(func() {}) }
-
 func (s *providersState) Build(bc m.BuildContext) m.Widget {
 	scope := app.ScopeOf(bc)
 	env := scope.Env()
