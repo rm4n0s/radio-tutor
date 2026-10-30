@@ -92,6 +92,13 @@ var messagesEN = map[string]string{
 	"already_running.body":  "Look for its window, or close it before starting Radio Tutor again.",
 	"already_running.ok":    "OK",
 
+	// The phone page stays open between submissions (SPEC §10.1): the page
+	// waits for the next exercises and switches to them by itself.
+	"phone.waiting":      "Waiting for the next exercise…",
+	"phone.waiting_hint": "When you press “Check my answers” on the computer, the exercises appear here by themselves.",
+	"phone.error.stale":  "These exercises are not waiting for photos any more. Wait for the next ones.",
+	"phone.offline":      "The connection was lost. Trying again…",
+
 	// The phone page (SPEC §10.1, §10.2).
 	"phone.heading":          "Exercises",
 	"phone.write_labels":     "Solve the exercises on paper. Write the number of each exercise next to its solution, then take photos of the pages.",
@@ -101,7 +108,7 @@ var messagesEN = map[string]string{
 	"phone.count":            "{n} of {max} photos",
 	"phone.send":             "Send",
 	"phone.sending":          "Sending...",
-	"phone.sent":             "Sent! Look at the computer.",
+	"phone.sent":             "Sent! Look at the computer. Leave this page open for the next one.",
 	"phone.expired.title":    "This link has expired",
 	"phone.expired.body":     "Go back to the computer and scan the new code.",
 	"phone.not_found.title":  "Page not found",
@@ -138,6 +145,8 @@ var messagesEN = map[string]string{
 	"flow.photos":             "Photos received: {n}",
 	"flow.opened":             "Your phone opened the page.",
 	"flow.uploading":          "Your phone is sending the photos...",
+	"flow.phone_ready":        "Your phone is ready: the page updated by itself",
+	"flow.scan_other":         "Another phone? Scan this.",
 	"flow.firewall":           "No phone has opened the page yet. Check that the phone is on the same Wi-Fi as this computer. If it is, a parent may need to open port {port} in the firewall: {command} (the README explains it).",
 	"flow.cancel":             "Cancel",
 	"flow.grading":            "Checking your answers...",

@@ -12,7 +12,7 @@ A session of a child:
 2. The child opens a cassette. The app loads the child's save file for it and continues where the child left off.
 3. A **lesson** is an animated SVG scene narrated by an audio track, with captions. The child plays it with **Play**, **Pause** and **Stop**.
 4. After a lesson comes a **worksheet**: one or more exercises. The child solves them **on paper**.
-5. The child presses **Check my answers**. The app shows a QR code. The child scans it with a phone, the phone opens a page served by the app on the local network, the page lists the exercises to photograph and has a button **Take photos of the solution**. The child takes one or more photos and sends them.
+5. The child presses **Check my answers**. The app shows a QR code. The child scans it with a phone, the phone opens a page served by the app on the local network, the page lists the exercises to photograph and has a button **Take photos of the solution**. The child takes one or more photos and sends them. The page stays open: the next time the child presses **Check my answers** the same page switches to the new exercises by itself, so the code is scanned once per login, not once per submission.
 6. A vision-capable AI model (cloud or offline) reads the photos, separates the solutions of the different exercises on the page, and grades each one by the cassette's instructions. The child sees, for each exercise, whether it is right and the feedback.
 7. The next lesson unlocks when every exercise before it is passed.
 
@@ -36,7 +36,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 | D10 | One photo submission can hold the solutions of several exercises; the AI must separate them, helped by the exercise **labels** the child writes next to each solution | children solve a whole worksheet on one page |
 | D11 | Profiles with username and password, two roles: `admin` and `student`; passwords hashed with PBKDF2-HMAC-SHA256 (stdlib `crypto/pbkdf2`) | the owner's requirement; no new dependency |
 | D12 | All data is local, in the XDG folders; JSON files written atomically | the owner's requirement; easy to inspect and back up |
-| D13 | The phone page is plain HTTP on the local network, on a fixed port (8737 by default), with an unguessable token per submission; photos are taken with `<input type="file" accept="image/*" capture="environment" multiple>` | the camera through a file input works without HTTPS (getUserMedia needs a secure context); a fixed port can be opened in the firewall once |
+| D13 | The phone page is plain HTTP on the local network, on a fixed port (8737 by default), with an unguessable token per **phone link** (one link per logged-in student, reused by their submissions, §10.1); photos are taken with `<input type="file" accept="image/*" capture="environment" multiple>` | the camera through a file input works without HTTPS (getUserMedia needs a secure context); a fixed port can be opened in the firewall once |
 | D14 | QR codes are made by `rsc.io/qr` | pure Go, small |
 | D15 | Only `correct` passes an exercise; `partial` and `incorrect` use an attempt; `unreadable` and `not_found` do not | the owner's agreement in the design discussion |
 | D16 | When an exercise's attempts run out it becomes `needs_review`; the child goes on meanwhile, the parent is told at login, looks at the photos that failed and marks it passed or gives more attempts | the AI can misread handwriting; a parent decides, and the lesson never stops waiting for one |
@@ -58,7 +58,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 
 ### 3.2 Sessions
 
-One user is logged in at a time. **Log out** returns to the login screen. The app remembers no password. The login screen lists the profiles' display names as buttons (a child taps their name, then types the password).
+One user is logged in at a time. **Log out** returns to the login screen and ends the student's phone link (§10.1). The app remembers no password. The login screen lists the profiles' display names as buttons (a child taps their name, then types the password).
 
 ### 3.3 What each role can do
 
@@ -111,7 +111,7 @@ internal/core/progress           save files, unlock rules, attempts, overrides, 
 internal/core/grading            images, prompt, reply schema, parsing, the Provider interface, the fake provider
 internal/core/grading/openai     the OpenAI-compatible provider
 internal/core/providers          the providers.json store and the connection test
-internal/core/phone              the HTTP server for phones, tokens, the page, uploads, the LAN address
+internal/core/phone              the HTTP server for phones, links, the page, long polling, uploads, the LAN address
 internal/core/qrcode             QR code as an image (rsc.io/qr)
 internal/core/submission         the submission service: open, receive photos, grade, apply to progress, events
 internal/core/settings           settings.json
@@ -285,24 +285,29 @@ The lesson's time is the audio position: the number of samples the sink has actu
 
 ### 10.1 The flow
 
-1. The app makes a submission (`waiting_photos`), a token (16 random bytes, base32 without padding), and a URL `http://<lan-address>:<port>/s/<token>`. It starts the phone server if it is not running.
-2. A full-window screen (opened over the worksheet, with no back arrow) shows the QR code of the URL (at least 280 logical pixels), the URL as text, the exercise labels, and "Scan this with your phone". It shows "Photos received: n" as photos arrive, and **Cancel**.
-3. The phone page shows the cassette title, the exercises (label, title, prompt text), the instruction to write the labels next to the solutions, and a big button **Take photos of the solution**. Each photo the child takes is shown as a thumbnail with a remove (✕) button; up to 6 photos. **Send** uploads them.
-4. When the upload completes, the page shows "Sent! Look at the computer." and the token stops working. The desktop closes the QR screen for the grading indicator (with Cancel), the submission becomes `grading`, and grading runs (§11).
-5. When grading ends, the child sees a results screen: one row per exercise with its label, a big mark (✓ correct, ~ partial, ✗ incorrect, ? unreadable or not found), the feedback for the child, and the next hint when one was unlocked. Exercises that are now passed show a star. **Back to the worksheet** returns.
-6. If grading fails (network, provider error, invalid reply after the retry of §11.5), the submission is `failed`; the child sees "The checker could not answer. Try again." with **Try again** (grades the same photos again, no new photos needed) and **Cancel**.
+1. The first time the logged-in student presses **Check my answers**, the app makes a **phone link** for the student: a token (16 random bytes, base32 without padding) and the URL `http://<lan-address>:<port>/p/<token>`. It starts the phone server if it is not running. Every later submission of the same student reuses the link. A link belongs to one student, never to one submission.
+2. The app makes a submission (`waiting_photos`) and offers it on the link: the phone page switches from *waiting* to *ready* by itself (step 4). A full-window screen (opened over the worksheet, with no back arrow) opens on every **Check my answers**, so that a new phone can join: it shows the QR code of the student's link (at least 280 logical pixels), the URL as text, the exercise labels, and "Scan this with your phone". It shows "Photos received: n" as photos arrive, and **Cancel**. When a phone has the link open (it asked for news within the last 30 seconds, or is waiting for it right now), the screen says "Your phone is ready: the page updated by itself" prominently and the QR code is smaller below it, for another phone.
+3. **The link ends** when the student logs out, when the app closes, when a different user logs in or opens a submission (a link never outlives its student's login), or after 60 minutes in which no submission was sent through it (the 60 minutes count from the link's creation or from the last time a submission ended on it; a link with a submission waiting for photos does not end). An ended link answers the friendly "This link has expired" page (410). The next **Check my answers** of a student whose link ended makes a new link and a new QR code.
+4. The phone page has four states. **Waiting**: "Waiting for the next exercise..." (calm; shows the cassette title of the last submission, if any). **Ready**: a submission is waiting for photos: the cassette title, the exercises (label, title, prompt text), the instruction to write the labels next to the solutions, a big button **Take photos of the solution**, each photo as a thumbnail with a remove (✕) button, up to 6 photos, and **Send**. **Sending**: a progress bar, the buttons disabled. **Sent**: "Sent! Look at the computer. Leave this page open for the next one."; the page stays there until the next submission is offered, then shows *ready* again. When the desktop cancels or ends the submission (Cancel, the 30 minutes), a *ready* page goes back to *waiting* and its thumbnails are dropped.
+5. When the upload completes, the desktop closes the QR screen for the grading indicator (with Cancel), the submission becomes `grading`, and grading runs (§11). The link stays open for the next submission.
+6. When grading ends, the child sees a results screen: one row per exercise with its label, a big mark (✓ correct, ~ partial, ✗ incorrect, ? unreadable or not found), the feedback for the child, and the next hint when one was unlocked. Exercises that are now passed show a star. **Back to the worksheet** returns.
+7. If grading fails (network, provider error, invalid reply after the retry of §11.5), the submission is `failed`; the child sees "The checker could not answer. Try again." with **Try again** (grades the same photos again, no new photos needed) and **Cancel**.
 
-A token is valid for 30 minutes or until the photos are sent or the submission is cancelled.
+A submission waits for its photos for 30 minutes, until the photos are sent or until it is cancelled; then the page goes back to waiting and the link stays.
+
+**Why a link per student is safe.** The link is as secret as the per-submission token was (128 random bits, on the home network, plain HTTP, D13); it lives longer, so its reach is limited instead: it is valid only while its student is logged in (a parent on the admin screens, or another child, never inherits it), it ends after 60 idle minutes, and it can do one thing only: send photos for the submission that is waiting at that moment (§10.2). The page shows the exercise texts and never grades or names of students. A phone that keeps the link after the child went away gets "This link has expired".
 
 ### 10.2 The server
 
 - `internal/core/phone` listens on `0.0.0.0:<port>` (setting `phone.port`, default 8737). If the port is taken, the error is shown with the port number and a pointer to the setting.
 - **LAN address:** the first IPv4 address of an interface that is up, not loopback, and in a private range (10/8, 172.16/12, 192.168/16), preferring the interface of the default route (from `/proc/net/route`); the other interfaces are tried in the system's order, skipping virtual ones (names starting with `docker`, `br-`, `veth`, `virbr`, `lo`, `tun`, `tap`, `wg`) are skipped, so with no default route a Docker bridge does not win over Wi-Fi; the admin can pick an interface in the settings (a named interface, and the interface of the default route, are used even if the name looks virtual). With no such address, the dialog says "This computer is not connected to a network." and offers no QR.
-- Routes: `GET /s/<token>` (the page), `POST /s/<token>/photos` (multipart upload), `GET /static/...` (the page's CSS and JS, embedded). Anything else is 404. An unknown or expired token gives a friendly "This link has expired" page with status 410.
+- Routes: `GET /p/<token>` (the page), `GET /p/<token>/state?v=<version>` (the state, a long poll, below), `POST /p/<token>/photos?offer=<n>` (multipart upload), `GET /static/...` (the page's CSS and JS, embedded). Anything else is 404. An unknown, ended or expired link gives a friendly "This link has expired" page with status 410 (the state and the upload answer 410 with JSON).
+- **Long polling.** The page learns about changes by asking `GET /p/<token>/state?v=<n>` where `n` is the last version it knows. The state is `{v, state: "waiting"|"ready", title, offer, exercises: [{label, title, lines}]}`; `v` goes up on every change (a submission offered, ended or sent, the link ended). When the server's version differs from `n` it answers at once; otherwise it holds the request until the state changes or about 25 seconds pass and then answers with the unchanged state, and the page asks again at once. A page that is only open therefore makes about 2 or 3 requests a minute, far below the limit of 30 per address. The page ignores an answer older than what it shows, asks again at once when it becomes visible again (`visibilitychange`: a phone that slept lost its connection), and after a network error retries with a backoff (1 s, doubling, at most 15 s) and shows "The connection was lost. Trying again...".
+- **Uploads go to the submission that is ready at that moment.** The page names the submission it shows (`offer`, a number that grows with each submission offered on the link). An upload for another one (it was cancelled, it expired, it was already sent, a newer one replaced it) is refused with status 409 and "These exercises are not waiting for photos any more. Wait for the next ones."; the page then goes back to *waiting*. A second upload for the same submission while the first is being received answers 409 "busy".
 - Uploads: at most 6 files, each at most 20 MiB, total at most 80 MiB (`http.MaxBytesReader`). Accepted: JPEG and PNG (by content sniffing, not by name). Others give "Only photos can be sent" (status 415).
-- Per remote address, at most 30 requests per minute.
-- The page is plain HTML with a small embedded script, no external resources, works on current Android Chrome and iOS Safari, large touch targets, in the UI language (§17).
-- The README explains opening the port in firewalld (`sudo firewall-cmd --add-port=8737/tcp --permanent && sudo firewall-cmd --reload`); the QR dialog shows a hint about the firewall when no phone has opened the page 60 seconds after it appeared.
+- Per remote address, at most 30 requests per minute (long polling keeps an open page far below it).
+- The page is plain HTML with a small embedded script (it draws the state it gets from the server; all text goes in with `textContent`), no external resources, works on current Android Chrome and iOS Safari, large touch targets, in the UI language (§17).
+- The README explains opening the port in firewalld (`sudo firewall-cmd --add-port=8737/tcp --permanent && sudo firewall-cmd --reload`); the QR dialog shows a hint about the firewall when no phone has opened the page 60 seconds after it appeared (not when a phone already has the link open).
 
 ### 10.3 Photos
 
