@@ -3,6 +3,7 @@ package worksheet
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -14,6 +15,7 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -355,9 +357,33 @@ func photo(t testing.TB) []byte {
 	return buf.Bytes()
 }
 
-// upload posts one photo to the URL the way the phone page does and returns the
-// status.
+// offerOf asks the phone link for the submission that is waiting for photos,
+// the way the page does, and returns its number (0 when none waits).
+func offerOf(t testing.TB, url string) uint64 {
+	t.Helper()
+	resp, err := http.Get(url + "/state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var st struct {
+		Offer uint64 `json:"offer"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&st); err != nil {
+		t.Fatal(err)
+	}
+	return st.Offer
+}
+
+// upload posts one photo to the URL the way the phone page does, for the
+// submission that waits at that moment, and returns the status.
 func upload(t testing.TB, url string) int {
+	t.Helper()
+	return uploadOffer(t, url, offerOf(t, url))
+}
+
+// uploadOffer posts one photo for the named submission and returns the status.
+func uploadOffer(t testing.TB, url string, offer uint64) int {
 	t.Helper()
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
@@ -374,7 +400,7 @@ func upload(t testing.TB, url string) int {
 	if err := mw.Close(); err != nil {
 		t.Fatal(err)
 	}
-	resp, err := http.Post(url+"/photos", mw.FormDataContentType(), &body)
+	resp, err := http.Post(url+"/photos?offer="+strconv.FormatUint(offer, 10), mw.FormDataContentType(), &body)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -71,7 +71,15 @@ func (s *rootState) logIn(p profile.Profile) {
 
 func (s *rootState) logOut() {
 	if s.session != nil {
-		s.Widget().env.Log.Info("logout", "username", s.session.Username)
+		env := s.Widget().env
+		env.Log.Info("logout", "username", s.session.Username)
+		// The student's phone link ends with the login (SPEC §10.1). Ending it
+		// waits for a submission that is being opened, so it is not done on the
+		// UI thread.
+		if env.Submission != nil {
+			username := s.session.Username
+			s.Go(func(context.Context) { env.Submission.EndLink(username) })
+		}
 	}
 	s.SetState(func() { s.session = nil })
 }

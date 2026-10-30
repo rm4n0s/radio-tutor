@@ -45,11 +45,18 @@ func (s *flowState) labels() string {
 
 // qrView is the QR dialog (SPEC §10.1): the code, the address as text, the
 // labels, "Scan this with your phone", the photos received so far, the hint
-// about the firewall when it is time, and Cancel.
+// about the firewall when it is time, and Cancel. When a phone has the link
+// open already, its page has switched to the submission by itself: the dialog
+// says so first, and the code is smaller, for another phone.
 func (s *flowState) qrView(bc m.BuildContext, scope *app.Scope) m.Widget {
 	theme := m.ThemeOf(bc)
 	title := theme.TextTheme.HeadlineSmall.CopyWith(m.TextStyleCopy{FontWeight: m.FontWeightW600})
-	code := m.NewContainer(qrCode(KeyQR, s.matrix), m.ContainerOpts{
+	ready := s.sess.PhoneReady
+	side, scanKey := MinQRSize, "flow.scan"
+	if ready {
+		side, scanKey = SmallQRSize, "flow.scan_other"
+	}
+	code := m.NewContainer(qrCode(KeyQR, s.matrix, side), m.ContainerOpts{
 		Padding: m.NewEdgeInsetsAll(qrPadding),
 		Decoration: m.NewBoxDecoration(m.BoxDecorationOpts{
 			Color:        m.Some(m.NewColor(0xFFFFFFFF)),
@@ -57,10 +64,14 @@ func (s *flowState) qrView(bc m.BuildContext, scope *app.Scope) m.Widget {
 			Border:       m.NewBorderAll(m.BorderSideOpts{Color: m.Some(theme.ColorScheme.OutlineVariant()), Width: m.Some(2.0)}),
 		}),
 	})
+	urlStyle := theme.TextTheme.TitleMedium
+	if ready {
+		urlStyle = theme.TextTheme.BodyMedium
+	}
 	right := []m.Widget{
-		m.NewText(scope.T("flow.scan"), m.TextOpts{Style: title}),
+		m.NewText(scope.T(scanKey), m.TextOpts{Style: title}),
 		gap(app.Gap),
-		m.NewText(s.sess.URL, m.TextOpts{Key: m.NewValueKey(KeyURL), Style: theme.TextTheme.TitleMedium}),
+		m.NewText(s.sess.URL, m.TextOpts{Key: m.NewValueKey(KeyURL), Style: urlStyle}),
 		gap(12),
 		m.NewText(scope.T("flow.exercises", "labels", s.labels()), m.TextOpts{Key: m.NewValueKey(KeyLabels), Style: theme.TextTheme.BodyLarge}),
 		gap(12),
@@ -74,17 +85,39 @@ func (s *flowState) qrView(bc m.BuildContext, scope *app.Scope) m.Widget {
 		}),
 		gap(app.Gap),
 	)
-	if s.firewall && !s.pageOpened {
+	if s.firewall && !s.pageOpened && !ready {
 		right = append(right, s.firewallHint(bc, scope), gap(app.Gap))
 	}
 	right = append(right, cancelButton(bc, scope, true))
-	return pageBody(flowMaxWidth+60, []m.Widget{
+	var body []m.Widget
+	if ready {
+		body = append(body, s.phoneReadyBanner(bc, scope), gap(app.PagePadding))
+	}
+	body = append(body, m.NewRow([]m.Widget{
+		code,
+		hgap(app.PagePadding),
+		m.NewExpanded(m.NewColumn(right, m.ColumnOpts{CrossAxisAlignment: m.CrossAxisAlignmentStart})),
+	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentStart}))
+	return pageBody(flowMaxWidth+60, body)
+}
+
+// phoneReadyBanner is the prominent line that says the phone's page has
+// switched to the exercises by itself.
+func (s *flowState) phoneReadyBanner(bc m.BuildContext, scope *app.Scope) m.Widget {
+	theme := m.ThemeOf(bc)
+	scheme := theme.ColorScheme
+	text := theme.TextTheme.HeadlineSmall.CopyWith(m.TextStyleCopy{FontWeight: m.FontWeightW700, Color: m.Some(scheme.OnPrimaryContainer())})
+	return m.NewContainer(
 		m.NewRow([]m.Widget{
-			code,
-			hgap(app.PagePadding),
-			m.NewExpanded(m.NewColumn(right, m.ColumnOpts{CrossAxisAlignment: m.CrossAxisAlignmentStart})),
-		}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentStart}),
-	})
+			m.NewIcon(m.Icons.CheckCircle(), m.IconOpts{Size: m.Some(40.0), Color: m.Some(scheme.Primary())}),
+			hgap(16),
+			m.NewExpanded(m.NewText(scope.T("flow.phone_ready"), m.TextOpts{Key: m.NewValueKey(KeyPhoneReady), Style: text})),
+		}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter}),
+		m.ContainerOpts{
+			Padding:    m.NewEdgeInsetsAll(20),
+			Decoration: m.NewBoxDecoration(m.BoxDecorationOpts{Color: m.Some(scheme.PrimaryContainer()), BorderRadius: m.NewBorderRadiusCircular(qrCardRadius)}),
+		},
+	)
 }
 
 // phoneStatus says what the phone is doing.

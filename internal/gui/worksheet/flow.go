@@ -22,6 +22,9 @@ const (
 	KeyLabels = "labels"
 	// KeyPhotos is the key of the "Photos received: n" text.
 	KeyPhotos = "photos"
+	// KeyPhoneReady is the key of the line that says that a phone has the
+	// link open and its page switched to the submission by itself.
+	KeyPhoneReady = "phone-ready"
 	// KeyPhoneStatus is the key of the text that says what the phone does.
 	KeyPhoneStatus = "phone-status"
 	// KeyFirewall is the key of the firewall hint.

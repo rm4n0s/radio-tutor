@@ -60,7 +60,7 @@ func pumpQR(t *testing.T, locale string) *harness {
 	h := pump(t, config{locale: locale, size: goldenSize, port: goldenPort})
 	h.check()
 	h.PumpAndSettle()
-	if got, want := h.url(), "http://127.0.0.1:38737/s/"; len(got) < len(want) || got[:len(want)] != want {
+	if got, want := h.url(), "http://127.0.0.1:38737/p/"; len(got) < len(want) || got[:len(want)] != want {
 		t.Fatalf("the golden address is %q, want one that starts with %q", got, want)
 	}
 	return h
@@ -87,6 +87,46 @@ func TestQRDialogGoldens(t *testing.T) {
 		h.check()
 		h.PumpAndSettle()
 		h.MatchesGolden("qr_small_window_en")
+	})
+}
+
+// pumpReadyQR opens the QR dialog of a second submission while a phone has the
+// link open: the first dialog is opened, the phone opens the page, the child
+// cancels and presses Check my answers again.
+func pumpReadyQR(t *testing.T, c config) *harness {
+	t.Helper()
+	c.port = goldenPort
+	h := pump(t, c)
+	h.check()
+	url := h.url()
+	if status := get(t, url); status != 200 {
+		t.Fatalf("GET status %d", status)
+	}
+	h.TapKey(KeyCancel)
+	h.WaitFor(t, "the worksheet", func() bool { return h.HasKey(KeyCheck) })
+	h.check()
+	h.PumpAndSettle()
+	if !h.HasKey(KeyPhoneReady) {
+		t.Fatal("the dialog does not say that the phone is ready")
+	}
+	if h.url() != url {
+		t.Fatalf("the address changed from %q to %q", url, h.url())
+	}
+	return h
+}
+
+func TestQRDialogPhoneReadyGoldens(t *testing.T) {
+	t.Run("qr_ready_en", func(t *testing.T) {
+		h := pumpReadyQR(t, config{locale: "en_US.UTF-8", size: goldenSize})
+		h.MatchesGolden("qr_ready_en")
+	})
+	t.Run("qr_ready_el", func(t *testing.T) {
+		h := pumpReadyQR(t, config{locale: "el_GR.UTF-8", size: goldenSize})
+		h.MatchesGolden("qr_ready_el")
+	})
+	t.Run("qr_ready_small_window_en", func(t *testing.T) {
+		h := pumpReadyQR(t, config{size: m.Size{Width: app.MinWindowWidth, Height: app.MinWindowHeight}})
+		h.MatchesGolden("qr_ready_small_window_en")
 	})
 }
 

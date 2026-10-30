@@ -14,7 +14,7 @@ var updateGoldens = flag.Bool("update-goldens", false, "rewrite the golden files
 
 // phoneURL has the shape of SPEC §10.1: http://<lan-address>:<port>/s/<token>
 // with a 16-byte token in base32 without padding (26 characters).
-const phoneURL = "http://192.168.100.200:8737/s/MFRGGZDFMZTWQ2LKNNWG23TPOM"
+const phoneURL = "http://192.168.100.200:8737/p/mfrggzdfmztwq2lknnwg23tpom"
 
 func mustEncode(t *testing.T, text string, level Level) Matrix {
 	t.Helper()

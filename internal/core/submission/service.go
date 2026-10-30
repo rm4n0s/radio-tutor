@@ -26,7 +26,7 @@
 // later ones reuse it, so the page that is open on the phone switches to the
 // next submission by itself. A session only offers its exercises on the link;
 // when the session ends the offer is withdrawn and the link stays. The link
-// ends with EndLinks (the user logged out), when an Open is made for another
+// ends with EndLink (the user logged out), when an Open is made for another
 // student, when the phone server stops (Close), when the language or the LAN
 // address changed, and after an hour in which no submission was sent on it (the
 // phone server's rule). An Open after that makes a new link.
@@ -125,7 +125,7 @@ type Service struct {
 	opts Options
 	base context.Context
 
-	openMu sync.Mutex // serializes Open, EndLinks and Close
+	openMu sync.Mutex // serializes Open, EndLink and Close
 
 	// onReceiving, when set by a test, runs when an upload has been accepted
 	// and before its photos are stored.
@@ -293,15 +293,22 @@ func (svc *Service) Retry(ctx context.Context, sessionID string) error {
 	return s.retry(ctx)
 }
 
-// EndLinks ends every phone link: the pages that are open on phones show "This
-// link has expired" and the next Open makes a new link. The UI calls it when
-// the user logs out. It does not cancel sessions. It waits for an Open that is
-// in progress (so that the link that Open makes ends too), so call it from a
-// goroutine, not from the UI thread.
-func (svc *Service) EndLinks() {
+// EndLink ends the phone link of the student: the page that is open on the
+// phone shows "This link has expired" and the next Open makes a new link. The
+// UI calls it when the student logs out. It does not cancel the session. It
+// waits for an Open that is in progress (so that the link that Open makes ends
+// too), so call it from a goroutine, not from the UI thread. A student without a
+// link is not an error.
+func (svc *Service) EndLink(username string) {
 	svc.openMu.Lock()
 	defer svc.openMu.Unlock()
-	svc.endLinksExcept("")
+	svc.mu.Lock()
+	ul, ok := svc.links[username]
+	delete(svc.links, username)
+	svc.mu.Unlock()
+	if ok {
+		ul.link.End()
+	}
 }
 
 // Cancel ends the session: the phone token stops working, grading in progress

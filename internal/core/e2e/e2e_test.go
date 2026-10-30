@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -14,6 +15,7 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -102,7 +104,7 @@ func post(t *testing.T, url string, photo []byte) (int, string) {
 	if err := mw.Close(); err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url+"/photos", &body)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url+"/photos?offer="+waitingOffer(t, url), &body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,4 +378,26 @@ wait:
 			t.Errorf("the save file lacks %s:\n%s", want, raw)
 		}
 	}
+}
+
+// waitingOffer asks the phone link which submission is waiting for photos, as
+// the phone page does, and returns its number for the upload address.
+func waitingOffer(t *testing.T, url string) string {
+	t.Helper()
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url+"/state", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var st struct {
+		Offer uint64 `json:"offer"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&st); err != nil {
+		t.Fatal(err)
+	}
+	return strconv.FormatUint(st.Offer, 10)
 }

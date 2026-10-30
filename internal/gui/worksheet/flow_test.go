@@ -28,7 +28,7 @@ func TestFullFlowFromTheWorksheetToTheResults(t *testing.T) {
 
 	h.check()
 	url := h.url()
-	if !strings.HasPrefix(url, "http://127.0.0.1:") || !strings.Contains(url, "/s/") {
+	if !strings.HasPrefix(url, "http://127.0.0.1:") || !strings.Contains(url, "/p/") {
 		t.Fatalf("the address %q is not a phone address", url)
 	}
 	for _, text := range []string{"Scan this with your phone", "Exercises: 1, B2", "Photos received: 0"} {
@@ -80,9 +80,12 @@ func TestFullFlowFromTheWorksheetToTheResults(t *testing.T) {
 		t.Errorf("the save file does not show the results: %+v", p.Exercises)
 	}
 
-	// The token stopped working.
-	if status := get(t, url); status != 410 {
-		t.Errorf("GET after grading status %d, want 410", status)
+	// The submission is no longer waiting, but the link stays open for the next.
+	if status := get(t, url); status != 200 {
+		t.Errorf("GET after grading status %d, want 200", status)
+	}
+	if offer := offerOf(t, url); offer != 0 {
+		t.Errorf("the page still shows submission %d after grading", offer)
 	}
 
 	// Back to the worksheet, which shows the new state.
@@ -153,8 +156,8 @@ func TestCancelOnTheQRDialog(t *testing.T) {
 		t.Fatal("Cancel did not return to the worksheet")
 	}
 	h.waitSubmission(progress.SubmissionCancelled)
-	if status := get(t, url); status != 410 {
-		t.Errorf("GET after Cancel status %d, want 410", status)
+	if offer := offerOf(t, url); offer != 0 {
+		t.Errorf("the page still shows submission %d after Cancel", offer)
 	}
 	if len(h.load().Submissions) != 1 {
 		t.Errorf("the save file has %d submissions, want 1", len(h.load().Submissions))

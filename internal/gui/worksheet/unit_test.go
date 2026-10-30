@@ -55,9 +55,14 @@ func TestFailureTexts(t *testing.T) {
 }
 
 func TestQRModuleSize(t *testing.T) {
-	tests := []struct{ name, url string }{
-		{"a short address", "http://192.168.1.20:8737/s/ABCDEFGHIJKLMNOPQRSTUVWXYZ"},
-		{"a long address", "http://192.168.100.200:8737/s/ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"},
+	tests := []struct {
+		name, url string
+		min       float64
+	}{
+		{"a short address", "http://192.168.1.20:8737/p/abcdefghijklmnopqrstuvwxyz", MinQRSize},
+		{"a long address", "http://192.168.100.200:8737/p/abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789", MinQRSize},
+		{"a short address, small", "http://192.168.1.20:8737/p/abcdefghijklmnopqrstuvwxyz", SmallQRSize},
+		{"a long address, small", "http://192.168.100.200:8737/p/abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789", SmallQRSize},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -65,16 +70,16 @@ func TestQRModuleSize(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			module := qrModuleSize(matrix.Total())
+			module := qrModuleSize(matrix.Total(), tt.min)
 			if module != float64(int(module)) || module < 1 {
 				t.Errorf("module %v is not a whole number of pixels", module)
 			}
-			if side := module * float64(matrix.Total()); side < MinQRSize {
-				t.Errorf("the code is %v pixels wide, want at least %v", side, MinQRSize)
+			if side := module * float64(matrix.Total()); side < tt.min {
+				t.Errorf("the code is %v pixels wide, want at least %v", side, tt.min)
 			}
 		})
 	}
-	if qrModuleSize(0) != 1 {
+	if qrModuleSize(0, MinQRSize) != 1 {
 		t.Error("an empty matrix has no module size")
 	}
 }

@@ -77,18 +77,18 @@ func TestPhoneReadyOnlyWhileThePhoneIsThere(t *testing.T) {
 	expect[PageOpened](t, second)
 }
 
-func TestEndLinksEndsThePhoneLinks(t *testing.T) {
+func TestEndLinkEndsThePhoneLink(t *testing.T) {
 	e := newEnv(t)
 	first := e.open("ann", "e1")
-	e.svc.EndLinks()
+	e.svc.EndLink("ann")
 	if status, body := get(t, first.URL); status != 410 || !strings.Contains(body, "This link has expired") {
-		t.Errorf("page after EndLinks: %d %s", status, body)
+		t.Errorf("page after EndLink: %d %s", status, body)
 	}
 	if status, _ := get(t, first.URL+"/state"); status != 410 {
-		t.Errorf("state after EndLinks: %d", status)
+		t.Errorf("state after EndLink: %d", status)
 	}
 	if status, _ := upload(t, first, photo(t, 30, 30)); status != 410 {
-		t.Errorf("upload after EndLinks: %d", status)
+		t.Errorf("upload after EndLink: %d", status)
 	}
 	// The session itself is not cancelled by it.
 	expectQuiet(t, first)
@@ -100,10 +100,10 @@ func TestEndLinksEndsThePhoneLinks(t *testing.T) {
 	if status, _ := get(t, second.URL); status != 200 {
 		t.Errorf("new link: %d", status)
 	}
-	e.svc.EndLinks() // with nothing to end, and again
-	e.svc.EndLinks()
+	e.svc.EndLink("ann") // with nothing to end
+	e.svc.EndLink("bob")
 	if status, _ := get(t, second.URL); status != 410 {
-		t.Errorf("second link after EndLinks: %d", status)
+		t.Errorf("second link after EndLink: %d", status)
 	}
 }
 
