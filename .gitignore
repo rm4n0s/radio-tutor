@@ -38,3 +38,4 @@ go.work.sum
 # Radio Tutor: cassettes made outside the test data folders
 *.cassette
 !**/testdata/**/*.cassette
+!examples/cassettes/*.cassette

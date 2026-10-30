@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a237e"/><stop offset="1" stop-color="#3949ab"/></linearGradient>
+</defs>
+<rect width="300" height="400" fill="url(#bg)"/>
+<text x="150" y="78" font-family="sans-serif" font-size="46" font-weight="bold" text-anchor="middle" fill="#ffffff">Υλικά</text>
+<text x="150" y="128" font-family="sans-serif" font-size="46" font-weight="bold" text-anchor="middle" fill="#ffd54f">σώματα</text>
+<circle cx="75" cy="245" r="48" fill="#ef5350"/><ellipse cx="62" cy="228" rx="10" ry="16" fill="#ffffff" opacity="0.45"/>
+<polygon points="130,300 215,300 215,235 130,235" fill="#90a4ae" stroke="#eceff1" stroke-width="4"/><polygon points="130,235 150,215 235,215 215,235" fill="#cfd8dc"/><polygon points="215,235 235,215 235,280 215,300" fill="#78909c"/>
+<path d="M255 190 q-30 45 -30 70 a30 30 0 0 0 60 0 q0 -25 -30 -70z" fill="#29b6f6" stroke="#e1f5fe" stroke-width="4"/>
+<circle cx="90" cy="335" r="16" fill="#e53935"/><circle cx="70" cy="365" r="9" fill="#fff"/><circle cx="110" cy="365" r="9" fill="#fff"/><circle cx="170" cy="345" r="11" fill="#ffd54f"/><circle cx="215" cy="350" r="11" fill="#ab47bc"/><circle cx="250" cy="335" r="11" fill="#66bb6a"/>
+<text x="150" y="388" font-family="sans-serif" font-size="22" text-anchor="middle" fill="#c5cae9">Φυσικά Ε΄ Δημοτικού</text>
+</svg>
