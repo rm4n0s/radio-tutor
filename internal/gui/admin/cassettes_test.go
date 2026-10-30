@@ -9,6 +9,7 @@ import (
 	"github.com/rm4n0s/glutter/gluttertest"
 	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/student"
 	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
@@ -82,6 +83,7 @@ func TestCassettesNothingInstalled(t *testing.T) {
 }
 
 func TestCassettesListFailure(t *testing.T) {
+	storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 	a := pump(t, config{setup: func(t *testing.T, env *app.Env) {
 		if err := os.RemoveAll(env.Paths.CassettesDir()); err != nil {
 			t.Fatal(err)
@@ -275,6 +277,9 @@ func TestRemoveCassetteDataFailures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				storagetest.SkipOnWindows(t, "the setup makes a file where a folder goes or a folder read-only")
+			}
 			env, _ := testutil.NewEnv(t, testutil.Options{})
 			if tt.setup != nil {
 				tt.setup(t, env)

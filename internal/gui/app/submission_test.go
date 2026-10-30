@@ -32,6 +32,7 @@ func TestStartCreatesTheSubmissionService(t *testing.T) {
 }
 
 func TestStartKeepsGoingWhenProvidersCannotBeRead(t *testing.T) {
+	storagetest.SkipWithoutUnixModes(t)
 	paths := storagetest.Isolate(t)
 	write(t, paths.ProvidersFile(), `{"format":1,"active":"","providers":[]}`)
 	// Other users could read the API keys: the store refuses the file.

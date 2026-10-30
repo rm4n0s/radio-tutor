@@ -109,6 +109,7 @@ func TestListSaveIDs(t *testing.T) {
 }
 
 func TestListSaveIDsFailsWhenTheStudentFolderIsAFile(t *testing.T) {
+	storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 	env := dataEnv(t)
 	if err := os.MkdirAll(env.Paths.ProgressDir(), 0o700); err != nil {
 		t.Fatal(err)

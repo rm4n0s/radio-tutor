@@ -36,7 +36,9 @@ func TestImportInstallsACassette(t *testing.T) {
 	a.WaitForText(t, "There are no cassettes yet. Ask a parent to add one.")
 	tapBusy(a, KeyImport)
 	whileBusy(t, a, "the message", func() bool { return has(a, `The cassette "Fractions, part 1" was added.`) })
-	waitShelf(t, a)
+	// The shelf reloads on a goroutine after the message, and shows no spinner
+	// while it does (it keeps the empty message), so wait for the card itself.
+	a.WaitFor(t, "the new card on the shelf", func() bool { return a.HasKey(KeyCardPrefix + fractionsID) })
 	if !a.HasKey(KeyCardPrefix + fractionsID) {
 		t.Error("the new cassette is not on the shelf")
 	}

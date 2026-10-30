@@ -10,6 +10,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 )
 
 const otherID = "org.example.second-2"
@@ -123,6 +124,7 @@ func TestShelfOpensTheCassetteAndReloadsOnReturn(t *testing.T) {
 }
 
 func TestShelfLoadFailureIsShown(t *testing.T) {
+	storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 	a := pump(t, config{setup: func(t *testing.T, env *app.Env) {
 		twoCassettes(t, env)
 		// A save file the progress store cannot even quarantine: its folder is a file.

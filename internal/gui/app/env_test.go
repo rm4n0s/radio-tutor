@@ -216,7 +216,7 @@ func TestStartFailures(t *testing.T) {
 		route string
 	}{
 		{"home unknown", func(t *testing.T, _ storage.Paths) (context.Context, map[string]string) {
-			return context.Background(), map[string]string{"XDG_CONFIG_HOME": "", "XDG_DATA_HOME": "", "XDG_STATE_HOME": "", "HOME": ""}
+			return context.Background(), map[string]string{"XDG_CONFIG_HOME": "", "XDG_DATA_HOME": "", "XDG_STATE_HOME": "", "HOME": "", "LOCALAPPDATA": "", "USERPROFILE": ""}
 		}, "Start->ResolveFrom"},
 		{"cancelled context", func(t *testing.T, _ storage.Paths) (context.Context, map[string]string) {
 			ctx, cancel := context.WithCancel(context.Background())

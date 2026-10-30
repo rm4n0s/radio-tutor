@@ -10,6 +10,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
 )
@@ -326,6 +327,9 @@ func TestDeleteStudentFailures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				storagetest.SkipWithoutUnixModes(t) // the setup makes a folder read-only
+			}
 			env, _ := testutil.NewEnv(t, testutil.Options{})
 			testutil.AddProfile(t, env, "mum", "Mum", profile.RoleAdmin, adminPassword)
 			testutil.AddProfile(t, env, "mia", "Mia", profile.RoleStudent, studentPassword)
