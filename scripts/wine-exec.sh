@@ -12,12 +12,16 @@
 #     RADIO_TUTOR_WINEPREFIX moves it. Nothing of the user's ~/.wine is read or written. A new prefix is made on the first
 #     run, under a lock: its first boot hangs when the wine-cms package is not installed (setupapi
 #     loops on the missing mscms.dll), so it is cut after 20 seconds and the server is stopped;
-#   - sets WINEDLLOVERRIDES="mscoree,mshtml=;winepulse.drv,winealsa.drv,wineoss.drv=d" (no Mono or
-#     Gecko prompt, and NO AUDIO DRIVER: a test never plays on the speakers of the machine, the
-#     waveOut of Wine then has no device) with PULSE_SERVER=unix:/nonexistent as a second guard,
-#     WINEDEBUG=-all (RADIO_TUTOR_WINEDEBUG overrides it), WINEARCH=win64, and the Mesa software
-#     drivers only (VK_DRIVER_FILES and VK_ICD_FILENAMES to lavapipe, Mesa's EGL and GLX vendor,
-#     LIBGL_ALWAYS_SOFTWARE=1, DRI_PRIME unset): the GPU is never used;
+#   - turns the audio of Wine off, so that a test never plays on the speakers of the machine: the
+#     registry value HKCU\Software\Wine\Drivers\Audio="" of the prefix ("no driver", the waveOut of
+#     Wine then has no device) is set and checked on EVERY run, and the run is refused (status 70) when
+#     it cannot be set. WINEDLLOVERRIDES="mscoree,mshtml=;winepulse.drv,winealsa.drv,wineoss.drv=d" only
+#     stops the Mono and Gecko prompts and asks the audio drivers not to load (it was not enough on its
+#     own: a trace showed winealsa.drv still loaded and routed to PipeWire), and PULSE_SERVER=
+#     unix:/nonexistent is a second guard. Also WINEDEBUG=-all (RADIO_TUTOR_WINEDEBUG overrides it),
+#     WINEARCH=win64, and the Mesa software drivers only (VK_DRIVER_FILES and VK_ICD_FILENAMES to
+#     lavapipe, Mesa's EGL and GLX vendor, LIBGL_ALWAYS_SOFTWARE=1, DRI_PRIME unset): the GPU is never
+#     used;
 #   - lowers the core-file limit (ulimit -c 1), so that a crash of Wine never writes a core file or
 #     reaches the system's crash reporter;
 #   - runs the program under `timeout -k 10` (RADIO_TUTOR_WINE_TIMEOUT seconds, 600 by default);
