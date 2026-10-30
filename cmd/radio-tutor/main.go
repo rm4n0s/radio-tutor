@@ -14,6 +14,11 @@ import (
 )
 
 func main() {
+	// The GUI build on Windows has no usable standard streams in a terminal: it takes
+	// no command and points to the console build (guiexe.go).
+	if len(os.Args) > 1 && isGUIProgram() {
+		os.Exit(refuseGUICommand(guiRefusalDeps()))
+	}
 	// os.Interrupt is Ctrl+C on both systems; SIGTERM is the termination signal on
 	// Linux and, in Go, what Windows sends when a console is closed or the user logs
 	// off or shuts down (SPEC §4).

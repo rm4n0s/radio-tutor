@@ -44,3 +44,8 @@ go.work.sum
 /*.pdf
 .wine-test/
 .scratch/
+
+# Windows builds (scripts/build-windows.sh) and the temporary folders of glutter-windows
+/dist/
+_glutterwin-*/
+*.syso
