@@ -80,6 +80,9 @@ type Player struct {
 	timer  Timer
 	gen    uint64 // changes whenever the end timer is replaced or cancelled
 	closed bool
+
+	gain    float32 // the factor of the samples of the next start (SetVolume)
+	gainSet bool    // SetVolume was called; otherwise the gain is 1
 }
 
 // NewPlayer returns a Player that plays through sink and reads time from
@@ -152,7 +155,8 @@ func (p *Player) Play(ctx context.Context) error {
 		return nil
 	}
 	f := Format{SampleRate: p.clip.SampleRate, Channels: p.clip.Channels}
-	if err := p.sink.Start(ctx, &clipSource{samples: p.clip.Samples, channels: p.clip.Channels}, f); err != nil {
+	src := &clipSource{samples: p.clip.Samples, channels: p.clip.Channels, scaled: p.gainSet, gain: p.gain}
+	if err := p.sink.Start(ctx, src, f); err != nil {
 		return err
 	}
 	p.open = true
@@ -307,11 +311,14 @@ func (p *Player) onTimer(gen uint64) {
 	p.scheduleLocked()
 }
 
-// clipSource is the Source of a Clip: the samples from the start.
+// clipSource is the Source of a Clip: the samples from the start, multiplied by
+// gain when scaled is set (the zero value plays the samples as they are).
 type clipSource struct {
 	samples  []float32
 	channels int
 	pos      int
+	scaled   bool
+	gain     float32
 }
 
 func (s *clipSource) SeekFrame(frame int64) {
@@ -324,7 +331,14 @@ func (s *clipSource) Read(dst []float32) int {
 	if n <= 0 {
 		return 0
 	}
-	copy(dst, s.samples[s.pos:s.pos+n])
+	if !s.scaled || s.gain == 1 {
+		copy(dst, s.samples[s.pos:s.pos+n])
+	} else {
+		for i, v := range s.samples[s.pos : s.pos+n] {
+			// Clamp after the gain so a gain above 1 could not overflow.
+			dst[i] = min(max(v*s.gain, -1), 1)
+		}
+	}
 	s.pos += n
 	return n
 }
