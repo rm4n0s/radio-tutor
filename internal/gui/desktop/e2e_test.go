@@ -382,6 +382,9 @@ func TestWalkthrough(t *testing.T) {
 	// Lesson 1: play to the end on the fake sink.
 	w.tap(student.KeyItemPrefix + lesson1)
 	w.waitKey(player.KeyPlay)
+	// Mia mutes the sound; it is saved for every profile and every lesson.
+	w.tap(player.KeyMute)
+	w.until("the mute to be saved", func() bool { return w.Env.Settings.Get().Muted })
 	w.tap(player.KeyPlay)
 	w.until("the sink to start", func() bool {
 		w.mu.Lock()
@@ -472,6 +475,15 @@ func TestWalkthrough(t *testing.T) {
 	w.SetViewSize(ui.Size{Width: app.MinWindowWidth, Height: progressWindow})
 	w.logOut()
 	w.logIn("mum", parentPassword, admin.KeyStudents)
+	// The parent's Settings screen shows the mute that Mia set in the lesson.
+	w.tap(admin.KeySettings)
+	w.waitKey(admin.KeyMuteSwitch)
+	w.PumpAndSettle()
+	if !gluttertest.WidgetAs[*m.Switch](w.Tester, gluttertest.Descendant(key(admin.KeyMuteSwitch), gluttertest.ByType[*m.Switch]())).Value() {
+		t.Error("the Settings screen does not show the sound as muted")
+	}
+	w.back()
+	w.waitKey(admin.KeyStudents)
 	w.tap(admin.KeyProgress)
 	w.waitKey(admin.KeyProgressStudentPrefix + "mia")
 	w.tap(admin.KeyProgressStudentPrefix + "mia")

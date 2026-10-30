@@ -69,6 +69,8 @@ const (
 	KeyImportSwitch = "students-can-import"
 	// KeyVolume is the key of the volume slider.
 	KeyVolume = "volume"
+	// KeyMuteSwitch is the key of the switch that mutes all the sound.
+	KeyMuteSwitch = "mute-sound"
 	// KeyVolumeValue is the key of the text that shows the volume in percent.
 	KeyVolumeValue = "volume-value"
 	// KeyPort is the key of the phone port field.

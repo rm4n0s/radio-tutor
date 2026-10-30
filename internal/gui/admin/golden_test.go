@@ -95,6 +95,11 @@ func TestGoldens(t *testing.T) {
 				t.Fatal(err)
 			}
 		}, func(t *testing.T, a *testutil.App) { openSettings(t, a) }},
+		{"settings_muted_el", "el_GR.UTF-8", func(t *testing.T, env *app.Env) {
+			if err := env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume, s.Muted = 35, true }); err != nil {
+				t.Fatal(err)
+			}
+		}, func(t *testing.T, a *testutil.App) { openSettings(t, a) }},
 		{"providers_en", "en_US.UTF-8", withProviders, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},
 		{"providers_empty_en", "en_US.UTF-8", nil, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},
 		{"providers_el", "el_GR.UTF-8", withProviders, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},

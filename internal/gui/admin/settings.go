@@ -114,10 +114,11 @@ func (s *settingsState) volumeRow(scope *app.Scope) m.Widget {
 	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})
 }
 
-// saveVolume saves the volume when the drag ends.
+// saveVolume saves the volume when the drag ends. Moving the slider while the
+// sound is muted unmutes it, like the volume control of the lesson player.
 func (s *settingsState) saveVolume(v float64) {
 	volume := int(math.Round(v))
-	s.save(func(st *settings.Settings) { st.Volume = volume })
+	s.save(func(st *settings.Settings) { st.Volume, st.Muted = volume, false })
 }
 
 // savePort checks the port and saves it.
@@ -159,6 +160,14 @@ func (s *settingsState) Build(bc m.BuildContext) m.Widget {
 		s.section(bc, scope.T("admin.settings.volume")),
 		body(bc, scope.T("admin.settings.volume_hint")),
 		s.volumeRow(scope),
+		m.NewSwitchListTile(cur.Muted, func(v bool) {
+			s.save(func(st *settings.Settings) { st.Muted = v })
+		}, m.SwitchListTileOpts{
+			Key:            m.NewValueKey(KeyMuteSwitch),
+			Title:          m.NewText(scope.T("admin.settings.mute_switch")),
+			Subtitle:       m.NewText(scope.T("admin.settings.mute_hint")),
+			ContentPadding: m.NewEdgeInsetsAll(0),
+		}),
 		gap(app.Gap * 1.5),
 		s.section(bc, scope.T("admin.settings.phone")),
 		body(bc, scope.T("admin.settings.phone_hint")),

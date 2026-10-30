@@ -223,3 +223,68 @@ func TestSettingsVolumeIsSavedWhenTheDragEnds(t *testing.T) {
 	a.PumpAndSettle()
 	tillTrue(t, a, "the volume to be saved", func() bool { return a.Env.Settings.Get().Volume < 100 })
 }
+
+// muteSwitchOn reports whether the mute switch is on.
+func muteSwitchOn(a *testutil.App) bool {
+	return gluttertest.WidgetAs[*m.Switch](a.Tester, gluttertest.Descendant(key(KeyMuteSwitch), gluttertest.ByType[*m.Switch]())).Value()
+}
+
+func TestSettingsShowWhatTheLessonPlayerSaved(t *testing.T) {
+	// The lesson player saves the volume and the mute in the same settings.
+	a := pump(t, config{setup: func(t *testing.T, env *app.Env) {
+		if err := env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume, s.Muted = 35, true }); err != nil {
+			t.Fatal(err)
+		}
+	}})
+	openSettings(t, a)
+	if got := volumeText(a); got != "35%" {
+		t.Errorf("the volume reads %q, want 35%%", got)
+	}
+	if !muteSwitchOn(a) {
+		t.Error("the mute switch is off although the sound is muted")
+	}
+}
+
+func TestSettingsMuteSwitchKeepsTheVolume(t *testing.T) {
+	a := pump(t, config{setup: func(t *testing.T, env *app.Env) {
+		if err := env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume = 35 }); err != nil {
+			t.Fatal(err)
+		}
+	}})
+	openSettings(t, a)
+	if muteSwitchOn(a) {
+		t.Fatal("the mute switch starts on")
+	}
+	a.TapKey(KeyMuteSwitch)
+	tillTrue(t, a, "the mute to be saved", func() bool { return a.Env.Settings.Get().Muted })
+	if got := a.Env.Settings.Get().Volume; got != 35 {
+		t.Errorf("muting changed the volume to %d", got)
+	}
+	waitText(t, a, "Saved.")
+	if !muteSwitchOn(a) || volumeText(a) != "35%" {
+		t.Errorf("the screen shows mute %v and volume %q", muteSwitchOn(a), volumeText(a))
+	}
+	a.TapKey(KeyMuteSwitch)
+	tillTrue(t, a, "the unmute to be saved", func() bool { return !a.Env.Settings.Get().Muted })
+	if got := a.Env.Settings.Get().Volume; got != 35 {
+		t.Errorf("unmuting changed the volume to %d", got)
+	}
+}
+
+func TestSettingsMovingTheSliderWhileMutedUnmutes(t *testing.T) {
+	a := pump(t, config{setup: func(t *testing.T, env *app.Env) {
+		if err := env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Muted = true }); err != nil {
+			t.Fatal(err)
+		}
+	}})
+	openSettings(t, a)
+	a.DragFrom(thumb(a), ui.Offset{Dx: -150})
+	a.PumpAndSettle()
+	tillTrue(t, a, "the volume to be saved", func() bool { return a.Env.Settings.Get().Volume < 100 })
+	if a.Env.Settings.Get().Muted {
+		t.Error("the sound is still muted after the slider moved")
+	}
+	if muteSwitchOn(a) {
+		t.Error("the mute switch is still on after the slider moved")
+	}
+}
