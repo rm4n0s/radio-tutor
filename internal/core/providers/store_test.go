@@ -252,7 +252,7 @@ func TestStoreErrors(t *testing.T) {
 			c, cancel := context.WithCancel(ctx)
 			cancel()
 			return s.Add(c, validConfig("C"))
-		}, "Store.commit->WritePrivateJSONAtomic->writeJSONAtomic.WriteCancelled"},
+		}, "Store.commit->WritePrivateJSONAtomic->writeJSONAtomic->writeFileAtomic.WriteCancelled"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -299,7 +299,7 @@ func TestStoreWriteFailureKeepsState(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(dir, "sub"), "x", 0o600) // "sub" is a file: its folder cannot be created
 	err = s.Add(ctx, validConfig("A"))
-	wantRoute(t, err, "Store.Add->Store.commit->WritePrivateJSONAtomic->writeJSONAtomic->EnsureDir.DirCreateFailed")
+	wantRoute(t, err, "Store.Add->Store.commit->WritePrivateJSONAtomic->writeJSONAtomic->writeFileAtomic.DirCreateFailed")
 	if len(s.List()) != 0 {
 		t.Error("the list changed although the write failed")
 	}

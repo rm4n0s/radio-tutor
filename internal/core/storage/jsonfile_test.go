@@ -119,12 +119,12 @@ func TestWriteJSONAtomicFailures(t *testing.T) {
 		oldIsKept bool
 		newIsKept bool // the rename happened, the failure is after it
 	}{
-		{"protect", "protect", "writeJSONAtomic.FilePrivateFailed", true, false},
-		{"write", "write", "writeJSONAtomic.TempFileWriteFailed", true, false},
-		{"sync", "sync", "writeJSONAtomic.TempFileSyncFailed", true, false},
-		{"close", "close", "writeJSONAtomic.TempFileCloseFailed", true, false},
-		{"rename", "rename", "writeJSONAtomic.RenameFailed", true, false},
-		{"folder sync", "syncDir", "writeJSONAtomic.DirSyncFailed", false, true},
+		{"protect", "protect", "writeJSONAtomic->writeFileAtomic.FilePrivateFailed", true, false},
+		{"write", "write", "writeJSONAtomic->writeFileAtomic.TempFileWriteFailed", true, false},
+		{"sync", "sync", "writeJSONAtomic->writeFileAtomic.TempFileSyncFailed", true, false},
+		{"close", "close", "writeJSONAtomic->writeFileAtomic.TempFileCloseFailed", true, false},
+		{"rename", "rename", "writeJSONAtomic->writeFileAtomic.RenameFailed", true, false},
+		{"folder sync", "syncDir", "writeJSONAtomic->writeFileAtomic.DirSyncFailed", false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestWriteJSONAtomicErrors(t *testing.T) {
 			ctx:   cancelled,
 			path:  func(t *testing.T) string { return filepath.Join(t.TempDir(), "doc.json") },
 			value: doc{Format: 1},
-			route: "WriteJSONAtomic->writeJSONAtomic.WriteCancelled",
+			route: "WriteJSONAtomic->writeJSONAtomic->writeFileAtomic.WriteCancelled",
 		},
 		{
 			name:  "value that is not JSON",
@@ -216,7 +216,7 @@ func TestWriteJSONAtomicErrors(t *testing.T) {
 				return filepath.Join(file, "doc.json")
 			},
 			value: doc{Format: 1},
-			route: "WriteJSONAtomic->writeJSONAtomic->EnsureDir.DirCreateFailed",
+			route: "WriteJSONAtomic->writeJSONAtomic->writeFileAtomic.DirCreateFailed",
 		},
 		{
 			name: "folder is read-only",
@@ -235,7 +235,7 @@ func TestWriteJSONAtomicErrors(t *testing.T) {
 				return filepath.Join(dir, "doc.json")
 			},
 			value: doc{Format: 1},
-			route: "WriteJSONAtomic->writeJSONAtomic.TempFileCreateFailed",
+			route: "WriteJSONAtomic->writeJSONAtomic->writeFileAtomic.TempFileCreateFailed",
 		},
 		{
 			name: "target is a folder",
@@ -248,7 +248,7 @@ func TestWriteJSONAtomicErrors(t *testing.T) {
 				return p
 			},
 			value: doc{Format: 1},
-			route: "WriteJSONAtomic->writeJSONAtomic.RenameFailed",
+			route: "WriteJSONAtomic->writeJSONAtomic->writeFileAtomic.RenameFailed",
 		},
 	}
 	for _, tt := range tests {

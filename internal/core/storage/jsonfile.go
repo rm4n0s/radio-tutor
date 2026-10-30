@@ -72,18 +72,33 @@ func WritePrivateJSONAtomic(ctx context.Context, path string, v any) error {
 }
 
 func writeJSONAtomic(ctx context.Context, path string, v any, ops atomicOps) error {
-	if err := ctx.Err(); err != nil {
-		return errors.NewErr("WriteCancelled", err).SetMetadata("path", path)
-	}
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return errors.NewErr("JSONMarshalFailed", err).SetMetadata("path", path)
 	}
 	data = append(data, '\n')
+	return writeFileAtomic(ctx, path, data, FileMode, DirMode, ops)
+}
 
+// WriteFileAtomic writes data to path with the same guarantees as
+// WriteJSONAtomic (a reader sees the old file or the new one, never a partial
+// file; a failure leaves the previous file untouched and removes the temporary
+// file), for a file that is not JSON and has a mode of its own: the file gets
+// fileMode and the folder, when missing, is created with dirMode. It fails with
+// the tags WriteCancelled, DirCreateFailed, TempFileCreateFailed,
+// TempFileWriteFailed, TempFileSyncFailed, TempFileCloseFailed, RenameFailed and
+// DirSyncFailed.
+func WriteFileAtomic(ctx context.Context, path string, data []byte, fileMode, dirMode os.FileMode) error {
+	return writeFileAtomic(ctx, path, data, fileMode, dirMode, realAtomicOps())
+}
+
+func writeFileAtomic(ctx context.Context, path string, data []byte, fileMode, dirMode os.FileMode, ops atomicOps) error {
+	if err := ctx.Err(); err != nil {
+		return errors.NewErr("WriteCancelled", err).SetMetadata("path", path)
+	}
 	dir := filepath.Dir(path)
-	if err := EnsureDir(dir); err != nil {
-		return err
+	if err := os.MkdirAll(dir, dirMode); err != nil {
+		return errors.NewErr("DirCreateFailed", err).SetMetadata("path", dir)
 	}
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
 	if err != nil {
@@ -101,7 +116,7 @@ func writeJSONAtomic(ctx context.Context, path string, v any, ops atomicOps) err
 		}
 	}()
 
-	if err := tmp.Chmod(FileMode); err != nil {
+	if err := tmp.Chmod(fileMode); err != nil {
 		return errors.NewErr("TempFileCreateFailed", err).SetMetadata("path", path)
 	}
 	if ops.protect != nil {

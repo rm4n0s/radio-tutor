@@ -174,7 +174,7 @@ func TestUpdateWriteFailureKeepsSettings(t *testing.T) {
 	}
 	cancel()
 	err = st.SetLanguage(ctx, i18n.EL)
-	if appErr, _ := errors.FromError(err); appErr == nil || !appErr.HasRoute("Update->WriteJSONAtomic->writeJSONAtomic.WriteCancelled") {
+	if appErr, _ := errors.FromError(err); appErr == nil || !appErr.HasRoute("Update->WriteJSONAtomic->writeJSONAtomic->writeFileAtomic.WriteCancelled") {
 		t.Fatalf("unexpected failure path: %v", err)
 	}
 	if st.Get().Language != i18n.EN {
