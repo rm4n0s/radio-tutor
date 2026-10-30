@@ -15,8 +15,8 @@ type Format struct {
 }
 
 // Source supplies the samples a Sink plays. A sink pulls from its source
-// when the device wants more data (PulseAudio asks for data; it is not
-// pushed), on a goroutine of its own, and only one goroutine reads at a
+// when the device wants more data (PulseAudio asks for data; waveOut gets
+// buffers refilled when it has played them; nothing is pushed), on a goroutine of its own, and only one goroutine reads at a
 // time.
 type Source interface {
 	// Read copies up to len(dst) interleaved float32 samples into dst and
@@ -32,7 +32,7 @@ type Source interface {
 
 // Sink plays the samples of a Source and reports how much of them has
 // actually been played. It is what the Player drives. The implementations
-// are PulseSink (real sound), SilentSink (no sound, a wall clock) and
+// are PulseSink and WaveOutSink (real sound), SilentSink (no sound, a wall clock) and
 // FakeSink (tests).
 //
 // Start, Pause, Resume, Stop and Close are called by one goroutine at a time
@@ -40,7 +40,7 @@ type Source interface {
 // server. Position may be called from any goroutine, at any time, and never
 // blocks on the server.
 type Sink interface {
-	// Name is "pulse", "silent" or "fake".
+	// Name is "pulse", "waveout", "silent" or "fake".
 	Name() string
 	// Start stops any playback in progress and starts playing src from its
 	// current point, in format f. The position restarts at 0.

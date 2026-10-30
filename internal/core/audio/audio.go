@@ -14,12 +14,13 @@
 // page's header), so it is the number of samples the player will really play.
 //
 // The rest of the package plays a Clip (SPEC §8): a Player (Load, Play, Pause,
-// Stop, Position, Ended) drives a Sink. The sinks are PulseSink (real sound
-// over the PulseAudio protocol, which PipeWire serves too), SilentSink (a wall
-// clock, no sound) and FakeSink (tests); OpenDefaultSink picks the first and
-// falls back to the second. A Clock (SystemClock, or a FakeClock in tests)
+// Stop, Position, Ended) drives a Sink. The sinks are PulseSink (Linux: real
+// sound over the PulseAudio protocol, which PipeWire serves too), WaveOutSink
+// (Windows: real sound through winmm's waveOut), SilentSink (a wall clock, no
+// sound) and FakeSink (tests); OpenDefaultSink picks the first that fits the
+// system and falls back to the silent one. A Clock (SystemClock, or a FakeClock in tests)
 // stands for time, so no test waits for real time and none makes a sound.
-// See Player and PulseSink for the goroutine rules.
+// See Player, PulseSink and WaveOutSink for the goroutine rules.
 package audio
 
 import (
