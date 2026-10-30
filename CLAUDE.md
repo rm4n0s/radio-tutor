@@ -13,6 +13,7 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 - Test the cgo-free path: `CGO_ENABLED=0 go test ./...`
 - Windows build and vet: `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...` (and the same with `GOARCH=arm64`), `GOOS=windows golangci-lint run`
 - Test on Windows, under Wine: `scripts/heavy.sh -- scripts/test-windows.sh` (every package; one package: `scripts/test-windows.sh ./internal/core/storage/...`). Wine runs with a private prefix in `.wine-test/`, with audio drivers disabled and Mesa software rendering only (never the GPU, never a sound): see SPEC §16
+- Build for Windows: `scripts/build-windows.sh [-o dir] [-arch amd64,arm64] [-release]` makes `dist/windows/radio-tutor.exe` (GUI) and `radio-tutor-cli.exe` (console, for the subcommands) with the icon and manifest. Smoke test of the real app under Wine (builds both, first run in English and Greek with Glutter's self-capture, the CLI's `validate` and `pack`): `scripts/heavy.sh -- go test -tags radiotutor_wine -p 1 ./cmd/radio-tutor`. Redraw the icon with `go run ./scripts/icongen`
 - Test one package: `go test ./internal/core/timeline -run TestName -v`
 - Tests that need a real display or a real audio server: `go test -tags radiotutor_display ./...`, `go test -tags radiotutor_audio ./...`
 - Update golden images: `go test <package> -run Golden -update-goldens` (per package: each package with goldens defines the flag, so `./...` would fail in the others), then review every changed golden
@@ -29,7 +30,7 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 ## Definition of done
 Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go vet ./...`, `golangci-lint run` and `go test -race ./...`, and fix anything they report. Say so explicitly if any step was skipped or failed. Also:
 - `CGO_ENABLED=0 go build ./...` and `CGO_ENABLED=0 go test ./...` pass (proves the app stays cgo-free)
-- `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...`, the same build and vet with `GOARCH=arm64`, `GOOS=windows golangci-lint run`, and `scripts/heavy.sh -- scripts/test-windows.sh` pass (the app stays Windows-clean; a test skipped on Windows says why in `t.Skip`)
+- `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...`, the same build and vet with `GOARCH=arm64`, `GOOS=windows golangci-lint run`, and `scripts/heavy.sh -- scripts/test-windows.sh` pass (the app stays Windows-clean; a test skipped on Windows says why in `t.Skip`), and so does the Wine smoke test `scripts/heavy.sh -- go test -tags radiotutor_wine -p 1 ./cmd/radio-tutor` when the change touches the app's start, the window, the data folders, the build script or the CLI
 - `scripts/error-tags.sh --untested` prints nothing (every error Tag has a test that asserts its route; `docs/ERROR-TAGS-UNTESTED.md` is the only exception list)
 - Every new exported identifier has a doc comment
 - Every changed golden image has been looked at, not just regenerated

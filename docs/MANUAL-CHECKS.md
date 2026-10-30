@@ -179,7 +179,7 @@ go test -tags radiotutor_audio -run TestRealServerTone -count=3 -v ./internal/co
 
 ## W.1 Windows: what Wine cannot show
 
-Needs a real Windows 10 (1809 or later) or 11 PC and a Windows build of the app (`GOOS=windows go build -o radio-tutor-console.exe ./cmd/radio-tutor` gives the console build; the GUI build is made with `glutter-windows build`). Do not use an account whose `%LOCALAPPDATA%\radio-tutor` holds data you want to keep; a throwaway user is best. The unit tests of all of this pass under Wine (`scripts/test-windows.sh`); these are the parts a headless Wine cannot prove.
+Needs a real Windows 10 (1809 or later) or 11 PC and a Windows build of the app (`scripts/build-windows.sh -release` gives `radio-tutor.exe` and `radio-tutor-cli.exe`; below, `radio-tutor-console.exe` means `radio-tutor-cli.exe`). Do not use an account whose `%LOCALAPPDATA%\radio-tutor` holds data you want to keep; a throwaway user is best. The unit tests of all of this pass under Wine (`scripts/test-windows.sh`); these are the parts a headless Wine cannot prove.
 
 1. **Data folders.** Start the app, create the admin, close it. In Explorer (`%LOCALAPPDATA%\radio-tutor`): are there `config` (`settings.json`), `data` (`profiles.json`) and `state` (`radio-tutor.log`, `lock`)? Is there nothing under `%APPDATA%\radio-tutor`? Add an AI provider with a key, then in PowerShell: `icacls "$env:LOCALAPPDATA\radio-tutor\config\providers.json"`: only your own user may be listed (with full access), no `Users`, no `Everyone`, and no inherited entries.
 2. **The lock with two instances.** Start the app, then start `radio-tutor-console.exe` again, or the GUI a second time: the second one must show the small window "Radio Tutor is already running" (GUI) or print it and exit with code 2 (console: `echo %ERRORLEVEL%`). Close the first one: the second start now works. Kill the first with Task Manager instead: the next start must work too (the OS drops the lock).
@@ -188,3 +188,15 @@ Needs a real Windows 10 (1809 or later) or 11 PC and a Windows build of the app 
 5. **Folders and files on a real NTFS.** Import a cassette, take a photo submission, rename nothing: then check that a cassette with a lesson id such as `con` is refused when imported, and that a student named `nul` cannot be created.
 6. **Language.** On a PC whose Windows display language is Greek, a first run offers Greek (the locale is read from the system, since `LANG` is not set on Windows).
 7. **Packaging.** SmartScreen warns about the unsigned `.exe` (More info, Run anyway); the README says so.
+
+## W.2 Windows: the packaged app on a real PC
+
+The Wine smoke test (`go test -tags radiotutor_wine ./cmd/radio-tutor`) proves that the two `.exe` files build, that the app opens, draws its first-run screen (in English and in Greek) and ends cleanly, and that the console exe validates and packs cassettes. Under Wine the app draws with Glutter's GDI fallback and there is no sound, no real taskbar and no firewall, so a person has to check, on a real Windows 10 (1809 or later) or 11 PC with a throwaway user, with the two `.exe` files made by `scripts/build-windows.sh -release` (copy `dist/windows` to the PC):
+
+1. **Start.** Double-click `radio-tutor.exe`. SmartScreen warns (More info, Run anyway). The window opens with the first-run screen, in the language of Windows (English or Greek), without a console window.
+2. **Icon.** The cassette icon shows in the title bar, the taskbar, Alt+Tab and the file in Explorer (right-click, Properties, Details: product name "Radio Tutor"). It looks sharp at 100% and 150% scale.
+3. **Rendering.** The window draws smoothly (Direct3D 12) when you resize it and move it between monitors of different scales; if it does not, run with `GLUTTER_RENDERER=soft` and tell which one fails.
+4. **A lesson with sound.** Create the parent account and a student, import `testdata/cassettes/sample.cassette`, play a lesson as the student: narration, captions and animation stay in step (see also the waveOut section above).
+5. **The phone flow with the firewall prompt.** Open a worksheet, press Check my answers: Windows Defender Firewall asks; allow on private networks. The QR code opens the page on a phone on the same Wi-Fi, a photo arrives (see W.1, item 4 for the refused prompt).
+6. **Grading.** With an AI provider set up, a photo of a solved exercise is graded and the next lesson unlocks.
+7. **The commands.** In PowerShell: `.\radio-tutor-cli.exe validate sample.cassette` prints the result; `.\radio-tutor.exe version` prints the message that points to `radio-tutor-cli.exe` (in the same terminal, not a message box), and a double click on a shortcut with an argument shows the message box.

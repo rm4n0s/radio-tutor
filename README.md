@@ -1,6 +1,6 @@
 # Radio Tutor
 
-Radio Tutor is a desktop tutoring app for children on Linux. It plays **cassettes**: files with short animated, narrated lessons and paper-and-pencil exercises for one subject (math, a language, history, anything a book teaches). An AI agent can write the cassettes for you from a book or a subject. A vision-capable AI model, in the cloud or on your own computer, checks the child's work from photos. Parents keep control: you create the profiles, choose the AI provider, see every photo and can overrule the AI.
+Radio Tutor is a desktop tutoring app for children on Linux and Windows. It plays **cassettes**: files with short animated, narrated lessons and paper-and-pencil exercises for one subject (math, a language, history, anything a book teaches). An AI agent can write the cassettes for you from a book or a subject. A vision-capable AI model, in the cloud or on your own computer, checks the child's work from photos. Parents keep control: you create the profiles, choose the AI provider, see every photo and can overrule the AI.
 
 A session of a child:
 
@@ -14,9 +14,9 @@ Everything stays on your computer, except the photos and the exercise text, whic
 
 ## Requirements
 
-- Linux with a desktop session (Wayland or X11) and a graphics driver (Vulkan or OpenGL ES, which any current desktop has).
+- Linux with a desktop session (Wayland or X11) and a graphics driver (Vulkan or OpenGL ES, which any current desktop has), or Windows 10 (version 1809 or later) or 11 on a 64-bit PC (see [Windows](#windows)).
 - Go 1.27 to build the program. No C compiler is needed.
-- PulseAudio, or PipeWire with `pipewire-pulse`, for the lesson sound. Without it the lessons play silently.
+- PulseAudio, or PipeWire with `pipewire-pulse`, for the lesson sound on Linux (Windows needs nothing). Without it the lessons play silently.
 - A phone with a camera on the same Wi-Fi (or network) as the computer.
 - A vision-capable AI provider: a cloud service with your own key, or a local server such as Ollama.
 - To make your own cassettes: an AI agent that can run commands, `ffmpeg` and a text-to-speech program ([details](docs/CASSETTE-AUTHORING-PROMPT.md)).
@@ -102,6 +102,31 @@ Press **Test** on the provider: the app sends a small picture of "2 + 3 = 5" and
 
 API keys are kept in `providers.json`, readable only by you. If the file is readable by others the app refuses to use it and tells you to run `chmod 600` on it.
 
+## Windows
+
+Radio Tutor runs on Windows 10 (version 1809 or later) and Windows 11, on 64-bit Intel and AMD PCs (and ARM64 builds, which are built but not tested). There is no installer.
+
+To get the program, build it on any computer that has Go 1.27 (Linux or Windows; no C compiler and no SDK are needed):
+
+```
+scripts/build-windows.sh -release          # on Linux; writes dist/windows/
+```
+
+The script (`-o dir` for another folder, `-arch amd64,arm64` for more architectures) makes two files from the same code, with the icon and the Windows manifest inside:
+
+| File | Is |
+|---|---|
+| `radio-tutor.exe` | the application: double-click it. It has no console window. Given a command it only says that the commands are in the other file |
+| `radio-tutor-cli.exe` | the same program as a console program, for the commands `validate`, `pack`, `reset-password` and `version`; run it in PowerShell or `cmd.exe`, for example `radio-tutor-cli.exe validate my.cassette` |
+
+Copy both to a folder of your choice, for example `C:\Users\<you>\RadioTutor\`. Everything else on this page applies, with these differences:
+
+- **Data folders.** Everything is under `%LOCALAPPDATA%\radio-tutor` (usually `C:\Users\<you>\AppData\Local\radio-tutor`): `config\` (`settings.json`, `providers.json` with the API keys), `data\` (`profiles.json`, `cassettes\`, `progress\`, `photos\`) and `state\` (`radio-tutor.log`, the lock file). It is the local folder, not the roaming one, so that keys and photos do not sync to a server or to OneDrive. To back up, close Radio Tutor and copy the `config` and `data` folders.
+- **SmartScreen.** The program is not signed, so Windows shows "Windows protected your PC" the first time. Press **More info**, then **Run anyway**.
+- **Firewall.** The first time the phone page starts, Windows Defender Firewall asks whether to let Radio Tutor communicate on the network. Allow it on **private networks** (your home Wi-Fi); without that the phone cannot open the page. If you pressed Cancel, allow `radio-tutor.exe` in Windows Security, Firewall and network protection, Allow an app through firewall. Nothing needs to be opened by hand as on Linux.
+- **Sound** goes to the default playback device of Windows. Without a device the lessons play silently.
+- **Forgotten password:** close Radio Tutor and run `radio-tutor-cli.exe reset-password <username>` in a terminal.
+
 ## Making cassettes
 
 You do not write cassettes by hand. Give an AI agent that can run commands your book or subject and the prompt in [docs/CASSETTE-AUTHORING-PROMPT.md](docs/CASSETTE-AUTHORING-PROMPT.md); it writes the lessons, makes the narration and packs the file. The format it follows is in [docs/CASSETTE-FORMAT.md](docs/CASSETTE-FORMAT.md). To check or pack a cassette yourself:
@@ -115,7 +140,7 @@ radio-tutor pack my-cassette/ my.cassette    # validates first; --force replaces
 
 ## Where the data lives
 
-Radio Tutor follows the XDG folders (`XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_STATE_HOME`; the defaults are shown):
+On Linux, Radio Tutor follows the XDG folders (`XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG_STATE_HOME`; the defaults are shown):
 
 | Folder | Holds |
 |---|---|
@@ -123,7 +148,7 @@ Radio Tutor follows the XDG folders (`XDG_CONFIG_HOME`, `XDG_DATA_HOME` and `XDG
 | `~/.local/share/radio-tutor/` | `profiles.json` (with password hashes), `cassettes/`, `progress/<user>/` (save files), `photos/<user>/` (the children's photos) |
 | `~/.local/state/radio-tutor/` | `radio-tutor.log` (add `RADIO_TUTOR_DEBUG=1` to the environment for more detail), the lock file |
 
-Photos stay until you delete them (Progress, per submission or per student). A file that cannot be read is not overwritten: it is renamed to `<name>.broken-<time>` next to it and the app starts with an empty value.
+On Windows the folders are inside `%LOCALAPPDATA%\radio-tutor` (see [Windows](#windows)). Photos stay until you delete them (Progress, per submission or per student). A file that cannot be read is not overwritten: it is renamed to `<name>.broken-<time>` next to it and the app starts with an empty value.
 
 ## Backing up
 
