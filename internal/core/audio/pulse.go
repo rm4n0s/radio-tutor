@@ -2,19 +2,19 @@ package audio
 
 import (
 	"context"
-	"math"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/jfreymuth/pulse"
-	"github.com/jfreymuth/pulse/proto"
 	"github.com/rm4n0s/errors"
+	"github.com/rm4n0s/radio-tutor/internal/core/pulse"
+	"github.com/rm4n0s/radio-tutor/internal/core/pulse/proto"
 )
 
 // PulseSink plays through a PulseAudio server over the PulseAudio protocol,
-// with github.com/jfreymuth/pulse (pure Go, no cgo). PipeWire serves the same
+// with internal/core/pulse (pure Go, no cgo; a copy of
+// github.com/jfreymuth/pulse, see its LICENSE). PipeWire serves the same
 // protocol (pipewire-pulse), so this is the sink on a current Linux desktop.
 //
 // How the library works, and what the sink does with it. The library is
@@ -24,13 +24,16 @@ import (
 // running until the Player stops it (which lets Pause work to the last
 // moment and keeps the library out of its end-of-data states).
 //
-// Pause closes the stream and Resume opens a new one that continues from the
-// played position (the Source is asked to SeekFrame there), instead of
-// corking and uncorking one stream. The library deadlocks on cork and uncork:
-// the server answers an uncork with a "started" event, which the library
-// hands to a channel nobody reads, which blocks its connection loop, and
-// every later request times out (found against PipeWire's PulseAudio server).
-// A new stream costs a few milliseconds.
+// Pause corks the stream (the server stops playing it at once and the
+// library stops calling the reader) and Resume uncorks the same stream, which
+// goes on with the samples the Source gives next; the server keeps the audio
+// that was already in its buffer and plays it after the uncork, so nothing is
+// skipped or repeated and the Source is never moved. (With the upstream
+// library this deadlocked: the server answers an uncork with a "started"
+// event, which the library handed to a channel nobody read, which blocked
+// its connection loop, and every later request timed out, found against
+// PipeWire's PulseAudio server. The copy in internal/core/pulse never blocks
+// its connection loop.)
 //
 // The library has no played-position call. The sink asks the server for it:
 // every pollInterval it sends a GetPlaybackLatency request and computes
@@ -40,11 +43,14 @@ import (
 // where the read index counts the bytes that have left the stream's buffer
 // toward the device and latency is the time from there to the speakers
 // (equivalently: the samples written, minus the ones still in the buffer,
-// minus the device latency). Between two answers the position is
-// extrapolated with the Clock. The answers only correct the extrapolation;
-// the position never goes backwards (a correction that would move it back
-// holds it until time catches up). If the server stops answering, the
-// position goes on by the Clock, so a lesson still finishes.
+// minus the device latency). The read index stops while the stream is corked
+// and goes on after the uncork, so one stream counts the played time of the
+// whole play, pauses included. Between two answers the position is
+// extrapolated with the Clock, which is held while paused. The answers only
+// correct the extrapolation; the position never goes backwards (a correction
+// that would move it back holds it until time catches up). If the server
+// stops answering, the position goes on by the Clock, so a lesson still
+// finishes.
 type PulseSink struct {
 	backend pulseBackend
 	clock   Clock
@@ -57,9 +63,7 @@ type PulseSink struct {
 	stream   pulseStream
 	stopPoll chan struct{}
 	closed   bool
-	src      Source // the source of the current play, kept while paused
-	format   Format // its format
-	paused   bool
+	paused   bool // the stream is corked
 }
 
 // PulseOptions configures NewPulseSink. The zero value is fine.
@@ -78,9 +82,11 @@ type PulseOptions struct {
 const connectTimeout = 5 * time.Second
 
 // NewPulseSink connects to the PulseAudio server. It fails, tagged
-// PulseNoServer, PulseConnectFailed, PulseConnectTimeout or
-// PulseConnectCanceled, when no server can be reached, and the caller may fall
-// back to a SilentSink (OpenDefaultSink does). The library reads the
+// PulseNoServer, PulseConnectTimeout or PulseConnectCanceled, or with the
+// tagged error of the pulse package (such as PulseDialFailed,
+// PulseCookieReadFailed or PulseRequestRejected), when no server can be
+// reached, and the caller may fall back to a SilentSink (OpenDefaultSink
+// does). The library reads the
 // authentication cookie from $PULSE_COOKIE or ~/.config/pulse/cookie, as
 // every PulseAudio client does; a server that allows anonymous clients needs
 // none.
@@ -136,7 +142,7 @@ func dialPulse(ctx context.Context, timeout time.Duration, opts ...PulseOptions)
 	select {
 	case r := <-done:
 		if r.err != nil {
-			return nil, errors.NewErr("PulseConnectFailed", r.err).SetMetadata("server", server)
+			return nil, r.err // tagged by the pulse package
 		}
 		return newPulseSink(&libBackend{client: r.c, name: o.AppName}, o.Clock), nil
 	case <-ctx.Done():
@@ -176,7 +182,8 @@ func (s *PulseSink) Name() string { return "pulse" }
 
 // Start opens a playback stream for src and starts it; any earlier stream is
 // closed first. It fails, tagged PulseClosed, PulseFormatUnsupported,
-// PulseStreamFailed, PulseStartTimeout or PulseStartCanceled.
+// PulseStartTimeout or PulseStartCanceled, or with the tagged error of the
+// pulse package when the server refuses the stream.
 func (s *PulseSink) Start(ctx context.Context, src Source, f Format) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -196,10 +203,9 @@ func (s *PulseSink) Start(ctx context.Context, src Source, f Format) error {
 	if err != nil {
 		return err
 	}
-	s.src, s.format = src, f
 	s.stream = stream
 	s.track.start()
-	s.beginPolling(stream, 0)
+	s.beginPolling(stream)
 	return nil
 }
 
@@ -213,7 +219,7 @@ func (s *PulseSink) openStream(ctx context.Context, src Source, f Format) (pulse
 	}
 	stream, err := s.backend.open(read, f)
 	if err != nil {
-		return nil, errors.NewErr("PulseStreamFailed", err)
+		return nil, err // tagged by the pulse package
 	}
 
 	// The library's Start waits for the server's "started" event, which may
@@ -239,31 +245,39 @@ func (s *PulseSink) openStream(ctx context.Context, src Source, f Format) (pulse
 
 // beginPolling takes the first measurement and starts the poll loop. The
 // caller keeps s.mu.
-//
-// offset is the seconds of the source before the stream's first sample (the
-// server counts from the stream's own start).
-func (s *PulseSink) beginPolling(stream pulseStream, offset float64) {
-	s.observe(stream, offset)
+func (s *PulseSink) beginPolling(stream pulseStream) {
+	s.observe(stream)
 	s.stopPoll = make(chan struct{})
-	go s.pollLoop(stream, offset, s.stopPoll)
+	go s.pollLoop(stream, s.stopPoll)
 }
 
-// Pause holds the position and closes the stream (see the PulseSink
-// documentation for why it is not corked).
+// stopPollingLocked ends the poll loop, if there is one. The caller keeps s.mu.
+func (s *PulseSink) stopPollingLocked() {
+	if s.stopPoll != nil {
+		close(s.stopPoll)
+		s.stopPoll = nil
+	}
+}
+
+// Pause holds the position and corks the stream (see the PulseSink
+// documentation). It returns when the server has answered the cork, which
+// takes a round trip.
 func (s *PulseSink) Pause() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.stream == nil {
+	if s.stream == nil || s.paused {
 		return
 	}
 	s.track.pause()
-	s.closeStreamLocked()
+	s.stopPollingLocked()
+	s.stream.Pause()
 	s.paused = true
 }
 
-// Resume opens a new stream that continues at the position Pause held. It
-// fails like Start does (PulseStreamFailed, PulseStartTimeout,
-// PulseStartCanceled) and then stays paused.
+// Resume uncorks the stream Pause corked; it goes on from where it stopped.
+// It fails with PulseStartCanceled when ctx is done, or with the tagged error
+// of the pulse package when the server does not answer the uncork, and then
+// stays paused.
 func (s *PulseSink) Resume(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -273,17 +287,12 @@ func (s *PulseSink) Resume(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return errors.NewErr("PulseStartCanceled", err)
 	}
-	held := s.track.position()
-	frame := int64(math.Round(held * float64(s.format.SampleRate)))
-	s.src.SeekFrame(frame)
-	stream, err := s.openStream(ctx, s.src, s.format)
-	if err != nil {
-		return err
+	if err := s.stream.Resume(); err != nil {
+		return err // tagged by the pulse package
 	}
 	s.paused = false
-	s.stream = stream
 	s.track.resume()
-	s.beginPolling(stream, float64(frame)/float64(s.format.SampleRate))
+	s.beginPolling(s.stream)
 	return nil
 }
 
@@ -314,22 +323,19 @@ func (s *PulseSink) Position() float64 { return s.track.position() }
 func (s *PulseSink) stopLocked() {
 	s.closeStreamLocked()
 	s.track.stop()
-	s.src, s.paused = nil, false
+	s.paused = false
 }
 
 // closeStreamLocked stops polling and closes the stream, if there is one.
 func (s *PulseSink) closeStreamLocked() {
-	if s.stopPoll != nil {
-		close(s.stopPoll)
-		s.stopPoll = nil
-	}
+	s.stopPollingLocked()
 	if s.stream != nil {
 		s.stream.Close()
 		s.stream = nil
 	}
 }
 
-func (s *PulseSink) pollLoop(stream pulseStream, offset float64, stop <-chan struct{}) {
+func (s *PulseSink) pollLoop(stream pulseStream, stop <-chan struct{}) {
 	t := time.NewTicker(s.pollInterval)
 	defer t.Stop()
 	for {
@@ -337,13 +343,13 @@ func (s *PulseSink) pollLoop(stream pulseStream, offset float64, stop <-chan str
 		case <-stop:
 			return
 		case <-t.C:
-			s.observe(stream, offset)
+			s.observe(stream)
 		}
 	}
 }
 
 // observe asks the server how much has been played and corrects the tracker.
-func (s *PulseSink) observe(stream pulseStream, offset float64) {
+func (s *PulseSink) observe(stream pulseStream) {
 	epoch, running := s.track.token()
 	if !running {
 		return
@@ -352,7 +358,7 @@ func (s *PulseSink) observe(stream pulseStream, offset float64) {
 	if !ok {
 		return
 	}
-	s.track.observe(epoch, pos+offset, at)
+	s.track.observe(epoch, pos, at)
 }
 
 // pulseBackend is the part of the library the sink uses, so that the sink's
@@ -367,6 +373,12 @@ type pulseBackend interface {
 type pulseStream interface {
 	// Start blocks until the stream runs (or the library gives up waiting).
 	Start()
+	// Pause corks the stream: the server stops playing it and does not ask
+	// for data.
+	Pause()
+	// Resume uncorks a paused stream; it fails when the server does not
+	// answer. The stream is paused again after a failure.
+	Resume() error
 	// Close ends the stream. It is safe to call it once.
 	Close()
 	// played asks the server for the played position in seconds, and the
@@ -406,6 +418,19 @@ type libStream struct {
 }
 
 func (l *libStream) Start() { l.s.Start() }
+
+func (l *libStream) Pause() { l.s.Pause() }
+
+func (l *libStream) Resume() error {
+	l.s.Resume()
+	if err := l.s.Error(); err != nil {
+		// The library thinks the stream runs now; make it paused again, so
+		// that a later Resume sends the uncork again.
+		l.s.Pause()
+		return err
+	}
+	return nil
+}
 
 // Close corks the stream first, so that the server does not ask for data
 // while the stream is being deleted (the library does not expect that).

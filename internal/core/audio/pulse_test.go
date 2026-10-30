@@ -14,11 +14,12 @@ import (
 
 // fakeBackend is a pulseBackend without a server.
 type fakeBackend struct {
-	mu      sync.Mutex
-	openErr error
-	gate    chan struct{} // when set, streams' Start blocks until it is closed
-	streams []*fakeStream
-	closed  bool
+	mu        sync.Mutex
+	openErr   error
+	resumeErr error         // when set, streams' Resume fails with it
+	gate      chan struct{} // when set, streams' Start blocks until it is closed
+	streams   []*fakeStream
+	closed    bool
 }
 
 func (b *fakeBackend) open(read func([]float32) (int, error), f Format) (pulseStream, error) {
@@ -27,7 +28,7 @@ func (b *fakeBackend) open(read func([]float32) (int, error), f Format) (pulseSt
 	if b.openErr != nil {
 		return nil, b.openErr
 	}
-	s := &fakeStream{read: read, format: f, gate: b.gate}
+	s := &fakeStream{read: read, format: f, gate: b.gate, backend: b}
 	b.streams = append(b.streams, s)
 	return s, nil
 }
@@ -47,9 +48,10 @@ func (b *fakeBackend) stream(i int) *fakeStream {
 // fakeStream is a pulseStream that records calls and answers played with a
 // scripted position.
 type fakeStream struct {
-	read   func([]float32) (int, error)
-	format Format
-	gate   chan struct{}
+	read    func([]float32) (int, error)
+	format  Format
+	gate    chan struct{}
+	backend *fakeBackend
 
 	mu       sync.Mutex
 	calls    []string
@@ -69,6 +71,20 @@ func (s *fakeStream) Start() {
 		<-s.gate
 	}
 }
+func (s *fakeStream) Pause() { s.record("pause") }
+
+func (s *fakeStream) Resume() error {
+	s.backend.mu.Lock()
+	err := s.backend.resumeErr
+	s.backend.mu.Unlock()
+	if err != nil {
+		s.record("resume failed")
+		return err
+	}
+	s.record("resume")
+	return nil
+}
+
 func (s *fakeStream) Close() { s.record("close") }
 
 func (s *fakeStream) Calls() []string {
@@ -133,7 +149,7 @@ func TestPulseSinkPosition(t *testing.T) {
 	// The server says 0.15 s were played 0 ms ago: behind the extrapolation,
 	// so the position holds, then goes on once time has caught up.
 	st.setAnswer(func(time.Time) (float64, bool) { return 0.15, true })
-	s.observe(st, 0)
+	s.observe(st)
 	if !near(s.Position(), 0.2) {
 		t.Fatalf("position went back to %v", s.Position())
 	}
@@ -148,61 +164,127 @@ func TestPulseSinkPosition(t *testing.T) {
 
 	// A server ahead of the clock moves the position forward at once.
 	st.setAnswer(func(time.Time) (float64, bool) { return 0.5, true })
-	s.observe(st, 0)
+	s.observe(st)
 	if !near(s.Position(), 0.5) {
 		t.Fatalf("position = %v, want 0.5", s.Position())
 	}
 
 	// No answer: the clock goes on.
 	st.setAnswer(func(time.Time) (float64, bool) { return 0, false })
-	s.observe(st, 0)
+	s.observe(st)
 	clock.Advance(ms(100))
 	if !near(s.Position(), 0.6) {
 		t.Fatalf("position = %v, want 0.6", s.Position())
 	}
 
-	// Pause holds, even when the server still answers; the stream is closed.
+	// Pause holds, even when the server still answers; the stream is corked,
+	// not closed.
 	s.Pause()
 	st.setAnswer(func(time.Time) (float64, bool) { return 0.9, true })
-	s.observe(st, 0)
+	s.observe(st)
 	clock.Advance(ms(1000))
 	if !near(s.Position(), 0.6) {
 		t.Fatalf("position while paused = %v", s.Position())
 	}
-	if got := st.Calls(); !slices.Equal(got, []string{"start", "close"}) {
+	if got := st.Calls(); !slices.Equal(got, []string{"start", "pause"}) {
 		t.Fatalf("stream calls after Pause = %v", got)
 	}
 
-	// Resume opens a new stream, continuing at the held position.
+	// Resume uncorks the same stream; the source is not moved, and the clock
+	// goes on from the held position.
+	srcPos := src.pos
+	st.setAnswer(func(time.Time) (float64, bool) { return 0, false })
 	if err := s.Resume(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if got := src.pos; got != 600 {
-		t.Fatalf("the source was moved to frame %d, want 600", got)
+	if src.pos != srcPos {
+		t.Fatalf("the source was moved from %d to %d", srcPos, src.pos)
 	}
-	st2 := b.stream(1)
+	if len(b.streams) != 1 {
+		t.Fatalf("%d streams opened, want the one", len(b.streams))
+	}
 	clock.Advance(ms(100))
 	if !near(s.Position(), 0.7) {
 		t.Fatalf("position after resume = %v", s.Position())
 	}
-	// The new stream counts from its own start: 0.12 s into it is 0.72 s of
-	// the clip.
-	st2.setAnswer(func(time.Time) (float64, bool) { return 0.12, true })
-	s.observe(st2, 0.6)
+	// The stream counts from its own start and not while corked: 0.72 s into
+	// it is 0.72 s of the clip.
+	st.setAnswer(func(time.Time) (float64, bool) { return 0.72, true })
+	s.observe(st)
 	if !near(s.Position(), 0.72) {
-		t.Fatalf("position after an observation of the new stream = %v", s.Position())
+		t.Fatalf("position after an observation of the stream = %v", s.Position())
 	}
 
 	s.Stop()
 	if s.Position() != 0 {
 		t.Fatalf("position after Stop = %v", s.Position())
 	}
-	if got := st2.Calls(); !slices.Equal(got, []string{"start", "close"}) {
-		t.Fatalf("second stream calls = %v", got)
+	if got := st.Calls(); !slices.Equal(got, []string{"start", "pause", "resume", "close"}) {
+		t.Fatalf("stream calls = %v", got)
 	}
 	// After Stop there is nothing to resume.
-	if err := s.Resume(context.Background()); err != nil || len(b.streams) != 2 {
+	if err := s.Resume(context.Background()); err != nil || len(b.streams) != 1 {
 		t.Fatalf("Resume after Stop: %v, %d streams", err, len(b.streams))
+	}
+}
+
+func TestPulseSinkPauseResumeCycles(t *testing.T) {
+	// Many pauses and resumes keep to one stream, and the position holds at
+	// every pause.
+	tests := []struct {
+		name   string
+		cycles int
+	}{
+		{"one", 1},
+		{"two", 2},
+		{"many", 20},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clock := NewFakeClock(epoch)
+			s, b := newFakePulse(clock)
+			src := &clipSource{samples: make([]float32, 100000), channels: 1}
+			if err := s.Start(context.Background(), src, mono1k); err != nil {
+				t.Fatal(err)
+			}
+			want := []string{"start"}
+			played := 0.0
+			for range tt.cycles {
+				clock.Advance(ms(100))
+				played += 0.1
+				s.Pause()
+				clock.Advance(ms(500)) // not counted
+				if !near(s.Position(), played) {
+					t.Fatalf("position while paused = %v, want %v", s.Position(), played)
+				}
+				if err := s.Resume(context.Background()); err != nil {
+					t.Fatal(err)
+				}
+				want = append(want, "pause", "resume")
+			}
+			clock.Advance(ms(100))
+			if !near(s.Position(), played+0.1) {
+				t.Fatalf("position = %v, want %v", s.Position(), played+0.1)
+			}
+			if len(b.streams) != 1 {
+				t.Fatalf("%d streams opened, want 1", len(b.streams))
+			}
+			if got := b.stream(0).Calls(); !slices.Equal(got, want) {
+				t.Fatalf("stream calls = %v, want %v", got, want)
+			}
+			// Pause twice and Resume twice do nothing the second time.
+			s.Pause()
+			s.Pause()
+			if err := s.Resume(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.Resume(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			if got := b.stream(0).Calls(); !slices.Equal(got, append(want, "pause", "resume")) {
+				t.Fatalf("stream calls after the doubled calls = %v", got)
+			}
+		})
 	}
 }
 
@@ -311,22 +393,23 @@ func TestPulseSinkErrors(t *testing.T) {
 		ctx   func() (context.Context, context.CancelFunc)
 		f     Format
 		route string
+		is    error // when set, the error is this one, passed up from the library untouched
 	}{
-		{"zero sample rate", nil, nil, Format{Channels: 1}, "PulseSink.Start.PulseFormatUnsupported"},
-		{"three channels", nil, nil, Format{SampleRate: 1000, Channels: 3}, "PulseSink.Start.PulseFormatUnsupported"},
-		{"closed", func(s *PulseSink, _ *fakeBackend) { s.Close() }, nil, mono1k, "PulseSink.Start.PulseClosed"},
-		{"cancelled before", nil, func() (context.Context, context.CancelFunc) { return cancelled, func() {} }, mono1k, "PulseSink.Start.PulseStartCanceled"},
-		{"the server refuses the stream", func(_ *PulseSink, b *fakeBackend) { b.openErr = downErr }, nil, mono1k, "PulseSink.Start->PulseSink.openStream.PulseStreamFailed"},
+		{"zero sample rate", nil, nil, Format{Channels: 1}, "PulseSink.Start.PulseFormatUnsupported", nil},
+		{"three channels", nil, nil, Format{SampleRate: 1000, Channels: 3}, "PulseSink.Start.PulseFormatUnsupported", nil},
+		{"closed", func(s *PulseSink, _ *fakeBackend) { s.Close() }, nil, mono1k, "PulseSink.Start.PulseClosed", nil},
+		{"cancelled before", nil, func() (context.Context, context.CancelFunc) { return cancelled, func() {} }, mono1k, "PulseSink.Start.PulseStartCanceled", nil},
+		{"the server refuses the stream", func(_ *PulseSink, b *fakeBackend) { b.openErr = downErr }, nil, mono1k, "", downErr},
 		{"the stream never starts", func(s *PulseSink, b *fakeBackend) {
 			b.gate = make(chan struct{})
 			s.startTimeout = 20 * time.Millisecond
-		}, nil, mono1k, "PulseSink.Start->PulseSink.openStream.PulseStartTimeout"},
+		}, nil, mono1k, "PulseSink.Start->PulseSink.openStream.PulseStartTimeout", nil},
 		{"cancelled while starting", func(_ *PulseSink, b *fakeBackend) { b.gate = make(chan struct{}) },
 			func() (context.Context, context.CancelFunc) {
 				ctx, cancel := context.WithCancel(context.Background())
 				time.AfterFunc(20*time.Millisecond, cancel)
 				return ctx, cancel
-			}, mono1k, "PulseSink.Start->PulseSink.openStream.PulseStartCanceled"},
+			}, mono1k, "PulseSink.Start->PulseSink.openStream.PulseStartCanceled", nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -343,7 +426,14 @@ func TestPulseSinkErrors(t *testing.T) {
 			}
 			defer cancel()
 			err := s.Start(ctx, &clipSource{channels: 1}, tt.f)
-			wantRoute(t, err, tt.route)
+			if tt.is != nil {
+				// Tagged by the library and passed up as it is: not wrapped again.
+				if err != tt.is {
+					t.Fatalf("err = %v, want the library's error %v", err, tt.is)
+				}
+			} else {
+				wantRoute(t, err, tt.route)
+			}
 			if s.Position() != 0 {
 				t.Fatalf("position after a failed Start = %v", s.Position())
 			}
@@ -369,19 +459,17 @@ func TestPulseSinkErrors(t *testing.T) {
 func TestPulseSinkResumeErrors(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
+	downErr := errors.New("TestServerDown", "down")
 	tests := []struct {
 		name  string
 		setup func(s *PulseSink, b *fakeBackend)
 		ctx   context.Context
 		route string
+		is    error // when set, the error is this one, passed up from the library untouched
 	}{
-		{"the server refuses the new stream", func(_ *PulseSink, b *fakeBackend) { b.openErr = errors.New("TestServerDown", "down") },
-			context.Background(), "PulseSink.Resume->PulseSink.openStream.PulseStreamFailed"},
-		{"the new stream never starts", func(s *PulseSink, b *fakeBackend) {
-			b.gate = make(chan struct{})
-			s.startTimeout = 20 * time.Millisecond
-		}, context.Background(), "PulseSink.Resume->PulseSink.openStream.PulseStartTimeout"},
-		{"cancelled", nil, cancelled, "PulseSink.Resume.PulseStartCanceled"},
+		{"the server does not answer the uncork", func(_ *PulseSink, b *fakeBackend) { b.resumeErr = downErr },
+			context.Background(), "", downErr},
+		{"cancelled", nil, cancelled, "PulseSink.Resume.PulseStartCanceled", nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -395,22 +483,29 @@ func TestPulseSinkResumeErrors(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(s, b)
 			}
-			if gate := b.gate; gate != nil {
-				t.Cleanup(func() { close(gate) })
+			err := s.Resume(tt.ctx)
+			if tt.is != nil {
+				if err != tt.is {
+					t.Fatalf("err = %v, want the library's error %v", err, tt.is)
+				}
+			} else {
+				wantRoute(t, err, tt.route)
 			}
-			wantRoute(t, s.Resume(tt.ctx), tt.route)
 			// Still paused, and a later Resume can succeed.
 			clock.Advance(ms(1000))
 			if !near(s.Position(), 0.3) {
 				t.Fatalf("position after a failed Resume = %v", s.Position())
 			}
-			b.openErr, b.gate = nil, nil
+			b.resumeErr = nil
 			if err := s.Resume(context.Background()); err != nil {
 				t.Fatalf("Resume after the failure: %v", err)
 			}
 			clock.Advance(ms(100))
 			if !near(s.Position(), 0.4) {
 				t.Fatalf("position after the second Resume = %v", s.Position())
+			}
+			if len(b.streams) != 1 {
+				t.Fatalf("%d streams opened, want 1", len(b.streams))
 			}
 		})
 	}
@@ -435,7 +530,7 @@ func TestPulseSinkInAPlayer(t *testing.T) {
 	last := 0.0
 	for range 100 {
 		clock.Advance(ms(5))
-		s.observe(st, 0)
+		s.observe(st)
 		pos := p.Position()
 		if pos < last {
 			t.Fatalf("position went back from %v to %v", last, pos)
@@ -513,9 +608,9 @@ func TestNewPulseSinkErrors(t *testing.T) {
 		{"no server known", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": ""}, context.Background(), PulseOptions{}, 0,
 			"NewPulseSink->dialPulse.PulseNoServer"},
 		{"no socket", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": filepath.Join(dir, "missing")}, context.Background(), PulseOptions{}, 0,
-			"NewPulseSink->dialPulse.PulseConnectFailed"},
+			"NewClient->Connect->connect.PulseDialFailed"},
 		{"explicit server without a socket", nil, context.Background(), PulseOptions{Server: "unix:" + filepath.Join(dir, "none")}, 0,
-			"NewPulseSink->dialPulse.PulseConnectFailed"},
+			"NewClient->Connect->connect.PulseDialFailed"},
 		{"cancelled", nil, cancelled, PulseOptions{Server: "unix:" + silent}, 0,
 			"NewPulseSink->dialPulse.PulseConnectCanceled"},
 		{"cancelled while connecting", nil, nil, PulseOptions{Server: "unix:" + silent}, 0,
@@ -553,8 +648,8 @@ func TestOpenDefaultSinkFallsBackToSilent(t *testing.T) {
 		route string
 	}{
 		{"no server known", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": ""}, "OpenDefaultSink->NewPulseSink->dialPulse.PulseNoServer"},
-		{"no socket at PULSE_SERVER", map[string]string{"PULSE_SERVER": "unix:" + filepath.Join(dir, "none")}, "OpenDefaultSink->NewPulseSink->dialPulse.PulseConnectFailed"},
-		{"no socket in the runtime dir", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": dir}, "OpenDefaultSink->NewPulseSink->dialPulse.PulseConnectFailed"},
+		{"no socket at PULSE_SERVER", map[string]string{"PULSE_SERVER": "unix:" + filepath.Join(dir, "none")}, "NewClient->Connect->connect.PulseDialFailed"},
+		{"no socket in the runtime dir", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": dir}, "NewClient->Connect->connect.PulseDialFailed"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

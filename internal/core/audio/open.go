@@ -7,7 +7,8 @@ import "context"
 // $XDG_RUNTIME_DIR/pulse/native, and otherwise a SilentSink. The sink is
 // never nil. When reason is not nil the SilentSink is a fallback, and reason
 // says why the server could not be used (an error tagged PulseNoServer,
-// PulseConnectFailed, PulseConnectTimeout or PulseConnectCanceled): the UI
+// PulseConnectTimeout or PulseConnectCanceled, or the tagged error of the
+// pulse package, such as PulseDialFailed): the UI
 // shows "No sound device found. The lesson plays without sound." once per
 // run (SPEC §8.1) and logs reason. The caller closes the sink.
 func OpenDefaultSink(ctx context.Context) (sink Sink, reason error) {

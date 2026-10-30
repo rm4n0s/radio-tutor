@@ -24,8 +24,9 @@ type Source interface {
 	// 0 when the source is at its end.
 	Read(dst []float32) int
 	// SeekFrame moves the next Read to the given frame (clamped to the
-	// length of the source). A sink that pauses by closing its stream uses it
-	// to continue where it was; the user can never seek (SPEC D5).
+	// length of the source). A sink that pauses by closing its stream would use
+	// it to continue where it was (PulseSink corks its stream and does not
+	// need it); the user can never seek (SPEC D5).
 	SeekFrame(frame int64)
 }
 
@@ -48,8 +49,8 @@ type Sink interface {
 	// playing.
 	Pause()
 	// Resume continues after Pause. It does nothing when not paused. It can
-	// fail where Start can (a sink may open a new stream to continue); the
-	// sink then stays paused.
+	// fail (a sink may have to ask the audio server); the sink then stays
+	// paused.
 	Resume(ctx context.Context) error
 	// Stop ends playback and sets the position to 0. The sink can be started
 	// again.

@@ -10,14 +10,16 @@ import (
 )
 
 // TestRealServerTone plays a 1 second 440 Hz tone through the real PulseAudio
-// (or PipeWire) server, with a pause of 300 ms in the middle that does not
-// count in the second. Run it by hand (docs/MANUAL-CHECKS.md, step 5.1):
+// (or PipeWire) server, with two pauses (300 ms at 0.3 s and 200 ms at 0.7 s)
+// that do not count in the second. Each pause corks the stream and each
+// resume uncorks it. Run it by hand (docs/MANUAL-CHECKS.md, pulse copy):
 //
 //	go test -tags radiotutor_audio -run TestRealServerTone -v ./internal/core/audio
 //
-// You should hear a 1 s tone, with a short gap in the middle. The test fails
-// if no server answers, if the position runs backwards, if the pause does not
-// hold the position, or if the clip does not end after about 1 s of playing.
+// You should hear a 1 s tone, with two short gaps. The test fails if no server
+// answers, if the position runs backwards, if a pause does not hold the
+// position, if a resume fails, or if the clip does not end after about 1 s of
+// playing.
 func TestRealServerTone(t *testing.T) {
 	const rate = 44100
 	clip := &Clip{SampleRate: rate, Channels: 1, Samples: make([]float32, rate)}
@@ -57,15 +59,22 @@ func TestRealServerTone(t *testing.T) {
 	for check() < 0.3 {
 		time.Sleep(10 * time.Millisecond)
 	}
-	p.Pause()
-	held := check()
-	time.Sleep(300 * time.Millisecond)
-	if got := check(); got != held {
-		t.Fatalf("position moved from %v to %v while paused", held, got)
+	pauseFor := func(d time.Duration) {
+		p.Pause()
+		held := check()
+		time.Sleep(d)
+		if got := check(); got != held {
+			t.Fatalf("position moved from %v to %v while paused", held, got)
+		}
+		if err := p.Play(ctx); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := p.Play(ctx); err != nil {
-		t.Fatal(err)
+	pauseFor(300 * time.Millisecond)
+	for check() < 0.7 {
+		time.Sleep(10 * time.Millisecond)
 	}
+	pauseFor(200 * time.Millisecond)
 
 	tick := time.NewTicker(10 * time.Millisecond)
 	defer tick.Stop()
@@ -75,9 +84,9 @@ func TestRealServerTone(t *testing.T) {
 			if got := check(); got != 1 {
 				t.Fatalf("position at the end = %v, want 1", got)
 			}
-			// 1 s of sound plus 0.3 s paused, plus the time Play and Pause took.
-			if took := time.Since(began); took < 1200*time.Millisecond || took > 3*time.Second {
-				t.Fatalf("the clip took %v of wall time, want about 1.3 s", took)
+			// 1 s of sound plus 0.5 s paused, plus the time Play and Pause took.
+			if took := time.Since(began); took < 1400*time.Millisecond || took > 3*time.Second {
+				t.Fatalf("the clip took %v of wall time, want about 1.5 s", took)
 			}
 			return
 		case <-tick.C:
