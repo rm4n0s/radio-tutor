@@ -10,8 +10,10 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 )
 
-// appID is the application ID of the window (the Wayland app_id).
-const appID = "dev.radiotutor.app"
+// ID is the application ID of Radio Tutor: the app_id of its windows on Wayland, the
+// class of its windows on X11, the AppUserModelID on Windows, and the name of its
+// icon and desktop entry (radio-tutor setup-desktop, SPEC §14).
+const ID = "dev.radiotutor.app"
 
 // Run starts the application and blocks until its window is closed or ctx is
 // done (SIGTERM and SIGINT cancel it, see QuitOnDone): it calls
@@ -44,7 +46,7 @@ func RunWith(ctx context.Context, opts StartOptions) error {
 // windowOpts are the RunApp options of a window.
 func windowOpts(title string, size, minSize m.Size, env *Env) m.RunAppOpts {
 	opts := m.RunAppOpts{
-		AppID:  appID,
+		AppID:  ID,
 		Window: m.WindowConfig{Title: title, Size: size, MinSize: minSize},
 	}
 	logger := slog.Default()

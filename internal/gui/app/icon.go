@@ -18,6 +18,11 @@ import (
 //go:embed icon.png
 var iconPNG []byte
 
+// IconPNG returns the icon of Radio Tutor as a PNG file (256 by 256 pixels), the
+// picture of the menu entry that radio-tutor setup-desktop installs. The caller
+// must not change the bytes.
+func IconPNG() []byte { return iconPNG }
+
 // iconSizes are the sizes of the pictures of the window icon, in pixels.
 var iconSizes = []int{32, 48, 64, 128, 256}
 

@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 
 	"github.com/rm4n0s/errors"
+	"github.com/rm4n0s/radio-tutor/internal/core/menuentry"
 )
 
 // Exit codes of the command.
@@ -24,6 +25,7 @@ Commands:
   validate [--json] <file.cassette|folder>   validate a cassette
   pack [--force] <folder> <out.cassette>     validate a folder and pack it
   reset-password <username>                  set a new password for a user
+  setup-desktop [--remove]                   add Radio Tutor to the application menu (or remove it)
   version                                    print the version
 `
 
@@ -91,6 +93,8 @@ func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stder
 		return packCommand(ctx, args[1:], cassetteDeps{stdout: stdout, stderr: stderr, render: defaultRender()})
 	case "reset-password":
 		return resetPassword(ctx, args[1:], resetDeps{stdin: stdin, stdout: stdout, stderr: stderr, echo: terminalEcho})
+	case "setup-desktop":
+		return setupDesktop(ctx, args[1:], setupDeps{stdout: stdout, stderr: stderr, env: menuentry.DefaultEnv()})
 	case "version":
 		if len(args) > 1 {
 			stderr.printf("radio-tutor version: takes no arguments\n")
