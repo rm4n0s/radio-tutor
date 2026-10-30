@@ -37,6 +37,9 @@ type homeState struct {
 	started    bool
 	generation atomic.Int64
 	reviews    int
+	// noticed is true once the notice at login was decided: it is shown at most
+	// once per home (that is, per login).
+	noticed bool
 }
 
 // DidChangeDependencies starts the first count (the Scope cannot be read in
@@ -55,10 +58,12 @@ func (s *homeState) reload() {
 	s.Go(func(ctx context.Context) { s.load(ctx, env) })
 }
 
-// load counts and shows the number; it runs on a goroutine.
+// load counts and shows the number; it runs on a goroutine. After the first
+// count of a login that found exercises waiting, it opens the notice (SPEC
+// §12.1).
 func (s *homeState) load(ctx context.Context, env *app.Env) {
 	gen := s.generation.Add(1)
-	counts, err := scanWaiting(ctx, env, nil)
+	items, err := scanQueue(ctx, env)
 	if err != nil {
 		if ctx.Err() == nil {
 			env.Log.Error("counting the exercises to review failed", "err", err)
@@ -66,8 +71,26 @@ func (s *homeState) load(ctx context.Context, env *app.Env) {
 		return
 	}
 	s.SetState(func() {
-		if s.generation.Load() == gen {
-			s.reviews = counts.total()
+		if s.generation.Load() != gen {
+			return
+		}
+		s.reviews = len(items)
+		if s.noticed {
+			return
+		}
+		s.noticed = true
+		if len(items) > 0 {
+			s.notify(items)
+		}
+	})
+}
+
+// notify opens the notice that exercises are waiting; Review now opens the
+// review screen. It runs on the UI thread.
+func (s *homeState) notify(items []waitingItem) {
+	showDialog(s, func(m.BuildContext) m.Widget { return newReviewNotice(items) }, func(now bool) {
+		if now {
+			s.open(s.Context(), func(m.BuildContext) m.Widget { return NewReviewQueue() })
 		}
 	})
 }

@@ -94,7 +94,15 @@ func (s *progressState) load(ctx context.Context, env *app.Env) {
 func (s *progressState) Build(bc m.BuildContext) m.Widget {
 	scope := app.ScopeOf(bc)
 	env := scope.Env()
-	children := []m.Widget{body(bc, scope.T("admin.progress.pick_student")), gap(app.Gap)}
+	var children []m.Widget
+	if n := s.waiting.total(); n > 0 {
+		children = append(children, m.NewAlign(m.NewFilledButtonIcon(func() {
+			openScreen(s, bc, func(m.BuildContext) m.Widget { return NewReviewQueue() }, func(ctx context.Context) { s.load(ctx, env) })
+		}, m.NewText(scope.T("admin.review.open", "n", itoa(n))), m.FilledButtonIconOpts{
+			Icon: m.NewIcon(m.Icons.Flag()), Key: m.NewValueKey(KeyOpenReview), Style: bigAction(),
+		}), m.AlignOpts{Alignment: m.AlignmentCenterLeft}), gap(app.Gap))
+	}
+	children = append(children, body(bc, scope.T("admin.progress.pick_student")), gap(app.Gap))
 	for _, p := range env.Profiles.List() {
 		children = append(children, s.row(bc, scope, env, p), gap(12))
 	}

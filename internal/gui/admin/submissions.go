@@ -326,7 +326,6 @@ func thumbnail(bc m.BuildContext, scope *app.Scope, key, path string, onTap func
 // now and the override buttons.
 func (s *submissionPageState) resultCard(bc m.BuildContext, scope *app.Scope, r progress.Result, act func(progress.Override)) m.Widget {
 	d := s.data
-	theme := m.ThemeOf(bc)
 	v := itemView{id: r.ExerciseID, label: r.ExerciseID, title: r.ExerciseID, state: d.States[r.ExerciseID], ep: d.Progress.Exercises[r.ExerciseID]}
 	if d.Cassette != nil {
 		if ex := d.Cassette.Exercises[r.ExerciseID]; ex != nil {
@@ -346,6 +345,20 @@ func (s *submissionPageState) resultCard(bc m.BuildContext, scope *app.Scope, r 
 		head = append(head, hgap(8), stateBadge(bc, scope, StateKey(SectionSubmission, r.ExerciseID), v.state))
 	}
 	children := []m.Widget{m.NewRow(head, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})}
+	children = append(children, resultTexts(bc, scope, r, r.ExerciseID)...)
+	if buttons := v.overrideButtons(scope, SectionSubmission, act); len(buttons) > 0 {
+		children = append(children, gap(12), m.NewWrap(buttons, m.WrapOpts{Spacing: 12, RunSpacing: 8}))
+	}
+	return m.NewCard(m.NewPadding(m.NewEdgeInsetsAll(app.Gap), m.NewColumn(children, m.ColumnOpts{CrossAxisAlignment: m.CrossAxisAlignmentStretch})),
+		m.CardOpts{Key: m.NewValueKey(KeyResultPrefix + r.ExerciseID), Margin: m.NewEdgeInsetsAll(0)})
+}
+
+// resultTexts are the texts of a result under their labels: what the grader read,
+// what the child was told and the notes for the parent (the ones that are not
+// empty). Their keys are the Key prefixes followed by suffix.
+func resultTexts(bc m.BuildContext, scope *app.Scope, r progress.Result, suffix string) []m.Widget {
+	theme := m.ThemeOf(bc)
+	var out []m.Widget
 	for _, f := range []struct{ key, label, text string }{
 		{KeyTranscriptionPrefix, "admin.submission.transcription", r.Transcription},
 		{KeyFeedbackPrefix, "admin.submission.feedback", r.FeedbackForChild},
@@ -354,14 +367,10 @@ func (s *submissionPageState) resultCard(bc m.BuildContext, scope *app.Scope, r 
 		if f.text == "" {
 			continue
 		}
-		children = append(children, gap(12), muted(bc, scope.T(f.label)), gap(2),
-			m.NewText(f.text, m.TextOpts{Key: m.NewValueKey(f.key + r.ExerciseID), Style: theme.TextTheme.BodyLarge}))
+		out = append(out, gap(12), muted(bc, scope.T(f.label)), gap(2),
+			m.NewText(f.text, m.TextOpts{Key: m.NewValueKey(f.key + suffix), Style: theme.TextTheme.BodyLarge}))
 	}
-	if buttons := v.overrideButtons(scope, SectionSubmission, act); len(buttons) > 0 {
-		children = append(children, gap(12), m.NewWrap(buttons, m.WrapOpts{Spacing: 12, RunSpacing: 8}))
-	}
-	return m.NewCard(m.NewPadding(m.NewEdgeInsetsAll(app.Gap), m.NewColumn(children, m.ColumnOpts{CrossAxisAlignment: m.CrossAxisAlignmentStretch})),
-		m.CardOpts{Key: m.NewValueKey(KeyResultPrefix + r.ExerciseID), Margin: m.NewEdgeInsetsAll(0)})
+	return out
 }
 
 // deletePhotos asks for confirmation, then deletes the photos of the submission

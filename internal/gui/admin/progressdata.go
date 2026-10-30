@@ -12,6 +12,7 @@ import (
 	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/cassette"
 	"github.com/rm4n0s/radio-tutor/internal/core/problem"
+	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 )
@@ -129,16 +130,18 @@ func (w waitingCounts) ofStudent(username string) int {
 	return n
 }
 
-// scanWaiting counts, for every profile and every installed cassette that can
-// be read, the exercises that wait for a parent (SPEC §12.3). The state is the
-// one the unlock rule computes (progress.States), the same the progress screen
-// shows, so the count never differs from what the admin finds there. Cassettes
-// that are not installed are not counted: nothing can be decided about them.
-// Only the listed usernames are looked at; nil means every profile.
-func scanWaiting(ctx context.Context, env *app.Env, usernames []string) (waitingCounts, error) {
+// walkWaiting visits, for every profile and every installed cassette that can
+// be read, the save file and the item states, in the order of the profiles, then
+// of the cassette ids. The state is the one the unlock rule computes
+// (progress.States), the same the progress screen shows, so the count and the
+// review queue never differ from what the admin finds there. Cassettes that are
+// not installed are not visited: nothing can be decided about them. Only the
+// listed usernames are looked at; nil means every profile.
+func walkWaiting(ctx context.Context, env *app.Env, usernames []string,
+	visit func(p profile.Profile, c *cassette.Cassette, prog *progress.Progress, states map[string]progress.ItemState)) error {
 	installed, err := env.Archive.List(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	loaded := map[string]*cassette.Cassette{}
 	for _, in := range installed {
@@ -148,39 +151,53 @@ func scanWaiting(ctx context.Context, env *app.Env, usernames []string) (waiting
 		c, err := openCassette(ctx, env, in.ID)
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil, err
+				return err
 			}
 			env.Log.Warn("a cassette cannot be counted for review", "cassette", in.ID, "err", err)
 			continue
 		}
 		loaded[in.ID] = c
 	}
-	out := waitingCounts{}
+	ids := sortedKeys(loaded)
 	for _, p := range env.Profiles.List() {
 		if usernames != nil && !slices.Contains(usernames, p.Username) {
 			continue
 		}
-		for id, c := range loaded {
+		for _, id := range ids {
+			c := loaded[id]
 			// A broken save file is set aside by Load, which returns a fresh
 			// Progress with the error; the screens that show the progress tell
-			// the admin, this count goes on.
+			// the admin, this walk goes on.
 			prog, err := env.Progress.Load(ctx, p.Username, id)
 			if prog == nil {
-				return nil, err
+				return err
 			}
-			n := 0
-			for itemID, state := range progress.States(c, prog) {
-				if state == progress.StateNeedsReview && c.Exercises[itemID] != nil {
-					n++
-				}
-			}
-			if n > 0 {
-				if out[p.Username] == nil {
-					out[p.Username] = map[string]int{}
-				}
-				out[p.Username][id] = n
+			visit(p, c, prog, progress.States(c, prog))
+		}
+	}
+	return nil
+}
+
+// scanWaiting counts, for every profile and every installed cassette that can
+// be read, the exercises that wait for a parent (SPEC §12.3); see walkWaiting.
+func scanWaiting(ctx context.Context, env *app.Env, usernames []string) (waitingCounts, error) {
+	out := waitingCounts{}
+	err := walkWaiting(ctx, env, usernames, func(p profile.Profile, c *cassette.Cassette, _ *progress.Progress, states map[string]progress.ItemState) {
+		n := 0
+		for itemID, state := range states {
+			if state == progress.StateNeedsReview && c.Exercises[itemID] != nil {
+				n++
 			}
 		}
+		if n > 0 {
+			if out[p.Username] == nil {
+				out[p.Username] = map[string]int{}
+			}
+			out[p.Username][c.Manifest.ID] = n
+		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	return out, nil
 }

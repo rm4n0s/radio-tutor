@@ -114,6 +114,10 @@ type config struct {
 	choose app.FileChooser
 	// screens are the admin screens of the later steps.
 	screens Screens
+	// keepNotice leaves the notice of waiting exercises open after the login;
+	// otherwise pump answers it with Later, so that the tests of the other
+	// screens find the home as it was.
+	keepNotice bool
 }
 
 // pump opens the app with an admin ("mum") and a student ("mia"), logs mum in
@@ -154,6 +158,17 @@ func pump(t *testing.T, c config) *testutil.App {
 	a.EnterKey(app.KeyPassword, adminPassword)
 	a.TapKey(app.KeySubmit)
 	a.WaitFor(t, "the admin home", func() bool { return a.HasKey(KeyStudents) })
+	// The notice of waiting exercises opens when the first count is in.
+	// (A broken environment, which some tests make on purpose, has none.)
+	counts, err := scanWaiting(context.Background(), a.Env, nil)
+	if err == nil && counts.total() > 0 {
+		waitKey(t, a, KeyReviewNotice)
+		if !c.keepNotice {
+			a.TapKey(KeyNoticeLater)
+			a.PumpAndSettle()
+			waitGone(t, a, KeyReviewNotice)
+		}
+	}
 	return a
 }
 
