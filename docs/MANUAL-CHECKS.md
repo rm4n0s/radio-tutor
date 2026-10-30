@@ -122,3 +122,13 @@ Uses throw-away data folders for the app (`scripts/isolated.sh`) and a computer 
    `XDG_CONFIG_HOME=<root>/config XDG_DATA_HOME=<root>/data XDG_STATE_HOME=<root>/state go run ./cmd/radio-tutor reset-password <username>`
    and run the app again with the same three variables: the new password must log in. Delete `<root>` afterwards.
 5. Is any sentence of the README wrong or unclear for someone who has never seen the app?
+
+## Volume setting (after 7.3): the slider is audible
+
+Needs a running PulseAudio or PipeWire server and real speakers. Throw-away data folders:
+
+```
+scripts/isolated.sh -- go run ./cmd/radio-tutor
+```
+
+Make a parent account, import `testdata/cassettes/sample.cassette`, and open Settings. Set the volume to 100, then to 50 and to 20 (drag the slider and let go; "Saved." appears), and play a lesson and the speaker button of an exercise after each change. Is each step quieter, evenly, with 20 still audible? At 0 the lesson plays in silence, its time runs and it can be completed. Does the slider keep its value after restarting the app?
