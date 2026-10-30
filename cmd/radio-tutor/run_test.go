@@ -34,6 +34,7 @@ func TestRun(t *testing.T) {
 		{name: "validate needs a path", args: []string{"validate"}, wantCode: 2, wantStderr: "usage: radio-tutor validate"},
 		{name: "pack needs two paths", args: []string{"pack", "a"}, wantCode: 2, wantStderr: "usage: radio-tutor pack"},
 		{name: "reset-password needs a username", args: []string{"reset-password"}, wantCode: 2, wantStderr: "usage: radio-tutor reset-password <username>"},
+		{name: "setup-desktop takes only --remove", args: []string{"setup-desktop", "now"}, wantCode: 2, wantStderr: "usage: radio-tutor setup-desktop [--remove]"},
 		{name: "version", args: []string{"version"}, wantCode: 0, wantStdout: "\n"},
 		{name: "version with arguments", args: []string{"version", "x"}, wantCode: 2, wantStderr: "takes no arguments"},
 		{name: "help", args: []string{"help"}, wantCode: 0, wantStdout: "usage: radio-tutor"},
