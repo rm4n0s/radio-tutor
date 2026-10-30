@@ -5,10 +5,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/archive"
+	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 	"github.com/rm4n0s/radio-tutor/internal/core/logging"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
@@ -54,8 +56,13 @@ type Env struct {
 	// Notices are the messages for the admin that startup produced (a broken
 	// file that was set aside); the home of the admin shows them.
 	Notices []i18n.Message
+	// AudioClock is the clock the lesson player's end timer runs on; the
+	// default is audio.SystemClock. Tests that play on an audio.FakeSink pass
+	// the audio.FakeClock the sink runs on.
+	AudioClock audio.Clock
 
-	closers []func()
+	closers      []func()
+	noSoundShown atomic.Bool
 }
 
 // StartOptions are the optional parameters of Start.
@@ -77,6 +84,9 @@ type StartOptions struct {
 	Submission SubmissionOptions
 	// Screens are the screens of the other GUI packages.
 	Screens Screens
+	// AudioClock replaces audio.SystemClock as the clock of the lesson player
+	// (tests).
+	AudioClock audio.Clock
 	// Now gives the time used to name a quarantined file; the default is time.Now.
 	Now func() time.Time
 }
@@ -146,6 +156,10 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 	env.openProviders(ctx)
 	env.openSubmission(ctx, opts.Submission)
 	env.Screens = opts.Screens
+	env.AudioClock = opts.AudioClock
+	if env.AudioClock == nil {
+		env.AudioClock = audio.SystemClock()
+	}
 	logger.Info("started", "config", paths.Config, "data", paths.Data, "state", paths.State)
 	return env, nil
 }

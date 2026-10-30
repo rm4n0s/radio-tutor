@@ -22,3 +22,14 @@ func (e *Env) DefaultSinkFactory(ctx context.Context) (audio.Sink, error) {
 	}
 	return sink, nil
 }
+
+// SilentSinkName is the name of the sink audio.OpenDefaultSink falls back to
+// when no sound server answers (audio.SilentSink.Name). A screen that sees it
+// tells the child that the lesson plays without sound (SPEC §8.1).
+const SilentSinkName = "silent"
+
+// ClaimNoSoundNotice reports whether the caller is the first this run to ask,
+// and so should show "No sound device found" (SPEC §8.1: once per run).
+func (e *Env) ClaimNoSoundNotice() bool {
+	return e.noSoundShown.CompareAndSwap(false, true)
+}

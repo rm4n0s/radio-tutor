@@ -272,6 +272,74 @@ func TestCassetteScreenUsesTheScreensOfTheLaterSteps(t *testing.T) {
 	}
 }
 
+func TestLessonScreenCanOpenTheNextItem(t *testing.T) {
+	tests := []struct {
+		name string
+		// lesson is the lesson to open and wantNext whether its request can open
+		// a next item; the second lesson is followed by a worksheet.
+		lesson   string
+		progress func(p *progress.Progress)
+		want     string
+	}{
+		{"the worksheet after lesson 1", lesson1, halfDone, "worksheet here"},
+		{"locked: the lesson was not completed", lesson1, func(p *progress.Progress) {
+			p.Lessons[lesson1] = progress.LessonProgress{}
+		}, lockedMessage},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var lesson LessonRequest
+			var lessonCtx m.BuildContext
+			a := pump(t, config{size: size(tallWindow), setup: install1(tt.progress), screens: Screens{
+				Lesson: func(r LessonRequest) m.Widget {
+					lesson = r
+					return m.NewBuilder(func(bc m.BuildContext) m.Widget {
+						lessonCtx = bc
+						return plain("lesson player here")
+					})
+				},
+				Worksheet: func(WorksheetRequest) m.Widget { return plain("worksheet here") },
+			}})
+			waitShelf(t, a)
+			openCassette(t, a, fractionsID)
+			a.TapKey(KeyItemPrefix + tt.lesson)
+			a.WaitForText(t, "lesson player here")
+			if lesson.OpenNext == nil {
+				t.Fatal("the request of a lesson that has a next item cannot open it")
+			}
+			lesson.OpenNext(lessonCtx)
+			a.WaitForText(t, tt.want)
+			if tt.want == lockedMessage && !a.HasKey(KeyContinue) {
+				t.Error("a locked next item did not leave the cassette screen open")
+			}
+		})
+	}
+}
+
+func TestItemAfter(t *testing.T) {
+	c := &cassette.Cassette{Manifest: cassette.Manifest{Items: []cassette.Item{
+		{Type: cassette.ItemLesson, ID: "a"},
+		{Type: cassette.ItemExercise, ID: "b"},
+		{Type: cassette.ItemLesson, ID: "c"},
+	}}}
+	tests := []struct {
+		id     string
+		want   string
+		wantOK bool
+	}{
+		{"a", "b", true},
+		{"b", "c", true},
+		{"c", "", false}, // the last item: the player says Done
+		{"zzz", "", false},
+	}
+	for _, tt := range tests {
+		got, ok := itemAfter(c, tt.id)
+		if ok != tt.wantOK || got.ID != tt.want {
+			t.Errorf("itemAfter(%q) = %q, %v; want %q, %v", tt.id, got.ID, ok, tt.want, tt.wantOK)
+		}
+	}
+}
+
 func TestCassetteScreenMergesAnOlderSaveFile(t *testing.T) {
 	tests := []struct {
 		name        string

@@ -1,0 +1,50 @@
+{
+  "format": 1,
+  "title": "What is a fraction?",
+  "tracks": [
+    {
+      "actor": "square",
+      "keys": [
+        {"t": 0, "x": 0},
+        {"t": 2, "x": 800}
+      ]
+    },
+    {
+      "actor": "bar",
+      "origin": [800, 450],
+      "keys": [
+        {"t": 0, "rotate": 0},
+        {"t": 2, "rotate": 90}
+      ]
+    },
+    {
+      "actor": "label",
+      "reveal_box": [500, 740, 600, 140],
+      "reveal_from": "left",
+      "keys": [
+        {"t": 1, "reveal": 0},
+        {"t": 2, "reveal": 1}
+      ]
+    },
+    {
+      "actor": "ghost",
+      "keys": [
+        {"t": 0, "opacity": 0},
+        {"t": 2, "opacity": 1}
+      ]
+    },
+    {
+      "actor": "dot",
+      "origin": [1300, 700],
+      "keys": [
+        {"t": 0, "scale": 1},
+        {"t": 2, "scale": 2.5}
+      ]
+    }
+  ],
+  "captions": [
+    {"start": 0, "end": 1, "text": "Hello! This is a test lesson."},
+    {"start": 1, "end": 2, "text": "A square moves right.\nA bar turns around its center."},
+    {"start": 2, "end": 2.9, "text": "The end."}
+  ]
+}

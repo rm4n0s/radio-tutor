@@ -158,4 +158,18 @@ var messagesEL = map[string]string{
 	"flow.failed.other":       "Κάτι πήγε στραβά. Δοκίμασε ξανά.",
 	"flow.failed.details":     "Λεπτομέρειες: {message} ({tag})",
 	"flow.try_again":          "Δοκίμασε ξανά",
+
+	// 6.4 player
+	"player.loading":     "Ετοιμάζουμε το μάθημα...",
+	"player.failed":      "Δεν μπόρεσε να ανοίξει αυτό το μάθημα. Ζήτησε βοήθεια από έναν γονιό.",
+	"player.play":        "Αναπαραγωγή",
+	"player.pause":       "Παύση",
+	"player.stop":        "Διακοπή",
+	"player.back":        "Πίσω",
+	"player.next":        "Επόμενο",
+	"player.done":        "Τέλος",
+	"player.skip":        "Παράλειψη",
+	"player.no_sound":    "Δεν βρέθηκε συσκευή ήχου. Το μάθημα παίζει χωρίς ήχο.",
+	"player.ok":          "Εντάξει",
+	"player.play_failed": "Το μάθημα δεν μπόρεσε να ξεκινήσει. Δοκίμασε ξανά.",
 }

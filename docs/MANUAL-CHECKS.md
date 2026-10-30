@@ -62,3 +62,12 @@ Needs a real display, a phone on the same Wi-Fi, a sound device and (for the las
 1. **The QR code scans.** Open a worksheet as a student, press **Check my answers**, and scan the code with the phone's camera app. Does the phone open the page that lists the selected exercises (open port 8737 as in 4.1 if not)? Compare the address under the code with the one in the phone's browser.
 2. **Prompt audio.** On a worksheet whose exercise has `prompt.ogg`, press **Listen**: you should hear the prompt and the button goes back to **Listen** when it ends; **Stop** stops it at once.
 3. **The whole flow with a real provider.** Send a photo of your own solution and read the results screen: marks, feedback, the star and the new hint.
+## 6.4 The lesson player with real sound
+
+Uses throw-away data folders and the sample cassette of step 7.1 (until then any cassette that has a lesson, imported with **Import a cassette**). Needs a PulseAudio or PipeWire session.
+
+```
+scripts/isolated.sh -- go run ./cmd/radio-tutor
+```
+
+Create the parent account, add a student, import a cassette, log in as the student and open a lesson. Does the picture fit the window with bars at the sides or above and below (resize the window to check), and do the actors move in step with the narration (not ahead of it, not behind it)? Press Pause in the middle, wait, and press Play: does the sound and the picture continue together? Press Stop: does the picture go back to the start? Press Space and Escape. Let it play to the end: do you hear it finish, does the **Next** button appear, and is the lesson marked done on the cassette screen? Then stop the audio server (`systemctl --user stop pipewire-pulse.socket pipewire-pulse.service` or `pulseaudio -k`), start the app again and open a lesson: the notice "No sound device found. The lesson plays without sound." must show once, and the lesson must still play (without sound) to its end. Restart the audio server afterwards.

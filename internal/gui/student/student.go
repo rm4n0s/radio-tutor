@@ -60,6 +60,11 @@ type LessonRequest struct {
 	FS fs.FS
 	// LessonID is the lesson to play.
 	LessonID string
+	// OpenNext closes the lesson screen and opens the item that follows the
+	// lesson in the cassette (the cassette screen reads the progress again
+	// first, so the item is unlocked by what the lesson just saved). It is nil
+	// when the lesson is the last item. The context is the lesson screen's.
+	OpenNext func(bc m.BuildContext)
 }
 
 // WorksheetRequest is what the worksheet screen (step 6.5) gets when the

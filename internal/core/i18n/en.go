@@ -159,4 +159,18 @@ var messagesEN = map[string]string{
 	"flow.failed.other":       "Something went wrong. Try again.",
 	"flow.failed.details":     "Details: {message} ({tag})",
 	"flow.try_again":          "Try again",
+
+	// 6.4 player
+	"player.loading":     "Getting the lesson ready...",
+	"player.failed":      "This lesson could not be opened. Ask a parent for help.",
+	"player.play":        "Play",
+	"player.pause":       "Pause",
+	"player.stop":        "Stop",
+	"player.back":        "Back",
+	"player.next":        "Next",
+	"player.done":        "Done",
+	"player.skip":        "Skip",
+	"player.no_sound":    "No sound device found. The lesson plays without sound.",
+	"player.ok":          "OK",
+	"player.play_failed": "The lesson could not start. Try again.",
 }

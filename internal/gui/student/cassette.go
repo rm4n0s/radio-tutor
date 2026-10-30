@@ -260,6 +260,9 @@ func (s *cassetteState) open(bc m.BuildContext, v *view, it cassette.Item) {
 			return
 		}
 		req := LessonRequest{Username: w.username, Cassette: v.Cassette, FS: v.FS, LessonID: it.ID}
+		if next, ok := itemAfter(v.Cassette, it.ID); ok {
+			req.OpenNext = func(bc m.BuildContext) { app.Pop(bc, openAfter{item: next}) }
+		}
 		builder = func(m.BuildContext) m.Widget {
 			if w.screens.Lesson != nil {
 				return w.screens.Lesson(req)
@@ -293,11 +296,33 @@ func (s *cassetteState) open(bc m.BuildContext, v *view, it cassette.Item) {
 			env.Log.Error("saving the last item failed", "username", w.username, "cassette", w.id, "err", err)
 		}
 		select {
-		case <-ch:
+		case res := <-ch:
 			s.load(ctx, env, w.username, w.id)
+			if after, ok := res.(openAfter); ok {
+				s.SetState(func() {
+					if s.view != nil {
+						s.open(s.Context(), s.view, after.item)
+					}
+				})
+			}
 		case <-ctx.Done():
 		}
 	})
+}
+
+// openAfter is the result a lesson screen passes to Pop when it asks for the
+// next item: the cassette screen reads the progress again and opens the item.
+type openAfter struct{ item cassette.Item }
+
+// itemAfter returns the item that follows the item with the id in the manifest.
+func itemAfter(c *cassette.Cassette, id string) (cassette.Item, bool) {
+	items := c.Manifest.Items
+	for i, it := range items {
+		if it.ID == id && i+1 < len(items) {
+			return items[i+1], true
+		}
+	}
+	return cassette.Item{}, false
 }
 
 // comingSoon is the placeholder of a lesson or a worksheet screen that a later

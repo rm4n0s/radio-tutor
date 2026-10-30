@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/player"
 	"github.com/rm4n0s/radio-tutor/internal/gui/student"
 	"github.com/rm4n0s/radio-tutor/internal/gui/worksheet"
 )
@@ -17,6 +18,7 @@ import (
 func Screens() app.Screens {
 	return app.Screens{
 		Student: student.HomeBuilder(student.Screens{
+			Lesson:    player.Builder(),
 			Worksheet: worksheet.Builder(),
 		}),
 	}

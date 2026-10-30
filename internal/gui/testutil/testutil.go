@@ -17,6 +17,7 @@ import (
 	"github.com/rm4n0s/glutter/foundation"
 	"github.com/rm4n0s/glutter/gluttertest"
 	m "github.com/rm4n0s/glutter/material"
+	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
@@ -62,6 +63,9 @@ type Options struct {
 	// Submission replaces parts of the submission service (the phone server on
 	// 127.0.0.1, the fake provider, the LAN stub).
 	Submission app.SubmissionOptions
+	// AudioClock is the clock of the lesson player's end timer; tests that
+	// play with an audio.FakeSink pass the audio.FakeClock the sink runs on.
+	AudioClock audio.Clock
 	// Before runs on the environment after it started and before the window
 	// opens, for example to make profiles.
 	Before func(env *app.Env)
@@ -99,6 +103,7 @@ func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 		ChooseFile:     choose,
 		SinkFactory:    opts.SinkFactory,
 		Submission:     opts.Submission,
+		AudioClock:     opts.AudioClock,
 	})
 	if err != nil {
 		t.Fatalf("testutil.NewEnv: %v", err)

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#eef6ff"/>
+  <g>
+    <path d="M400 0V900M800 0V900M1200 0V900M0 450H1600" stroke="#b8c4d6" stroke-width="3"/>
+    <text x="400" y="50" font-size="40" font-family="sans-serif" text-anchor="middle" fill="#667">400</text>
+    <text x="800" y="50" font-size="40" font-family="sans-serif" text-anchor="middle" fill="#667">800</text>
+    <text x="1200" y="50" font-size="40" font-family="sans-serif" text-anchor="middle" fill="#667">1200</text>
+  </g>
+  <g id="square"><rect x="100" y="200" width="200" height="200" fill="#2a6fdb"/></g>
+  <g id="bar"><rect x="800" y="440" width="250" height="20" fill="#d33"/><circle cx="1050" cy="450" r="30" fill="#d33"/></g>
+  <g id="label"><text x="800" y="840" font-size="96" font-family="sans-serif" text-anchor="middle" fill="#222">HELLO</text></g>
+  <g id="ghost"><circle cx="1300" cy="250" r="120" fill="#2fa84f"/></g>
+  <g id="dot"><circle cx="1300" cy="700" r="60" fill="#f2a31b"/></g>
+  <circle cx="800" cy="450" r="14" fill="#333"/>
+</svg>
