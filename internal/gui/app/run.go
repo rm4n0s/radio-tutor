@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/rm4n0s/errors"
@@ -46,8 +47,17 @@ func windowOpts(title string, size, minSize m.Size, env *Env) m.RunAppOpts {
 		AppID:  appID,
 		Window: m.WindowConfig{Title: title, Size: size, MinSize: minSize},
 	}
+	logger := slog.Default()
 	if env != nil {
 		opts.Logger = env.Log
+		logger = env.Log
+	}
+	// The embedded icon is checked by a test; a window without an icon still works.
+	icon, err := windowIcon()
+	if err != nil {
+		logger.Error("window icon", "err", err)
+	} else {
+		opts.Window.Icon = icon
 	}
 	return opts
 }
