@@ -91,6 +91,7 @@ $XDG_STATE_HOME/radio-tutor/
 - Every JSON file has a `"format": 1` field. Files are written atomically: write to a temporary file in the same folder, `fsync`, rename, `fsync` the folder.
 - Folders are made with mode 0700, files with 0600.
 - One instance runs at a time: the app takes an exclusive `flock` on the lock file; a second instance says "Radio Tutor is already running" on stderr and exits with code 2; when it was started with a display (no terminal), a small window shows the same message first.
+- SIGTERM and SIGINT close the app exactly as closing the window does: the run ends, the deferred cleanups run (audio stopped, phone server stopped, files flushed, the lock released) and the exit code is 0 (`app.QuitOnDone`).
 - A JSON file that cannot be parsed is not overwritten: it is renamed to `<name>.broken-<time>`, the error is logged and shown to the admin, and the app starts with an empty value for it.
 
 ## 5. Architecture and packages
