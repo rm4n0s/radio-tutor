@@ -132,16 +132,3 @@ scripts/isolated.sh -- go run ./cmd/radio-tutor
 ```
 
 Make a parent account, import `testdata/cassettes/sample.cassette`, and open Settings. Set the volume to 100, then to 50 and to 20 (drag the slider and let go; "Saved." appears), and play a lesson and the speaker button of an exercise after each change. Is each step quieter, evenly, with 20 still audible? At 0 the lesson plays in silence, its time runs and it can be completed. Does the slider keep its value after restarting the app?
-
-## SIGTERM and SIGINT close the app (fix/quit-on-sigterm)
-
-Needs a display. Throw-away data folders, nothing is left running:
-
-```
-go build -o /tmp/radio-tutor-sig ./cmd/radio-tutor
-scripts/isolated.sh -- timeout -k 20 60 /tmp/radio-tutor-sig &
-sleep 5; pkill -TERM -x radio-tutor-sig; sleep 1; pgrep -x radio-tutor-sig || echo "gone"
-```
-
-The window must close within a second and `pgrep` must print nothing ("gone"). Repeat with `pkill -INT -x radio-tutor-sig`. Start the app again afterwards: it must not say "already running" (the lock was released). Also `go test -tags radiotutor_display -run TestRunEndsWhenContextIsDone -v ./internal/gui/app` opens a window for two seconds and must pass.
-
