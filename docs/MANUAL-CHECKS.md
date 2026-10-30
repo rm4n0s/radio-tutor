@@ -138,7 +138,7 @@ Uses throw-away data folders for the app (`scripts/isolated.sh`) and a computer 
 
 ## Volume setting (after 7.3): the slider is audible
 
-Needs a running PulseAudio or PipeWire server and real speakers. Throw-away data folders:
+Needs a running PulseAudio or PipeWire server and real speakers (on Windows, the sound check above first). Throw-away data folders:
 
 ```
 scripts/isolated.sh -- go run ./cmd/radio-tutor
@@ -148,7 +148,7 @@ Make a parent account, import `testdata/cassettes/sample.cassette`, and open Set
 
 ## Volume and mute in the lesson player (after the volume setting): listen to it
 
-Needs a running PulseAudio or PipeWire server and real speakers. Throw-away data folders:
+Needs a running PulseAudio or PipeWire server and real speakers (on Windows, the sound check above first). Throw-away data folders:
 
 ```
 scripts/isolated.sh -- go run ./cmd/radio-tutor
@@ -162,3 +162,17 @@ Make a parent account and a student, import `testdata/cassettes/sample.cassette`
 4. Set the volume to about 40 and leave the lesson with Back; open another lesson, and the exercise page with its speaker button: the sound is at 40 everywhere, and the slider starts at 40. Mute, close the app, start it again, open a lesson: it starts muted and the slider shows the volume you left.
 5. Log out, log in as the parent, open Settings: the volume row shows the same value and the **Mute the sound** switch shows the muted state. Change both there, and open a lesson again: the controls show the new state. Also check with `pavucontrol` (or your desktop's mixer) that the "Radio Tutor" stream's own volume is not changed by the controls: the app scales the samples itself.
 6. At 800x600, in Greek, with a lesson that has Skip and Next: is nothing cut off (the speaker and slider may wrap onto a second line)?
+
+## Sound on Windows (the `waveout` sink): listen to it on a real Windows 10 or 11 PC
+
+The `waveout` sink was tested against the real winmm only under Wine, in a sandbox with a device that discards the sound (nothing was heard), so what a person hears is unchecked. Needs a Windows 10 (1809) or 11 PC with speakers or headphones, a Windows build of Radio Tutor (`GOOS=windows`), and the Go toolchain for the first command. In PowerShell, in the repository:
+
+```
+go test -tags radiotutor_audio -run TestRealServerTone -count=3 -v ./internal/core/audio
+```
+
+1. You should hear a 1 s tone (440 Hz, quiet), with two gaps where the test pauses and resumes it (about 0.3 s at 0.3 s and 0.2 s at 0.7 s). Listen for a click at the pauses, a piece of the tone repeated or lost after a resume, or a delay at the end. The test passes when the position never goes backwards, each pause holds it, each resume succeeds and the clip ends by itself.
+2. Open the app, a throw-away account and the sample cassette (`testdata/cassettes/sample.cassette`) and play a lesson: Pause and Play ten times quickly (the narration continues exactly where it stopped, with no click and no delay), press Stop in the middle, and let another play run to the end (the **Next** button appears at the end of the sound, not before or after it).
+3. Volume and mute: while the narration plays drag the volume slider down and up (it changes within a fraction of a second), press the speaker button (the sound stops, the time goes on, the icon is crossed out) and press it again. Open the Windows volume mixer: Radio Tutor's own volume stays where it was, the app scales the samples itself.
+4. Change the output device in Windows (for example plug in headphones and make them the default) and open another lesson: it plays through the new default device. Switching in the middle of a lesson may stop the sound; note what happens.
+5. No device: disable every playback device (Settings, System, Sound, or Device Manager) and open a lesson: the notice "No sound device found. The lesson plays without sound." shows once, and the lesson plays (silently) to its end and is completed. Enable the devices again afterwards.

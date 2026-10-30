@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-// TestRealServerTone plays a 1 second 440 Hz tone through the real PulseAudio
-// (or PipeWire) server, with two pauses (300 ms at 0.3 s and 200 ms at 0.7 s)
-// that do not count in the second. Each pause corks the stream and each
-// resume uncorks it. Run it by hand (docs/MANUAL-CHECKS.md, pulse copy):
+// TestRealServerTone plays a 1 second 440 Hz tone through the real sound device
+// (PulseAudio or PipeWire on Linux, winmm's waveOut on Windows), with two pauses (300 ms at 0.3 s and 200 ms at 0.7 s)
+// that do not count in the second. Each pause holds the device and each
+// resume continues it. Run it by hand (docs/MANUAL-CHECKS.md, pulse copy):
 //
 //	go test -tags radiotutor_audio -run TestRealServerTone -v ./internal/core/audio
 //
@@ -32,7 +32,7 @@ func TestRealServerTone(t *testing.T) {
 	sink, reason := OpenDefaultSink(ctx)
 	if reason != nil {
 		sink.Close()
-		t.Fatalf("no PulseAudio server to play on (the sink fell back to %q): %v", sink.Name(), reason)
+		t.Fatalf("no sound device to play on (the sink fell back to %q): %v", sink.Name(), reason)
 	}
 	defer sink.Close()
 	t.Logf("playing a 1 s tone through the %s sink: you should hear it", sink.Name())

@@ -56,7 +56,7 @@ func TestOpenDefaultSinkWithoutDevice(t *testing.T) {
 		t.Skipf("this machine has %d sound output device(s); the real-device test carries the radiotutor_audio tag", n)
 	}
 	sink, reason := OpenDefaultSink(context.Background())
-	defer sink.Close()
+	sink.Close() // the silent sink holds nothing; the name is read after
 	if sink.Name() != "silent" {
 		t.Fatalf("sink = %q, want the silent fallback", sink.Name())
 	}
