@@ -39,8 +39,8 @@ Everything stays on the computer, except the photos and the exercise text that a
 | D13 | The phone page is plain HTTP on the local network, on a fixed port (8737 by default), with an unguessable token per submission; photos are taken with `<input type="file" accept="image/*" capture="environment" multiple>` | the camera through a file input works without HTTPS (getUserMedia needs a secure context); a fixed port can be opened in the firewall once |
 | D14 | QR codes are made by `rsc.io/qr` | pure Go, small |
 | D15 | Only `correct` passes an exercise; `partial` and `incorrect` use an attempt; `unreadable` and `not_found` do not | the owner's agreement in the design discussion |
-| D16 | When an exercise's attempts run out it becomes `needs_review`; the parent looks at the photos and marks it passed or resets its attempts | the AI can misread handwriting; a parent decides |
-| D17 | Unlock rule: an item is unlocked when every lesson before it is completed and every exercise before it is passed. Per student and cassette the parent can turn on **skip lessons** (lessons need not be completed) and **free navigation** (everything is open) | the owner: "some kids skip and we don't want that unless parents enable skipping lessons" |
+| D16 | When an exercise's attempts run out it becomes `needs_review`; the child goes on meanwhile, the parent is told at login, looks at the photos that failed and marks it passed or gives more attempts | the AI can misread handwriting; a parent decides, and the lesson never stops waiting for one |
+| D17 | Unlock rule: an item is unlocked when every lesson before it is completed and every exercise before it is passed or waiting for a parent (`needs_review`). Per student and cassette the parent can turn on **skip lessons** (lessons need not be completed) and **free navigation** (everything is open) | the owner: "some kids skip and we don't want that unless parents enable skipping lessons" |
 | D18 | Progress is kept by item id; importing a newer version of a cassette keeps the progress of the ids it still has | ids are stable by rule of the format |
 | D19 | The UI is in English and Greek, chosen in the settings; a cassette's content is in its own language | the owner's family speaks Greek; children who cannot read English |
 
@@ -174,9 +174,9 @@ A cassette's `items` list is an ordered list of lessons and exercises. A **works
 
 Item *i* is unlocked when free navigation is on, or when for every item *j* before *i*:
 - a lesson *j* is completed, or skip lessons is on, and
-- an exercise *j* is passed.
+- an exercise *j* is passed or in `needs_review`.
 
-For an exercise, only the items before its worksheet count (§7.1): the exercises of a worksheet do not wait for each other. So every exercise of a worksheet is available at once, and the next lesson unlocks when the whole worksheet is passed. An exercise in `needs_review` blocks what comes after it until a parent decides.
+For an exercise, only the items before its worksheet count (§7.1): the exercises of a worksheet do not wait for each other. So every exercise of a worksheet is available at once, and the next lesson unlocks when the whole worksheet is passed. An exercise in `needs_review` does not block what comes after it: for unlocking it counts like a passed exercise, so the child can go on. Its own state stays `needs_review` (not passed) until a parent decides, and the child cannot send new attempts for it (§7.6). If the parent gives more attempts (§7.7), the exercise is `available` again and blocks what follows like any unsolved exercise; if the parent passes it, what follows stays unlocked.
 
 ### 7.4 The save file
 
@@ -245,13 +245,13 @@ When a newer version is imported, each save file of that cassette keeps the entr
 - A grading result counts as an attempt of its exercise when its verdict is `correct`, `partial` or `incorrect`.
 - `correct` passes the exercise (`passed_by: "ai"`).
 - After a counted attempt that did not pass, the next hint of the exercise (if any is left) is shown, and `hints_shown` grows.
-- When `attempts` reaches the exercise's `max_attempts` (CASSETTE-FORMAT §7.2; 0 means no limit) without a pass, the state becomes `needs_review` and the child sees "Ask a parent to look at this exercise."
+- When `attempts` reaches the exercise's `max_attempts` (CASSETTE-FORMAT §7.2; 0 means no limit) without a pass, the state becomes `needs_review` and the child sees "A parent will look at this exercise. You can go on!"
 - Results of an exercise that is already passed, or that is in `needs_review` (a parent decides), are recorded in the submission but change nothing.
 - The hint after a counted attempt is shown also when that attempt was the last one.
 
 ### 7.7 Parent overrides
 
-On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark not passed** (removes the pass; the state is computed again), **Reset attempts** (attempts and hints to 0, state cleared). On any lesson: **Mark completed**, **Mark not completed**. Each action appends to `overrides`. The admin can also set `skip_lessons` and `free_navigation` per student and cassette, and **Reset all progress** of a student in a cassette (photos kept unless also chosen): the lesson and exercise entries, `last_item` and `orphaned` are cleared, the settings and earlier overrides stay, a `reset_all` override is appended, and the submissions stay unless the photos are deleted too. **Mark not passed** removes `passed_by` and `passed_at` and computes the state again, so an exercise whose attempts have run out is `needs_review`.
+On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark not passed** (removes the pass; the state is computed again), **Reset attempts** (attempts and hints to 0, state cleared; in the review screen of §12.3 this is called **Give more attempts**). On any lesson: **Mark completed**, **Mark not completed**. Each action appends to `overrides`. The admin can also set `skip_lessons` and `free_navigation` per student and cassette, and **Reset all progress** of a student in a cassette (photos kept unless also chosen): the lesson and exercise entries, `last_item` and `orphaned` are cleared, the settings and earlier overrides stay, a `reset_all` override is appended, and the submissions stay unless the photos are deleted too. **Mark not passed** removes `passed_by` and `passed_at` and computes the state again, so an exercise whose attempts have run out is `needs_review`.
 
 ## 8. The lesson player
 
@@ -402,6 +402,8 @@ The block is YAML-like. Every text value (title, language, grader instructions, 
 
 After an admin logs in: **Students**, **Cassettes**, **Progress**, **Settings**, and **Play as me** (the admin's own student-like view, §3.3), and **Log out**.
 
+**Notice of waiting exercises.** Right after an admin logs in, if any exercises are in `needs_review` (the same count the Progress tile shows, §12.3: over every profile and every installed cassette that can be read), a dialog says how many are waiting and lists them (child, cassette, exercise label and title), with **Review now** and **Later**. **Later** closes it (the Progress tile still shows the count, and the Progress screen has a button to the review screen). **Review now** opens the review screen of §12.3. The notice appears at every admin login while something is waiting, once per login, and not when nothing waits.
+
 ### 12.2 Students
 
 List of profiles with role and creation date; **Add**, **Rename**, **Reset password**, **Delete** (§3.1); per student, the hidden cassettes (checkboxes).
@@ -410,6 +412,8 @@ List of profiles with role and creation date; **Add**, **Rename**, **Reset passw
 
 Pick a student, then a cassette: the items in order with their states, attempts, hints shown, the dates; the per-cassette switches skip lessons and free navigation; the overrides of §7.7. Below, the submissions, newest first: date, exercises, provider and its kind, status; opening one shows its photos (zoomable, full size), the page notes, and per exercise the verdict, transcription, feedback and notes for the parent, with the override buttons. **Delete photos** per submission. Exercises in `needs_review` are listed first (a "Waiting for you" section), and the admin home shows how many are waiting: the exercises that the unlock rule (§7.3) shows as `needs_review`, over every profile and every installed cassette that can be read. A cassette that is not installed can be looked at (read-only, "Not installed") but is not counted, because nothing can be decided about it. **Delete all photos** of a student is also on the student's page; deleting photos keeps the submission records and clears their photo lists.
 
+**The review screen** is a queue over every profile and every installed cassette, oldest first (by the date of the newest attempt that did not pass). For each waiting exercise it shows the child, the cassette, the exercise's label, title and prompt text, the reference solution (collapsed until the parent opens it), and every attempt that did not pass since the last **Reset attempts** or **Reset all progress** of that exercise, newest first: the date, the photos of that submission (thumbnails that open the zoomable full-size view above), the verdict, the transcription, the feedback for the child and the notes for the parent. An attempt is a result whose verdict is not `correct`. Photos that a parent deleted (§12.3 above) are replaced by "Photos deleted", the verdict and texts stay. Two actions per exercise: **Pass** (Mark passed, §7.7) and **Give more attempts** (Reset attempts, §7.7), which asks for confirmation and says that the child will have to solve the exercise before going further. After an action the exercise leaves the queue; when the queue is empty the screen says "Nothing is waiting" and offers a way back home.
+
 ### 12.4 Settings
 
 `settings.json`: `language` (`en` or `el`, default from `LANG`, else `en`), `students_can_import` (default true), `phone.port` (default 8737), `phone.interface` (default automatic: the empty string), `volume` (an integer 0 to 100, default 100; a file without the field keeps 100, and 0 is a value, not a missing field; a value out of range is refused with the tag `SettingsVolumeInvalid`), `muted` (a boolean, default false; a file without the field keeps false; it silences the sound without changing `volume`), `hidden_cassettes` (per username). A field missing from the file keeps its default; a missing file is the defaults (it is written by the first change). The Settings screen has a **Volume** row: a slider from 0 to 100 in steps of 5 with the value shown as a percentage; the setting is saved when the drag ends, not on every move; moving it while muted unmutes. Under it a **Mute the sound** switch shows and changes `muted`. The lesson player has the same controls (§8.1), so the volume and the mute change there too. The providers (§11.6) have their own screen.
@@ -417,7 +421,7 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 ## 13. The student area
 
 - **Shelf:** the visible cassettes as cards (cover, title, subject, a progress bar: passed exercises and completed lessons over all items); **Import a cassette** when allowed. Large touch-friendly targets; the student's display name and **Log out** at the top.
-- **Cassette:** the items in order: lessons with a play icon, worksheets grouped as one row each with their exercises' labels; locked items greyed with a lock icon; states marked (✓, ⚑ for needs review). **Continue** opens `last_item` if it is unlocked, otherwise the first unlocked item that is not done.
+- **Cassette:** the items in order: lessons with a play icon, worksheets grouped as one row each with their exercises' labels; locked items greyed with a lock icon; states marked (✓, and an hourglass for needs review: "A parent will look at this", which does not lock what follows). On the worksheet and on the results screen an exercise in needs review shows "A parent will look at this exercise. You can go on!" instead of a request to ask a parent. **Continue** opens `last_item` if it is unlocked, otherwise the first unlocked item that is not done.
 - Opening a locked item does nothing except a short message "Finish the items before this one first."
 
 ## 14. Command line

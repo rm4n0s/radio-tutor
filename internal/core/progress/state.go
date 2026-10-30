@@ -21,13 +21,14 @@ func derivedState(ex *cassette.Exercise, ep ExerciseProgress) ItemState {
 // States computes the state of every item of the cassette by the unlock rule
 // of SPEC §7.3 (D17), keyed by item id. An item is unlocked when free
 // navigation is on, or when every item before it is done: a lesson is done when
-// it is completed or skip lessons is on, an exercise when it is passed. The
-// exercises of a worksheet do not wait for each other (they are all available
-// at once), so for an exercise only the items before its worksheet count. An
-// exercise in needs_review is not done, so it blocks what follows the
-// worksheet until a parent decides. A completed lesson, a passed exercise and
-// an exercise in needs_review show their own state even when the rule would
-// lock them.
+// it is completed or skip lessons is on, an exercise when it is passed or in
+// needs_review. The exercises of a worksheet do not wait for each other (they
+// are all available at once), so for an exercise only the items before its
+// worksheet count. An exercise in needs_review counts as done for unlocking:
+// the child goes on while a parent decides. Its own state stays needs_review
+// (not passed) until then. A completed lesson, a passed exercise and an
+// exercise in needs_review show their own state even when the rule would lock
+// them.
 func States(c *cassette.Cassette, p *Progress) map[string]ItemState {
 	states := make(map[string]ItemState, len(c.Manifest.Items))
 	open := true      // every item before the current one is done
@@ -63,7 +64,7 @@ func States(c *cassette.Cassette, p *Progress) map[string]ItemState {
 			default:
 				states[it.ID] = StateLocked
 			}
-			open = open && stored == StatePassed
+			open = open && (stored == StatePassed || stored == StateNeedsReview)
 		}
 	}
 	return states

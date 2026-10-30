@@ -45,13 +45,22 @@ func TestStates(t *testing.T) {
 				"l2": StateAvailable, "e3": StateLocked, "e4": StateLocked, "l3": StateLocked},
 		},
 		{
-			name: "needs_review blocks what follows",
+			name: "needs_review counts as done for unlocking what follows",
 			setup: func(t *testing.T, c *cassette.Cassette, p *Progress) {
 				complete(t, c, p, "l1")
 				pass(p, "e2")
 				p.Exercises["e1"] = ExerciseProgress{State: StateNeedsReview, Attempts: 3}
 			},
 			want: map[string]ItemState{"l1": StateCompleted, "e1": StateNeedsReview, "e2": StatePassed,
+				"l2": StateAvailable, "e3": StateLocked, "e4": StateLocked, "l3": StateLocked},
+		},
+		{
+			name: "needs_review does not open what follows while another exercise of the worksheet is open",
+			setup: func(t *testing.T, c *cassette.Cassette, p *Progress) {
+				complete(t, c, p, "l1")
+				p.Exercises["e1"] = ExerciseProgress{State: StateNeedsReview, Attempts: 3}
+			},
+			want: map[string]ItemState{"l1": StateCompleted, "e1": StateNeedsReview, "e2": StateAvailable,
 				"l2": StateLocked, "e3": StateLocked, "e4": StateLocked, "l3": StateLocked},
 		},
 		{
@@ -194,13 +203,13 @@ func TestContinue(t *testing.T) {
 			"e2", true,
 		},
 		{
-			"nothing available (a needs_review blocks): the first item",
+			"a needs_review exercise does not stop the way on: the next lesson",
 			func(t *testing.T, c *cassette.Cassette, p *Progress) {
 				complete(t, c, p, "l1")
 				p.Exercises["e1"] = ExerciseProgress{State: StateNeedsReview, Attempts: 3}
 				pass(p, "e2")
 			},
-			"l1", true,
+			"l2", true,
 		},
 		{
 			"everything done: the first item",
@@ -271,5 +280,44 @@ func TestVisibleHintsAndAttemptsLeft(t *testing.T) {
 		if got != l.left || limited != l.limited {
 			t.Errorf("AttemptsLeft(%s) = %d, %v; want %d, %v", l.id, got, limited, l.left, l.limited)
 		}
+	}
+}
+
+// TestStatesAroundParentDecisions follows an exercise in needs_review through a
+// parent's decisions: the items after it are unlocked meanwhile, they lock again
+// when the attempts are reset, and they stay unlocked when the parent passes it.
+func TestStatesAroundParentDecisions(t *testing.T) {
+	tests := []struct {
+		name       string
+		actions    []Action
+		wantE1     ItemState
+		wantLaters ItemState // state of l2 (the lesson after the worksheet)
+	}{
+		{"needs review", nil, StateNeedsReview, StateAvailable},
+		{"reset attempts locks again", []Action{ActionResetAttempts}, StateAvailable, StateLocked},
+		{"pass keeps unlocked", []Action{ActionMarkPassed}, StatePassed, StateAvailable},
+		{"pass then not passed is needs review again", []Action{ActionMarkPassed, ActionMarkNotPassed}, StateNeedsReview, StateAvailable},
+		{"reset then the attempts run out again", []Action{ActionResetAttempts, "again"}, StateNeedsReview, StateAvailable},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, p := testCassette(), newProgress()
+			complete(t, c, p, "l1")
+			pass(p, "e2")
+			p.Exercises["e1"] = ExerciseProgress{State: StateNeedsReview, Attempts: 3}
+			for _, a := range tt.actions {
+				if a == "again" {
+					p.Exercises["e1"] = ExerciseProgress{State: StateNeedsReview, Attempts: 3}
+					continue
+				}
+				if err := ApplyOverride(c, p, Override{Action: a, ExerciseID: "e1", By: "mum"}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			states := States(c, p)
+			if states["e1"] != tt.wantE1 || states["l2"] != tt.wantLaters {
+				t.Errorf("e1 = %q, l2 = %q; want %q and %q", states["e1"], states["l2"], tt.wantE1, tt.wantLaters)
+			}
+		})
 	}
 }
