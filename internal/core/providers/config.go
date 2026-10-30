@@ -4,8 +4,10 @@
 // grading.Provider (Build) and the connection test of the settings screen
 // (Test).
 //
-// providers.json holds API keys, so it is written with mode 0600 and a file that
-// other users can read is refused (ProvidersFileTooOpen). A Config is printed
+// providers.json holds API keys, so it is written private to its user (mode 0600
+// on Linux; on Windows a protected DACL that grants only the current user, in
+// the local, non-roaming folder) and, on Linux, a file that other users can read
+// is refused (ProvidersFileTooOpen). A Config is printed
 // and logged without its key.
 package providers
 

@@ -32,25 +32,18 @@ type atomicOps struct {
 	close   func(f *os.File) error
 	rename  func(oldPath, newPath string) error
 	syncDir func(dir string) error
+	// protect, when not nil, makes the temporary file private to its owner
+	// (protectFile) before any data is written to it.
+	protect func(path string) error
 }
 
 func realAtomicOps() atomicOps {
 	return atomicOps{
-		write:  func(f *os.File, data []byte) error { _, err := f.Write(data); return err },
-		sync:   func(f *os.File) error { return f.Sync() },
-		close:  func(f *os.File) error { return f.Close() },
-		rename: os.Rename,
-		syncDir: func(dir string) error {
-			d, err := os.Open(dir)
-			if err != nil {
-				return err
-			}
-			if err := d.Sync(); err != nil {
-				_ = d.Close() // the sync error is the one to report
-				return err
-			}
-			return d.Close()
-		},
+		write:   func(f *os.File, data []byte) error { _, err := f.Write(data); return err },
+		sync:    func(f *os.File) error { return f.Sync() },
+		close:   func(f *os.File) error { return f.Close() },
+		rename:  renameFile,
+		syncDir: syncDirectory,
 	}
 }
 
@@ -64,6 +57,18 @@ func realAtomicOps() atomicOps {
 // TempFileSyncFailed, TempFileCloseFailed, RenameFailed and DirSyncFailed.
 func WriteJSONAtomic(ctx context.Context, path string, v any) error {
 	return writeJSONAtomic(ctx, path, v, realAtomicOps())
+}
+
+// WritePrivateJSONAtomic is WriteJSONAtomic for a file that holds a secret
+// (providers.json, with the API keys): the file is private to the user who runs
+// Radio Tutor. On Linux that is its mode 0600; on Windows the temporary file
+// gets a protected DACL that grants full access to the current user only, before
+// the data is written, and the DACL stays with the file when it is renamed over
+// path. It fails with the tags of WriteJSONAtomic and FilePrivateFailed.
+func WritePrivateJSONAtomic(ctx context.Context, path string, v any) error {
+	ops := realAtomicOps()
+	ops.protect = protectFile
+	return writeJSONAtomic(ctx, path, v, ops)
 }
 
 func writeJSONAtomic(ctx context.Context, path string, v any, ops atomicOps) error {
@@ -98,6 +103,11 @@ func writeJSONAtomic(ctx context.Context, path string, v any, ops atomicOps) err
 
 	if err := tmp.Chmod(FileMode); err != nil {
 		return errors.NewErr("TempFileCreateFailed", err).SetMetadata("path", path)
+	}
+	if ops.protect != nil {
+		if err := ops.protect(tmpName); err != nil {
+			return errors.NewErr("FilePrivateFailed", err).SetMetadata("path", path)
+		}
 	}
 	if err := ops.write(tmp, data); err != nil {
 		return errors.NewErr("TempFileWriteFailed", err).SetMetadata("path", path)

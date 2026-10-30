@@ -3,7 +3,7 @@ package storage
 import (
 	"os"
 	"path/filepath"
-	"syscall"
+	"runtime"
 	"testing"
 
 	"github.com/rm4n0s/errors"
@@ -17,8 +17,10 @@ func TestLockRefusesSecondHolder(t *testing.T) {
 		t.Fatalf("first Lock: %v", err)
 	}
 	info, err := os.Stat(paths.LockFile())
-	if err != nil || info.Mode().Perm() != FileMode {
-		t.Errorf("lock file: %v, %v", info, err)
+	if err != nil {
+		t.Errorf("lock file: %v", err)
+	} else if runtime.GOOS != "windows" && info.Mode().Perm() != FileMode {
+		t.Errorf("lock file mode %v, want %v", info.Mode().Perm(), os.FileMode(FileMode))
 	}
 
 	_, err = Lock(paths)
@@ -44,12 +46,12 @@ func TestLockRefusesSecondHolder(t *testing.T) {
 }
 
 func TestLockErrors(t *testing.T) {
-	boom := syscall.EIO
+	boom := os.ErrDeadlineExceeded
 	tests := []struct {
-		name  string
-		paths func(t *testing.T) Paths
-		flock func(fd, how int) error
-		route string
+		name     string
+		paths    func(t *testing.T) Paths
+		lockFile func(f *os.File) error
+		route    string
 	}{
 		{
 			name: "state folder cannot be made",
@@ -60,8 +62,8 @@ func TestLockErrors(t *testing.T) {
 				}
 				return Paths{State: filepath.Join(file, "state")}
 			},
-			flock: syscall.Flock,
-			route: "lock->EnsureDir.DirCreateFailed",
+			lockFile: tryLockFile,
+			route:    "lock->EnsureDir.DirCreateFailed",
 		},
 		{
 			name: "lock path is a folder",
@@ -72,19 +74,19 @@ func TestLockErrors(t *testing.T) {
 				}
 				return p
 			},
-			flock: syscall.Flock,
-			route: "lock.LockOpenFailed",
+			lockFile: tryLockFile,
+			route:    "lock.LockOpenFailed",
 		},
 		{
-			name:  "flock fails",
-			paths: func(t *testing.T) Paths { return Paths{State: t.TempDir()} },
-			flock: func(int, int) error { return boom },
-			route: "lock.LockFailed",
+			name:     "locking fails",
+			paths:    func(t *testing.T) Paths { return Paths{State: t.TempDir()} },
+			lockFile: func(*os.File) error { return boom },
+			route:    "lock.LockFailed",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			unlock, err := lock(tt.paths(t), tt.flock)
+			unlock, err := lock(tt.paths(t), tt.lockFile)
 			if err == nil {
 				unlock()
 				t.Fatal("expected an error")
@@ -95,7 +97,7 @@ func TestLockErrors(t *testing.T) {
 			if appErr := routeOf(t, err); !appErr.HasRoute(tt.route) {
 				t.Errorf("unexpected failure path: %s", appErr.Route())
 			}
-			if tt.name == "flock fails" && !errors.Is(err, boom) {
+			if tt.name == "locking fails" && !errors.Is(err, boom) {
 				t.Errorf("the cause is lost: %v", err)
 			}
 		})

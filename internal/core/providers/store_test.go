@@ -75,10 +75,10 @@ func TestOpen(t *testing.T) {
 			}
 		}},
 		{"owner-only mode 0400 is fine", good, 0o400, "", nil},
-		{"group readable", good, 0o640, "Open.ProvidersFileTooOpen", nil},
-		{"world readable", good, 0o644, "Open.ProvidersFileTooOpen", nil},
-		{"group writable", good, 0o620, "Open.ProvidersFileTooOpen", nil},
-		{"world executable", good, 0o601, "Open.ProvidersFileTooOpen", nil},
+		{"group readable", good, 0o640, "Open->checkPrivate.ProvidersFileTooOpen", nil},
+		{"world readable", good, 0o644, "Open->checkPrivate.ProvidersFileTooOpen", nil},
+		{"group writable", good, 0o620, "Open->checkPrivate.ProvidersFileTooOpen", nil},
+		{"world executable", good, 0o601, "Open->checkPrivate.ProvidersFileTooOpen", nil},
 		{"not json", `{nope`, 0o600, "Open->ReadJSON.JSONInvalid", nil},
 		{"format 2", `{"format":2}`, 0o600, "Open->check.ProvidersFormatUnsupported", nil},
 		{"no format", `{"providers":[]}`, 0o600, "Open->check.ProvidersFormatUnsupported", nil},
@@ -248,7 +248,7 @@ func TestStoreErrors(t *testing.T) {
 			c, cancel := context.WithCancel(ctx)
 			cancel()
 			return s.Add(c, validConfig("C"))
-		}, "Store.commit->WriteJSONAtomic->writeJSONAtomic.WriteCancelled"},
+		}, "Store.commit->WritePrivateJSONAtomic->writeJSONAtomic.WriteCancelled"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -295,7 +295,7 @@ func TestStoreWriteFailureKeepsState(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(dir, "sub"), "x", 0o600) // "sub" is a file: its folder cannot be created
 	err = s.Add(ctx, validConfig("A"))
-	wantRoute(t, err, "Store.Add->Store.commit->WriteJSONAtomic->writeJSONAtomic->EnsureDir.DirCreateFailed")
+	wantRoute(t, err, "Store.Add->Store.commit->WritePrivateJSONAtomic->writeJSONAtomic->EnsureDir.DirCreateFailed")
 	if len(s.List()) != 0 {
 		t.Error("the list changed although the write failed")
 	}

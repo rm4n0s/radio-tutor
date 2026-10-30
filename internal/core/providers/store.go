@@ -36,8 +36,9 @@ type Store struct {
 
 // Open reads the providers file at path. A missing file is an empty list (it is
 // written by the first change). A file that group or others can access is not
-// read: it fails with ProvidersFileTooOpen, whose message tells the admin to
-// run chmod 600 on it. A file that is not valid JSON fails with the storage tag
+// read on Linux: it fails with ProvidersFileTooOpen, whose message tells the
+// admin to run chmod 600 on it (on Windows the file is written with a DACL for
+// the user only and is not checked again). A file that is not valid JSON fails with the storage tag
 // JSONInvalid (the caller may then storage.QuarantineBroken it, SPEC §4). It
 // also fails with ProvidersOpenCancelled (ctx done), ProvidersStatFailed,
 // ProvidersFormatUnsupported, ProviderNameDuplicate and ProvidersActiveUnknown,
@@ -54,10 +55,8 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		}
 		return nil, errors.NewErr("ProvidersStatFailed", err).SetMetadata("path", path)
 	}
-	if perm := info.Mode().Perm(); perm&0o077 != 0 {
-		return nil, errors.New("ProvidersFileTooOpen",
-			"providers.json holds API keys but other users can read it; make it private with: chmod 600 "+path,
-			"path", path, "mode", perm.String())
+	if err := checkPrivate(path, info); err != nil {
+		return nil, err
 	}
 	var f file
 	if err := storage.ReadJSON(path, &f); err != nil {
@@ -141,7 +140,7 @@ func (s *Store) index(name string) int {
 
 // commit writes the new state and, when that worked, makes it current.
 func (s *Store) commit(ctx context.Context, active string, list []Config) error {
-	if err := storage.WriteJSONAtomic(ctx, s.path, file{Format: formatVersion, Active: active, Providers: list}); err != nil {
+	if err := storage.WritePrivateJSONAtomic(ctx, s.path, file{Format: formatVersion, Active: active, Providers: list}); err != nil {
 		return err
 	}
 	s.active, s.list = active, list

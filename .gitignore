@@ -42,3 +42,5 @@ go.work.sum
 
 # The school books the example cassettes follow (copyrighted, never committed)
 /*.pdf
+.wine-test/
+.scratch/
