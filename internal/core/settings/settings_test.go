@@ -19,7 +19,7 @@ func TestDefaults(t *testing.T) {
 	}{{"", i18n.EN}, {"en_US.UTF-8", i18n.EN}, {"el_GR.UTF-8", i18n.EL}, {"de_DE", i18n.EN}}
 	for _, tt := range tests {
 		s := Defaults(tt.locale)
-		want := Settings{Format: 1, Language: tt.want, StudentsCanImport: true, Phone: Phone{Port: 8737}, HiddenCassettes: map[string][]string{}}
+		want := Settings{Format: 1, Language: tt.want, StudentsCanImport: true, Phone: Phone{Port: 8737}, Volume: 100, HiddenCassettes: map[string][]string{}}
 		if !reflect.DeepEqual(s, want) {
 			t.Errorf("Defaults(%q) = %+v, want %+v", tt.locale, s, want)
 		}
@@ -43,6 +43,11 @@ func TestOpen(t *testing.T) {
 				s.HiddenCassettes = map[string][]string{"mia": {"math"}}
 			}, ""},
 		{"missing phone port keeps the default", `{"format":1,"phone":{"interface":"eth0"}}`, "", func(s *Settings) { s.Phone.Interface = "eth0" }, ""},
+		{"volume 0 is not missing", `{"format":1,"volume":0}`, "", func(s *Settings) { s.Volume = 0 }, ""},
+		{"volume 35", `{"format":1,"volume":35}`, "", func(s *Settings) { s.Volume = 35 }, ""},
+		{"volume 100", `{"format":1,"volume":100}`, "", func(s *Settings) { s.Volume = 100 }, ""},
+		{"volume above 100", `{"format":1,"volume":101}`, "", nil, "Open->validate.SettingsVolumeInvalid"},
+		{"volume below 0", `{"format":1,"volume":-1}`, "", nil, "Open->validate.SettingsVolumeInvalid"},
 		{"format 2", `{"format":2}`, "", nil, "Open->validate.SettingsFormatUnsupported"},
 		{"format zero", `{"format":0}`, "", nil, "Open->validate.SettingsFormatUnsupported"},
 		{"language fr", `{"format":1,"language":"fr"}`, "", nil, "Open->validate.SettingsLanguageInvalid"},
@@ -102,6 +107,9 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 	if err := st.SetLanguage(ctx, i18n.EL); err != nil {
 		t.Fatal(err)
 	}
+	if err := st.Update(ctx, func(s *Settings) { s.Volume = 0 }); err != nil {
+		t.Fatal(err)
+	}
 	if err := st.Update(ctx, func(s *Settings) { s.HiddenCassettes["mia"] = []string{"a", "b"} }); err != nil {
 		t.Fatal(err)
 	}
@@ -117,6 +125,9 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := again.Get()
+	if got.Volume != 0 {
+		t.Errorf("volume 0 came back as %d", got.Volume)
+	}
 	if got.Language != i18n.EL || !reflect.DeepEqual(got.HiddenCassettes["mia"], []string{"a", "b"}) {
 		t.Errorf("reopened = %+v", got)
 	}
@@ -128,6 +139,8 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 	}{
 		{"language", func(s *Settings) { s.Language = "fr" }, "Update->validate.SettingsLanguageInvalid"},
 		{"port", func(s *Settings) { s.Phone.Port = 0 }, "Update->validate.SettingsPortInvalid"},
+		{"volume above 100", func(s *Settings) { s.Volume = 101 }, "Update->validate.SettingsVolumeInvalid"},
+		{"volume below 0", func(s *Settings) { s.Volume = -5 }, "Update->validate.SettingsVolumeInvalid"},
 		{"format", func(s *Settings) { s.Format = 7 }, "Update->validate.SettingsFormatUnsupported"},
 	}
 	for _, tt := range tests {

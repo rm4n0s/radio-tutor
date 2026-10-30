@@ -1,7 +1,7 @@
 // Package settings keeps the app settings of Radio Tutor in settings.json
 // (SPEC §12.4): the language of the UI, whether students may import cassettes,
-// the phone page's port and interface, and the cassettes hidden from each
-// student.
+// the phone page's port and interface, the volume of the sound, and the
+// cassettes hidden from each student.
 package settings
 
 import (
@@ -18,6 +18,8 @@ const (
 	formatVersion = 1
 	// DefaultPhonePort is the default port of the phone page (SPEC D13).
 	DefaultPhonePort = 8737
+	// MaxVolume is the highest volume and the default one: 100 percent.
+	MaxVolume = 100
 )
 
 // Phone holds the settings of the phone page.
@@ -39,6 +41,9 @@ type Settings struct {
 	StudentsCanImport bool `json:"students_can_import"`
 	// Phone are the settings of the phone page.
 	Phone Phone `json:"phone"`
+	// Volume is the volume of all the sound the app plays, for every profile:
+	// 0 (silence) to 100 (SPEC §8.1).
+	Volume int `json:"volume"`
 	// HiddenCassettes lists, per username, the ids of the cassettes hidden from
 	// that student.
 	HiddenCassettes map[string][]string `json:"hidden_cassettes"`
@@ -46,13 +51,14 @@ type Settings struct {
 
 // Defaults returns the settings of a first run: the language from the locale
 // (the LANG variable: Greek for "el...", else English), students may import,
-// port 8737, automatic interface, nothing hidden.
+// port 8737, automatic interface, full volume, nothing hidden.
 func Defaults(locale string) Settings {
 	return Settings{
 		Format:            formatVersion,
 		Language:          i18n.FromLocale(locale),
 		StudentsCanImport: true,
 		Phone:             Phone{Port: DefaultPhonePort},
+		Volume:            MaxVolume,
 		HiddenCassettes:   map[string][]string{},
 	}
 }
@@ -68,7 +74,7 @@ func (s Settings) clone() Settings {
 }
 
 // validate checks the values. Tags: SettingsFormatUnsupported,
-// SettingsLanguageInvalid, SettingsPortInvalid.
+// SettingsLanguageInvalid, SettingsPortInvalid, SettingsVolumeInvalid.
 func validate(s Settings) error {
 	switch {
 	case s.Format != formatVersion:
@@ -77,6 +83,8 @@ func validate(s Settings) error {
 		return errors.New("SettingsLanguageInvalid", "the language must be en or el", "language", string(s.Language))
 	case s.Phone.Port < 1 || s.Phone.Port > 65535:
 		return errors.New("SettingsPortInvalid", "the phone port must be 1 to 65535", "port", s.Phone.Port)
+	case s.Volume < 0 || s.Volume > MaxVolume:
+		return errors.New("SettingsVolumeInvalid", "the volume must be 0 to 100", "volume", s.Volume)
 	}
 	return nil
 }
@@ -94,9 +102,9 @@ type Store struct {
 // file gives the defaults for the locale (the file is written by the first
 // change); fields missing from the file keep their defaults. A file that is
 // not valid JSON fails with the storage tag JSONInvalid (the caller may then
-// storage.QuarantineBroken it, SPEC §4); an unsupported format, language or port
-// fail with SettingsFormatUnsupported, SettingsLanguageInvalid or
-// SettingsPortInvalid; a cancelled ctx with SettingsOpenCancelled.
+// storage.QuarantineBroken it, SPEC §4); an unsupported format, language, port or
+// volume fail with SettingsFormatUnsupported, SettingsLanguageInvalid,
+// SettingsPortInvalid or SettingsVolumeInvalid; a cancelled ctx with SettingsOpenCancelled.
 func Open(ctx context.Context, path, locale string) (*Store, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, errors.NewErr("SettingsOpenCancelled", err).SetMetadata("path", path)
@@ -128,8 +136,8 @@ func (s *Store) Get() Settings {
 
 // Update applies change to a copy of the settings, checks the result and writes
 // it. When the check or the write fails, the settings stay as they were. Tags:
-// SettingsFormatUnsupported, SettingsLanguageInvalid, SettingsPortInvalid, and
-// the failures of the atomic write.
+// SettingsFormatUnsupported, SettingsLanguageInvalid, SettingsPortInvalid,
+// SettingsVolumeInvalid, and the failures of the atomic write.
 func (s *Store) Update(ctx context.Context, change func(*Settings)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
