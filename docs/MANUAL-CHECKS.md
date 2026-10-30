@@ -132,3 +132,20 @@ scripts/isolated.sh -- go run ./cmd/radio-tutor
 ```
 
 Make a parent account, import `testdata/cassettes/sample.cassette`, and open Settings. Set the volume to 100, then to 50 and to 20 (drag the slider and let go; "Saved." appears), and play a lesson and the speaker button of an exercise after each change. Is each step quieter, evenly, with 20 still audible? At 0 the lesson plays in silence, its time runs and it can be completed. Does the slider keep its value after restarting the app?
+
+## Volume and mute in the lesson player (after the volume setting): listen to it
+
+Needs a running PulseAudio or PipeWire server and real speakers. Throw-away data folders:
+
+```
+scripts/isolated.sh -- go run ./cmd/radio-tutor
+```
+
+Make a parent account and a student, import `testdata/cassettes/sample.cassette`, log in as the student and open a lesson. Right after **Stop** there are a speaker button and a slider.
+
+1. Press Play, and while the narration plays drag the slider down to about 30 and let go, then back up to 100. Does the narration get quieter and louder while you drag (within a fraction of a second), without a click, a gap or a restart of the narration? Does the number show above the thumb while you drag?
+2. Press the speaker button while it plays: the sound stops at once (the lesson time keeps running and the captions go on) and the icon is crossed out. Press it again: the narration is heard again at the volume of the slider, in the middle of the sentence.
+3. Mute, then move the slider: the sound comes back and the icon is not crossed out any more.
+4. Set the volume to about 40 and leave the lesson with Back; open another lesson, and the exercise page with its speaker button: the sound is at 40 everywhere, and the slider starts at 40. Mute, close the app, start it again, open a lesson: it starts muted and the slider shows the volume you left.
+5. Log out, log in as the parent, open Settings: the volume row shows the same value and the **Mute the sound** switch shows the muted state. Change both there, and open a lesson again: the controls show the new state. Also check with `pavucontrol` (or your desktop's mixer) that the "Radio Tutor" stream's own volume is not changed by the controls: the app scales the samples itself.
+6. At 800x600, in Greek, with a lesson that has Skip and Next: is nothing cut off (the speaker and slider may wrap onto a second line)?

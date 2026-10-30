@@ -60,7 +60,7 @@ radio-tutor
    It prints `... is valid (0 errors, 0 warnings)` when the file is fine.
 5. Log out and log in as the child, or press **Play as me** on the parent's home screen to try it yourself.
 
-In **Settings** you choose the language (English or Greek), whether students may import cassettes themselves, the volume of the lessons and exercise sounds (for every profile), and the phone's port and network interface. Only one copy of Radio Tutor runs at a time.
+In **Settings** you choose the language (English or Greek), whether students may import cassettes themselves, the volume of the lessons and exercise sounds and whether they are muted (for every profile; students can change both in the lesson with the speaker button and the slider next to Stop), and the phone's port and network interface. Only one copy of Radio Tutor runs at a time.
 
 ## Let the phone reach the computer
 
