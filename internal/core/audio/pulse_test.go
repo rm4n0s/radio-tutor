@@ -649,7 +649,7 @@ func TestOpenDefaultSinkFallsBackToSilent(t *testing.T) {
 		env   map[string]string
 		route string
 	}{
-		{"no server known", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": ""}, "OpenDefaultSink->NewPulseSink->dialPulse.PulseNoServer"},
+		{"no server known", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": ""}, "OpenDefaultSink->openPlatformSink->NewPulseSink->dialPulse.PulseNoServer"},
 		{"no socket at PULSE_SERVER", map[string]string{"PULSE_SERVER": "unix:" + filepath.Join(dir, "none")}, "NewClient->Connect->connect.PulseDialFailed"},
 		{"no socket in the runtime dir", map[string]string{"PULSE_SERVER": "", "XDG_RUNTIME_DIR": dir}, "NewClient->Connect->connect.PulseDialFailed"},
 	}

@@ -13,7 +13,7 @@ import (
 type SinkFactory func(ctx context.Context) (audio.Sink, error)
 
 // DefaultSinkFactory opens audio.OpenDefaultSink: the PulseAudio (or PipeWire)
-// server when one answers, otherwise a silent sink. It never fails; env logs
+// server on Linux or the waveOut device on Windows when one answers, otherwise a silent sink. It never fails; env logs
 // the reason for the fallback.
 func (e *Env) DefaultSinkFactory(ctx context.Context) (audio.Sink, error) {
 	sink, reason := audio.OpenDefaultSink(ctx)
