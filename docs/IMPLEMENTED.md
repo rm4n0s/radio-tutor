@@ -474,3 +474,28 @@ Later:
 - Play as me (6.2) pushes `Env.Screens.Student(username)`; the admin's import (6.2) can reuse the import flow of `importflow.go` (it is unexported now; export it when 6.2 needs it).
 - `cmd/radio-tutor` has to call `desktop.Run`, and `desktop`/`Start` has to pass the `svgcheck` render checker of step 1.6 as `StartOptions.Render` (until then an imported cassette is not checked for drawable SVGs).
 - The cassette screen could scroll to the item Continue points to.
+
+## 7.1 Sample cassette
+
+Date: 2026-10-30.
+
+Built:
+- `testdata/cassettes/sample/`: the cassette `dev.radiotutor.sample.fractions` 1.0.0 ("Halves and quarters", English, math, ages 7 to 9): lesson `what-is-a-half` (27.7 s; a pizza is cut into two halves, 1/2 is written, the halves come together), worksheet `shade-the-half` (label 1, the child draws and shades) and `which-is-a-half` (label 2, reads `prompt.svg` with two pictures, one of them with unequal parts), lesson `quarters` (30.3 s; a cake is cut in half and in half again, one quarter is picked out, `1/4` is written, then `1/4 + 2/4 = 3/4`), worksheet `write-the-sum` (label 3, with a `prompt.ogg`) and `cut-a-square` (label 4, draw, shade, write). Scenes are 1600x900 with 9 and 14 actors: scale and fade in, move, rotate around an origin, reveal of written text and of the dashed cut lines (from the top and from the left), bounces; shared art in `<defs>` shown through `<use clip-path>` for the pieces. Cover 300x400. Every exercise has a reference solution, grading instructions with the common mistakes and what to tell the child, and three hints. It validates with 0 errors and 0 warnings.
+- `testdata/cassettes/sample-src/`: `script.json` (voice `en-us`, speed 140, the sentences and their pauses) and `lessons/<id>.json` (lesson.json templates). `scripts/samplegen/main.go` (run with `go run`, no new tool or dependency) speaks each sentence with `espeak-ng`, measures it with `ffprobe`, joins the pieces with `ffmpeg` (0.5 s lead, the sentences with 0.4 s or the script's pause, 2.5 s tail), encodes Ogg Vorbis (mono, 22050 Hz, `-q:a 2`, bitexact so the same input gives the same bytes), writes `narration.ogg` and the generated `lesson.json` (captions from the sentence times, keys resolved from anchors: `s3` is the start of sentence 3, `e3` its end, `end` the narration's end, each with an offset like `s3+0.5`) and prints the time of every sentence. `scripts/make-sample-cassette.sh` runs it, then `validate`, `pack --force` and `validate` of the zip. The sample `.cassette` (232 kB, mostly audio) and the generated files are committed; the `.gitignore` already lets testdata cassettes through.
+- Doc fixes found by following `docs/CASSETTE-AUTHORING-PROMPT.md` (step 3 to 8): exact `espeak-ng`, `ffmpeg` (normalise each piece to one WAV format, silences with `anullsrc`, the concat demuxer with a list file) and `ffprobe` commands; narration lead and tail silences so the last change is inside the narration; write numbers and fractions as words for the TTS (the sentence is also the caption); the tip to draw a cut object once in `<defs>` and clip it with `<use>`; a text width estimate for `reveal_box`; generate `lesson.json` from the sentence times with a script; keys in pairs (a property moves from its previous key to the next that sets it); `"ease": "step"` on the opacity key to swap one thing for another; `validate` ends with "is valid (0 errors, 0 warnings)" instead of "prints nothing"; `pack --force` for a new version.
+
+Tests:
+- `cmd/radio-tutor/sample_test.go`: the sample folder and the packed `sample.cassette` validate with the command (so every layer is drawn by Glutter through `svgcheck`) with no problem at all; packing the folder gives exactly the committed `.cassette` (a source changed without rebuilding fails here); the content promised by the plan (id, version, language, ages, item order, two worksheets of two, several actors and captions, about 30 s, hints, grading and reference solutions).
+- `scripts/samplegen/main_test.go`: the plan of the sentence times, anchors (valid, offsets, a sentence that does not exist, a bad anchor) with routes, a template resolved into a lesson.json, a key after the end of the narration.
+- A throw-away tool (not committed) drew every scene's layers with Glutter's offscreen rasterizer at many times, composing the timeline (opacity, move, rotate and scale around the origin, reveal) and the pictures were looked at: the art, the text boxes of the reveals, the pieces' positions and the final frames were checked against `lesson.json`.
+
+Deviations from the plan and spec:
+- The sources are in `testdata/cassettes/sample-src/`, not `sample/`, because a cassette folder may only hold the files of CASSETTE-FORMAT §1 (`validate` reports a `script.json`).
+- SPEC §5 and `internal/archtest`: the `os/exec` rule now also allows the developer tools under `scripts/` (the generator runs `espeak-ng` and `ffmpeg`); the application code still never imports it. A test row was added.
+- `docs/CASSETTE-AUTHORING-PROMPT.md` changed as listed above.
+
+Manual checks: pending, see docs/MANUAL-CHECKS.md (listen to the narration).
+
+Later:
+- The lesson player (6.3) should be run on the sample to see the animation with real timing.
+- A better voice (piper) would sound more natural; `script.json` only names the espeak voice and speed.

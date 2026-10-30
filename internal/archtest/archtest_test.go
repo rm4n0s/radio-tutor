@@ -106,6 +106,8 @@ func TestCheck(t *testing.T) {
 				{Path: "internal/core/storage/s_test.go", Imports: []string{"os/exec"}, BuildTags: "radiotutor_audio"},
 				{Path: "cmd/radio-tutor/main.go", Imports: []string{"os/exec"}},
 				{Path: "internal/gui/app/a.go", Imports: []string{"os/exec"}},
+				{Path: "scripts/samplegen/main.go", Imports: []string{"os/exec"}},
+				{Path: "scriptsfoo/main.go", Imports: []string{"os/exec"}},
 			},
 			want: []string{
 				"cmd/radio-tutor/main.go: os/exec",
@@ -113,6 +115,7 @@ func TestCheck(t *testing.T) {
 				"internal/core/audio/plain.go: os/exec",
 				"internal/core/storage/s_test.go: os/exec",
 				"internal/gui/app/a.go: os/exec",
+				"scriptsfoo/main.go: os/exec",
 			},
 		},
 	}

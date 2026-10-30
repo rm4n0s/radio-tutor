@@ -23,10 +23,11 @@ const (
 	// ModulePath is the module path of Radio Tutor.
 	ModulePath = "github.com/rm4n0s/radio-tutor"
 
-	corePrefix = "internal/core"
-	guiPrefix  = "internal/gui"
-	audioDir   = "internal/core/audio"
-	audioTag   = "radiotutor_audio"
+	corePrefix  = "internal/core"
+	guiPrefix   = "internal/gui"
+	toolsPrefix = "scripts/"
+	audioDir    = "internal/core/audio"
+	audioTag    = "radiotutor_audio"
 )
 
 // httpAllowed lists the core packages (directories relative to the module root)
@@ -88,7 +89,7 @@ func Check(files []File) []Violation {
 				}
 			}
 			if imp == "os/exec" && !execAllowed(f, dir) {
-				out = append(out, Violation{f.Path, imp, "os/exec is only for the audio test helpers behind the " + audioTag + " tag"})
+				out = append(out, Violation{f.Path, imp, "os/exec is only for the audio test helpers behind the " + audioTag + " tag and for the developer tools under " + toolsPrefix})
 			}
 		}
 	}
@@ -101,9 +102,14 @@ func Check(files []File) []Violation {
 	return out
 }
 
-// execAllowed reports whether the file may import os/exec: only a test helper
-// of internal/core/audio behind the radiotutor_audio build tag.
+// execAllowed reports whether the file may import os/exec: a test helper of
+// internal/core/audio behind the radiotutor_audio build tag, or a developer
+// tool under scripts/ (such as the sample cassette's generator), which is not
+// part of the application.
 func execAllowed(f File, dir string) bool {
+	if strings.HasPrefix(f.Path, toolsPrefix) {
+		return true
+	}
 	return dir == audioDir && isTestFile(f.Path) && strings.Contains(f.BuildTags, audioTag)
 }
 

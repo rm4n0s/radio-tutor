@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Write the sum",
+  "label": "3",
+  "prompt": "Add the fractions and write the result:\n1/4 + 2/4 = ?",
+  "reference_solution": "3/4",
+  "grading": "Correct: 3/4, or the words three quarters or three fourths, or 0.75. Partial: the right top number with a wrong bottom number (3/8), or the right bottom number with a wrong top number (2/4 or 4/4). Incorrect: anything else. Common mistakes and what to tell the child: (1) 3/8 comes from adding the bottom numbers too: say that the bottom number stays the same, because we are still counting quarters; 1 quarter and 2 quarters are 3 quarters. (2) 2/4 or 8/4 comes from multiplying or adding wrongly: say that we add only the top numbers, 1 plus 2. (3) 3 alone with no bottom number: say that we need to write what kind of pieces they are, quarters, so 3/4.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Look at the bottom numbers. Are they the same?",
+    "When the bottom numbers are the same, add only the top numbers.",
+    "1 quarter and 2 quarters are how many quarters? Write it as a fraction with 4 on the bottom."
+  ]
+}

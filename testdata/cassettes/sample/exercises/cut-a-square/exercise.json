@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Cut the square",
+  "label": "4",
+  "prompt": "Draw a square. Cut it into 4 equal parts. Colour 1 part and write the fraction you coloured.",
+  "reference_solution": "A square cut into 4 equal parts (two lines across the middle, one up and down and one side to side, or three lines in a row that make 4 equal strips). Exactly one of the 4 parts is coloured, and the fraction 1/4 is written next to it.",
+  "grading": "Correct: a four-sided shape divided into 4 parts of about the same size, exactly one part coloured, and the fraction 1/4 (or one quarter, one fourth, a quarter) written. Both ways of cutting count: a cross of two lines through the middle that makes 4 small squares, or three parallel lines that make 4 equal strips. A hand-drawn shape does not have to be exact. Partial: the square is cut and one part is coloured but the fraction is missing, or the fraction is wrong, or the parts are clearly unequal, or the square is cut well and the fraction 1/4 is right but nothing is coloured. Incorrect: the square is cut into a number of parts other than 4, or not cut. Common mistakes and what to tell the child: (1) 4 parts but one is much bigger: say that every quarter must be the same size, so the lines should go through the middle. (2) 1/3 or 3/4 written: say that 1 part is coloured out of 4 parts in all, so 1 on top and 4 on the bottom. (3) 4/1 written: say that the bottom number is how many equal parts there are in all, and the top number is how many are coloured. (4) All 4 parts coloured: say that a quarter is only one of the four parts.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Draw a square first. Then draw one line from top to bottom through the middle.",
+    "Now draw a second line from side to side through the middle. How many parts do you have?",
+    "Colour only one part. Write 1 on top and the number of all the parts on the bottom."
+  ]
+}

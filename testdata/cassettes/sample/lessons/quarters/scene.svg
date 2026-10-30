@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9f6ca"/>
+      <stop offset="1" stop-color="#f1fff4"/>
+    </linearGradient>
+    <clipPath id="clip-q1"><rect x="600" y="220" width="200" height="200"/></clipPath>
+    <clipPath id="clip-q2"><rect x="800" y="220" width="200" height="200"/></clipPath>
+    <clipPath id="clip-q3"><rect x="800" y="420" width="200" height="200"/></clipPath>
+    <clipPath id="clip-q4"><rect x="600" y="420" width="200" height="200"/></clipPath>
+    <g id="berry">
+      <path d="M-34 -22 Q0 -40 34 -22 Q30 24 0 40 Q-30 24 -34 -22 Z" fill="#e53935"/>
+      <path d="M-34 -22 Q0 -40 34 -22 Q32 -12 28 -6 Q0 -26 -28 -6 Q-32 -12 -34 -22 Z" fill="#ff7961" opacity="0.8"/>
+      <circle cx="-12" cy="2" r="3" fill="#ffee58"/>
+      <circle cx="10" cy="-4" r="3" fill="#ffee58"/>
+      <circle cx="2" cy="18" r="3" fill="#ffee58"/>
+      <circle cx="16" cy="14" r="3" fill="#ffee58"/>
+      <circle cx="-14" cy="22" r="3" fill="#ffee58"/>
+      <path d="M-22 -30 L0 -16 L22 -30 L8 -44 L0 -34 L-8 -44 Z" fill="#43a047"/>
+    </g>
+    <g id="cake-art">
+      <rect x="600" y="220" width="400" height="400" rx="34" fill="#8d5524"/>
+      <rect x="616" y="236" width="368" height="368" rx="24" fill="#f8bbd0"/>
+      <rect x="616" y="236" width="368" height="368" rx="24" fill="none" stroke="#ec407a" stroke-width="8"/>
+      <line x1="631" y1="260" x2="649" y2="260" stroke="#ffeb3b" stroke-width="7" stroke-linecap="round" transform="rotate(20 640 260)"/>
+      <line x1="731" y1="250" x2="749" y2="250" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" transform="rotate(-30 740 250)"/>
+      <line x1="831" y1="270" x2="849" y2="270" stroke="#81c784" stroke-width="7" stroke-linecap="round" transform="rotate(60 840 270)"/>
+      <line x1="941" y1="255" x2="959" y2="255" stroke="#ffffff" stroke-width="7" stroke-linecap="round" transform="rotate(-10 950 255)"/>
+      <line x1="611" y1="360" x2="629" y2="360" stroke="#ce93d8" stroke-width="7" stroke-linecap="round" transform="rotate(70 620 360)"/>
+      <line x1="751" y1="380" x2="769" y2="380" stroke="#ffeb3b" stroke-width="7" stroke-linecap="round" transform="rotate(10 760 380)"/>
+      <line x1="841" y1="350" x2="859" y2="350" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" transform="rotate(-50 850 350)"/>
+      <line x1="951" y1="370" x2="969" y2="370" stroke="#81c784" stroke-width="7" stroke-linecap="round" transform="rotate(40 960 370)"/>
+      <line x1="631" y1="470" x2="649" y2="470" stroke="#ffffff" stroke-width="7" stroke-linecap="round" transform="rotate(-20 640 470)"/>
+      <line x1="751" y1="440" x2="769" y2="440" stroke="#ce93d8" stroke-width="7" stroke-linecap="round" transform="rotate(50 760 440)"/>
+      <line x1="831" y1="470" x2="849" y2="470" stroke="#ffeb3b" stroke-width="7" stroke-linecap="round" transform="rotate(-60 840 470)"/>
+      <line x1="961" y1="440" x2="979" y2="440" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" transform="rotate(20 970 440)"/>
+      <line x1="641" y1="570" x2="659" y2="570" stroke="#81c784" stroke-width="7" stroke-linecap="round" transform="rotate(30 650 570)"/>
+      <line x1="741" y1="585" x2="759" y2="585" stroke="#ffffff" stroke-width="7" stroke-linecap="round" transform="rotate(-40 750 585)"/>
+      <line x1="851" y1="575" x2="869" y2="575" stroke="#ce93d8" stroke-width="7" stroke-linecap="round" transform="rotate(15 860 575)"/>
+      <line x1="941" y1="580" x2="959" y2="580" stroke="#ffeb3b" stroke-width="7" stroke-linecap="round" transform="rotate(-70 950 580)"/>
+      <line x1="791" y1="330" x2="809" y2="330" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" transform="rotate(0 800 330)"/>
+      <line x1="791" y1="520" x2="809" y2="520" stroke="#81c784" stroke-width="7" stroke-linecap="round" transform="rotate(25 800 520)"/>
+      <line x1="681" y1="420" x2="699" y2="420" stroke="#ffffff" stroke-width="7" stroke-linecap="round" transform="rotate(-35 690 420)"/>
+      <line x1="901" y1="420" x2="919" y2="420" stroke="#ce93d8" stroke-width="7" stroke-linecap="round" transform="rotate(35 910 420)"/>
+      <use href="#berry" x="700" y="320"/>
+      <use href="#berry" x="900" y="320"/>
+      <use href="#berry" x="900" y="520"/>
+      <use href="#berry" x="700" y="520"/>
+    </g>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <ellipse cx="1350" cy="190" rx="150" ry="52" fill="#ffffff"/>
+  <ellipse cx="1430" cy="160" rx="90" ry="52" fill="#ffffff"/>
+  <ellipse cx="230" cy="240" rx="120" ry="42" fill="#ffffff"/>
+  <ellipse cx="290" cy="212" rx="70" ry="42" fill="#ffffff"/>
+  <rect x="0" y="700" width="1600" height="200" fill="#ffcc80"/>
+  <rect x="0" y="694" width="1600" height="14" fill="#f57c00"/>
+  <rect x="520" y="150" width="560" height="540" rx="50" fill="#fff8e1" stroke="#d7b98e" stroke-width="10"/>
+
+  <g id="title">
+    <text x="800" y="100" font-family="sans-serif" font-size="84" font-weight="bold" text-anchor="middle" fill="#00695c">Sharing a cake</text>
+  </g>
+
+  <g id="friend-1">
+    <rect x="105" y="620" width="110" height="100" rx="38" fill="#29b6f6"/>
+    <circle cx="160" cy="570" r="62" fill="#f6c28b"/>
+    <path d="M98 555 Q102 500 160 500 Q218 500 222 555 Q190 522 160 524 Q130 522 98 555 Z" fill="#6d4c41"/>
+    <circle cx="138" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="182" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="140" cy="574" r="7" fill="#212121"/>
+    <circle cx="180" cy="574" r="7" fill="#212121"/>
+    <circle cx="116" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <circle cx="204" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <path d="M140 598 Q160 620 180 598" fill="none" stroke="#bf360c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g id="friend-2">
+    <rect x="285" y="620" width="110" height="100" rx="38" fill="#ef5350"/>
+    <circle cx="340" cy="570" r="62" fill="#c68642"/>
+    <path d="M278 555 Q282 500 340 500 Q398 500 402 555 Q370 522 340 524 Q310 522 278 555 Z" fill="#212121"/>
+    <circle cx="318" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="362" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="320" cy="574" r="7" fill="#212121"/>
+    <circle cx="360" cy="574" r="7" fill="#212121"/>
+    <circle cx="296" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <circle cx="384" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <path d="M320 598 Q340 620 360 598" fill="none" stroke="#bf360c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g id="friend-3">
+    <rect x="1205" y="620" width="110" height="100" rx="38" fill="#66bb6a"/>
+    <circle cx="1260" cy="570" r="62" fill="#8d5524"/>
+    <path d="M1198 555 Q1202 500 1260 500 Q1318 500 1322 555 Q1290 522 1260 524 Q1230 522 1198 555 Z" fill="#212121"/>
+    <circle cx="1238" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="1282" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="1240" cy="574" r="7" fill="#212121"/>
+    <circle cx="1280" cy="574" r="7" fill="#212121"/>
+    <circle cx="1216" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <circle cx="1304" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <path d="M1240 598 Q1260 620 1280 598" fill="none" stroke="#bf360c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g id="friend-4">
+    <rect x="1385" y="620" width="110" height="100" rx="38" fill="#ab47bc"/>
+    <circle cx="1440" cy="570" r="62" fill="#ffe0b2"/>
+    <path d="M1378 555 Q1382 500 1440 500 Q1498 500 1502 555 Q1470 522 1440 524 Q1410 522 1378 555 Z" fill="#f9a825"/>
+    <circle cx="1418" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="1462" cy="572" r="15" fill="#ffffff"/>
+    <circle cx="1420" cy="574" r="7" fill="#212121"/>
+    <circle cx="1460" cy="574" r="7" fill="#212121"/>
+    <circle cx="1396" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <circle cx="1484" cy="598" r="9" fill="#ff8a80" opacity="0.7"/>
+    <path d="M1420 598 Q1440 620 1460 598" fill="none" stroke="#bf360c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <g id="cake"><use href="#cake-art"/></g>
+  <g id="q1"><use href="#cake-art" clip-path="url(#clip-q1)"/></g>
+  <g id="q2"><use href="#cake-art" clip-path="url(#clip-q2)"/></g>
+  <g id="q3"><use href="#cake-art" clip-path="url(#clip-q3)"/></g>
+  <g id="q4"><use href="#cake-art" clip-path="url(#clip-q4)"/></g>
+
+  <g id="cut-v">
+    <line x1="800" y1="190" x2="800" y2="650" stroke="#1565c0" stroke-width="12" stroke-dasharray="30 18" stroke-linecap="round"/>
+  </g>
+  <g id="cut-h">
+    <line x1="560" y1="420" x2="1040" y2="420" stroke="#1565c0" stroke-width="12" stroke-dasharray="30 18" stroke-linecap="round"/>
+  </g>
+
+  <g id="label-quarter">
+    <text x="800" y="830" font-family="sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#4a148c">one quarter = 1/4</text>
+  </g>
+  <g id="sum-text">
+    <text x="800" y="830" font-family="sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#1b5e20">1/4 + 2/4 = 3/4</text>
+  </g>
+</svg>

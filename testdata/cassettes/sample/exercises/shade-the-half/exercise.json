@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Shade the half",
+  "label": "1",
+  "prompt": "Draw a circle. Cut it into 2 equal parts with one straight line. Colour 1 part.",
+  "reference_solution": "A circle with one straight line through its middle (a diameter) that makes two equal halves. Exactly one of the two halves is coloured in.",
+  "grading": "Correct: a closed round shape, divided into two parts of about the same size by one line (a hand-drawn line does not have to be perfect, and it may be vertical, horizontal or slanted as long as it goes through the middle), with exactly one part coloured or shaded (pencil hatching counts). Partial: the circle is cut into two parts that are clearly not equal (for example the line is near the edge), or the circle is cut correctly but nothing is coloured, or both parts are coloured. Incorrect: the circle is cut into more than two parts, or it is not cut at all. If the parts are unequal, tell the child that a half must be two parts of the same size, and that the line has to go through the middle. If both parts are coloured, tell the child that a half is only one of the two parts. If the circle is cut into 3 or 4 parts, say that we only want two parts today.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "A half is one of two equal parts.",
+    "Draw the line right through the middle of the circle, so both sides look the same.",
+    "Now colour only one of the two parts."
+  ]
+}

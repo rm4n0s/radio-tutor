@@ -68,25 +68,47 @@ SMIL or CSS animation, scripts and external references are all errors.
 2. For each lesson, write the narration script first, as a list of short
    sentences (one caption each, at most about 15 words). Speak to a child of
    {{AGE}}: simple words, one idea per sentence, examples from a child's life.
+   Text-to-speech programs read digits and symbols badly ("1/4" may be read
+   as "one slash four"), so write numbers and fractions in words in the
+   sentences ("one over four", "one quarter"). A sentence's text is also its
+   caption, so it must read well on the screen.
 
 3. Make the narration audio sentence by sentence, so you know the timing:
-   - synthesize each sentence to its own WAV file with the TTS program;
+   - synthesize each sentence to its own WAV file with the TTS program (for
+     espeak-ng: `espeak-ng -v en-us -s 140 -w 01.wav "the sentence"`; a speed
+     of 140 words per minute is good for children), and convert every file to
+     the same format, e.g. `ffmpeg -i 01.wav -ac 1 -ar 22050 -c:a pcm_s16le
+     s01.wav`, because the next step needs identical formats;
    - measure each file's length with
-     `ffprobe -v error -show_entries format=duration -of csv=p=0 file.wav`;
-   - join them in order with a 0.4 s silence between sentences (longer, 1-2 s,
-     where the scene shows something the child should look at) using ffmpeg;
-   - encode: `ffmpeg -i joined.wav -ac 1 -ar 44100 -c:a libvorbis -q:a 4
-     lessons/<id>/narration.ogg`;
-   - measure the final file's length again.
+     `ffprobe -v error -show_entries format=duration -of csv=p=0 s01.wav`;
+   - make the silences with `ffmpeg -f lavfi -i anullsrc=r=22050:cl=mono
+     -t 0.4 -c:a pcm_s16le gap.wav`: 0.4 s between sentences (longer, 1-2 s,
+     where the scene shows something the child should look at), about 0.5 s
+     before the first sentence and 2 s after the last one, so that the last
+     change on the scene happens while the narration is still playing;
+   - join the pieces in order and encode in one command, with a list file
+     whose lines are `file '/full/path/s01.wav'` (silences included):
+     `ffmpeg -f concat -safe 0 -i list.txt -ac 1 -ar 44100 -c:a libvorbis
+     -q:a 4 lessons/<id>/narration.ogg` (for speech, `-ar 22050 -q:a 2` makes
+     a much smaller file that is still clear);
+   - measure the final file's length again: it is the sum of the pieces.
    From the sentence lengths and pauses, compute each sentence's start and
-   end time. These are the captions, and the times the scene changes.
-   Keep the work files (WAVs, scripts) outside the cassette folder.
+   end time. These are the captions, and the times the scene changes. Do the
+   sums in a small script, not by hand, and keep it: if a sentence changes,
+   run it again.
+   Keep the work files (WAVs, scripts) outside the cassette folder: any other
+   file inside it is an error.
 
 4. Draw the scene `scene.svg` (viewBox 0 0 1600 900): a calm background
    (static), and every part that must move, appear, or be "written" as its
    own top-level <g id="...">. Big shapes, strong colors, big text (at least
    40 units, font-family sans-serif). Draw with simple paths, circles,
-   rectangles and text; no external images.
+   rectangles and text; no external images. Two tips: an object that is cut
+   into pieces (a pizza, a cake) is drawn once inside `<defs>` and shown by
+   several actors with `<use href="#art" clip-path="url(#clip-left)"/>`, each
+   clipping a different part; and the width of a bold sans-serif text is
+   about 0.55 x font-size x number of characters, which you need for the
+   `reveal_box` of a written text.
 
 5. Write `lesson.json`: the captions from step 3, and tracks that make the
    scene follow the narration: an actor appears (opacity) or is written
@@ -94,7 +116,15 @@ SMIL or CSS animation, scripts and external references are all errors.
    they are explained, and nothing moves while the child should read.
    Give `origin` (the actor's center) to every track that scales or rotates,
    and `reveal_box` (the actor's bounds) to every track that reveals.
-   Every time must be within the narration's length.
+   Every time must be within the narration's length. A key's time is the
+   start or end of a sentence plus a small offset ("sentence 4 starts at
+   12.0 s, so the cake is cut at 12.0 s"): generate `lesson.json` from the
+   sentence times with your script instead of typing the times, and move an
+   actor in pairs of keys (the value before, the value after), because a
+   property moves from its previous key to the next one that sets it.
+   To make something vanish and something else take its place at the same
+   moment (a whole pizza that is cut into halves), use `"ease": "step"` on
+   the key that changes `opacity`.
 
 6. Write the exercises (`exercise.json`, optional `prompt.svg`). Rules:
    - solvable with pencil and paper, and readable from a phone photo;
@@ -116,9 +146,11 @@ SMIL or CSS animation, scripts and external references are all errors.
    picture).
 
 8. Check and pack:
-   `{{RADIO_TUTOR}} validate <cassette folder>` — fix every error and warning,
-   and run it again until it prints nothing.
-   Then `{{RADIO_TUTOR}} pack <cassette folder> <id>-<version>.cassette`.
+   `{{RADIO_TUTOR}} validate <cassette folder>` — it prints every problem
+   (warnings too) as `path: message`; fix them all and run it again until it
+   prints no problem and ends with "is valid (0 errors, 0 warnings)".
+   Then `{{RADIO_TUTOR}} pack <cassette folder> <id>-<version>.cassette`
+   (add `--force` to replace a file that exists, when you make a new version).
 
 9. Before you finish, check your own work:
    - read every caption against the narration script;

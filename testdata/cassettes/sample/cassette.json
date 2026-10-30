@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "id": "dev.radiotutor.sample.fractions",
+  "version": "1.0.0",
+  "title": "Halves and quarters",
+  "description": "A small sample: what a half is, what a quarter is, and adding quarters. Two short lessons, each followed by two paper exercises.",
+  "language": "en",
+  "subject": "math",
+  "ages": [7, 9],
+  "authors": ["Radio Tutor sample, made by following the cassette authoring prompt"],
+  "grader_instructions": "Talk to the child in short, warm, simple English, as a friendly teacher would. Praise the effort first, even when the answer is wrong, and then say in one or two sentences what to look at again. Never say a child is bad at maths. Accept any correct equivalent form of an answer (1/2, one half, a half, 0.5) unless an exercise says otherwise. Drawings made by hand are never exact: judge whether the parts are meant to be equal and look about equal, not whether the lines are perfectly straight.",
+  "items": [
+    {"type": "lesson", "id": "what-is-a-half"},
+    {"type": "exercise", "id": "shade-the-half"},
+    {"type": "exercise", "id": "which-is-a-half"},
+    {"type": "lesson", "id": "quarters"},
+    {"type": "exercise", "id": "write-the-sum"},
+    {"type": "exercise", "id": "cut-a-square"}
+  ]
+}

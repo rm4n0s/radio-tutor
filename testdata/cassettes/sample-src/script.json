@@ -1,0 +1,43 @@
+{
+  "voice": "en-us",
+  "speed": 140,
+  "silence": 0.4,
+  "lead": 0.5,
+  "tail": 2.5,
+  "lessons": [
+    {
+      "id": "what-is-a-half",
+      "sentences": [
+        {"text": "Look, a yummy pizza!"},
+        {"text": "Two friends want to share it fairly."},
+        {"text": "So we cut it into two equal pieces.", "pause": 1.2},
+        {"text": "Both pieces are exactly the same size."},
+        {"text": "Each piece is called one half.", "pause": 1.0},
+        {"text": "We write one half like this: one over two.", "pause": 1.5},
+        {"text": "Two halves make one whole pizza!"}
+      ]
+    },
+    {
+      "id": "quarters",
+      "sentences": [
+        {"text": "Here is a square cake."},
+        {"text": "Four friends want to share it fairly."},
+        {"text": "First we cut it in half, then we cut each half in half again.", "pause": 1.0},
+        {"text": "Now there are four equal pieces."},
+        {"text": "Each piece is called one quarter.", "pause": 1.0},
+        {"text": "We write one quarter like this: one over four.", "pause": 1.5},
+        {"text": "One quarter plus two quarters makes three quarters."}
+      ]
+    }
+  ],
+  "exercises": [
+    {
+      "id": "write-the-sum",
+      "sentences": [
+        {"text": "Add the fractions."},
+        {"text": "One quarter plus two quarters equals what?"},
+        {"text": "Write the answer on your paper."}
+      ]
+    }
+  ]
+}

@@ -128,7 +128,7 @@ Rules (checked by `internal/archtest`):
 - `internal/core/...` never imports `github.com/rm4n0s/glutter/...` or `internal/gui/...`.
 - `internal/gui/...` may import `internal/core/...`.
 - Only `internal/core/grading/openai` and `internal/core/providers` make outbound HTTP requests; only `internal/core/phone` listens.
-- No package imports `os/exec`, except the test helpers of `internal/core/audio` behind the `radiotutor_audio` tag.
+- No package imports `os/exec`, except the test helpers of `internal/core/audio` behind the `radiotutor_audio` tag and the developer tools under `scripts/` (they are not part of the application).
 
 The core exposes plain Go services; the GUI calls them on goroutines and gets results back through `SetState` or the binding's `Post`. Long operations take a `ctx`.
 

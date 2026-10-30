@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Which picture shows a half?",
+  "label": "2",
+  "prompt": "Look at the two pictures, A and B. In one of them exactly one half is coloured. Write the letter of that picture, and then write the fraction that is coloured.",
+  "reference_solution": "A, and 1/2. Picture A is cut into 2 equal parts and 1 part is coloured. In picture B the two parts are not equal, so the coloured part is not a half.",
+  "grading": "Correct: the letter A together with the fraction 1/2. Accept 1/2, one half, a half, 1 over 2, or the symbol for one half. The letter may be written as A, a or with a circle around it. Partial: only the letter A without any fraction, or only the fraction 1/2 without a letter. Incorrect: the letter B (with any fraction), or a fraction other than 1/2 (such as 2/1, 1/1 or 2). Common mistakes and what to tell the child: (1) B chosen because one of two parts is coloured: say that the two parts of B are not the same size, so the coloured part is not a half; a half needs two equal parts. (2) 2/1 or 2 written: say that the bottom number tells how many equal parts there are in all, so it is 2 on the bottom and 1 on top, as in 1/2. (3) 1/1: say that the whole picture has 2 parts, so the bottom number is 2.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Count the parts in each picture. Then ask: are the parts the same size?",
+    "A half needs two equal parts. Which picture has two equal parts?",
+    "The bottom number is how many equal parts there are in all. The top number is how many are coloured."
+  ]
+}

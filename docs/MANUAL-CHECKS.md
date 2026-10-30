@@ -44,3 +44,14 @@ RADIO_TUTOR_AI_BASE_URL=http://localhost:11434/v1 RADIO_TUTOR_AI_MODEL=qwen2.5vl
 ```
 
 For a cloud provider add `RADIO_TUTOR_AI_KEY=<key>` and `RADIO_TUTOR_AI_KIND=cloud`. The test passes when a valid reply comes back; it prints the verdict (expected: `correct`), the model, the time and whether the app had to use a weaker structured output mode. It does not touch your Radio Tutor folders.
+
+## 7.1 Sample cassette: listen to it
+
+The narration is made by `espeak-ng`; the check is that it is clear enough for a child and that the animation follows it. Never run this on a machine where sound would disturb anyone: it plays on the real speakers.
+
+```
+ffplay -nodisp -autoexit testdata/cassettes/sample/lessons/what-is-a-half/narration.ogg
+ffplay -nodisp -autoexit testdata/cassettes/sample/lessons/quarters/narration.ogg
+```
+
+Are the sentences clear at this speed (140 words per minute, `"speed"` in `testdata/cassettes/sample-src/script.json`)? When the lesson player exists (6.3), play both lessons in the app (import `testdata/cassettes/sample.cassette` into a throw-away data folder with `scripts/isolated.sh`) and check that each change on the scene happens while its sentence is spoken.

@@ -172,7 +172,7 @@ Depends on: 6.2, 4.3. Spec: SPEC §12.3, §7.7, §11.7.
 
 ### 7.1 Sample cassette
 Depends on: 1.6. Spec: CASSETTE-FORMAT (all); `docs/CASSETTE-AUTHORING-PROMPT.md`.
-- `testdata/cassettes/sample/`: a small English cassette (2 lessons of about 30 s, a worksheet of 2 exercises after each), written by following the authoring prompt's method; narration made with `espeak-ng` and `ffmpeg` by `scripts/make-sample-cassette.sh` (which regenerates the audio and the caption times from `testdata/cassettes/sample/script.json` and packs `testdata/cassettes/sample.cassette`). Both the sources and the packed file are committed.
+- `testdata/cassettes/sample/`: a small English cassette (2 lessons of about 30 s, a worksheet of 2 exercises after each), written by following the authoring prompt's method; narration made with `espeak-ng` and `ffmpeg` by `scripts/make-sample-cassette.sh` (which regenerates the audio and the caption times from `testdata/cassettes/sample-src/script.json` and the lesson templates next to it, and packs `testdata/cassettes/sample.cassette`; the sources are not inside `sample/` because a cassette folder may only hold the files of CASSETTE-FORMAT §1). Both the sources and the packed file are committed.
 - Tests: the sample validates (through the command function); a test that the script reproduces the committed timings is not needed (espeak output may vary by version).
 
 ### 7.2 End-to-end tests
