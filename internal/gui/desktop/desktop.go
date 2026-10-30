@@ -7,9 +7,11 @@ package desktop
 import (
 	"context"
 
+	"github.com/rm4n0s/radio-tutor/internal/gui/admin"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/player"
 	"github.com/rm4n0s/radio-tutor/internal/gui/student"
+	"github.com/rm4n0s/radio-tutor/internal/gui/svgcheck"
 	"github.com/rm4n0s/radio-tutor/internal/gui/worksheet"
 )
 
@@ -21,11 +23,13 @@ func Screens() app.Screens {
 			Lesson:    player.Builder(),
 			Worksheet: worksheet.Builder(),
 		}),
+		Admin: admin.HomeBuilder(admin.Screens{}),
 	}
 }
 
 // Run starts the application with the real screens and blocks until its window
-// is closed (app.RunWith).
+// is closed (app.RunWith). Imported cassettes are render-checked with
+// svgcheck.Checker.
 func Run(ctx context.Context) error {
-	return app.RunWith(ctx, app.StartOptions{Screens: Screens()})
+	return app.RunWith(ctx, app.StartOptions{Screens: Screens(), Render: svgcheck.Checker{}})
 }

@@ -40,8 +40,12 @@ type Env struct {
 	// Progress is the store of the students' save files.
 	Progress *progress.Store
 	// Providers is the list of AI providers; nil when providers.json could not
-	// be read (the error is logged).
+	// be read (see ProvidersErr).
 	Providers *providers.Store
+	// ProvidersErr is why Providers is nil: providers.json is readable by other
+	// users (ProvidersFileTooOpen) or cannot be parsed. The app starts anyway;
+	// the admin sees a notice and the providers screen explains it.
+	ProvidersErr error
 	// Submission is the submission service (SPEC §10), created once for the run
 	// of the application and closed by Close.
 	Submission *submission.Service

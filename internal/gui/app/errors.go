@@ -9,6 +9,11 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 )
 
+// ErrorMessage turns an error of the profile store (or any other error) into the
+// message the user sees; see errorMessage. Admin screens call it with detailed
+// true, so that the message and the tag are shown.
+func ErrorMessage(err error, detailed bool) i18n.Message { return errorMessage(err, detailed) }
+
 // errorMessage turns an error of the profile store into the message the user
 // sees. Failures the user can fix (a wrong password, a short one) get their own
 // message. Anything else is "Something went wrong. Ask a parent." for a child

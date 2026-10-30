@@ -24,28 +24,70 @@ type outcome struct {
 	reload   bool
 }
 
-// startImport asks for a file and imports it on a goroutine (SPEC §6.2). The
-// shelf shows a progress indicator with Cancel meanwhile.
-func (s *shelfState) startImport() {
-	if s.importing {
+// ImportHost is what the import flow needs from the state of the screen that
+// offers it: every State of a screen has these methods (Glutter's StateOf).
+type ImportHost interface {
+	// Context is the build context of the screen.
+	Context() m.BuildContext
+	// Lifetime is done when the screen is disposed.
+	Lifetime() context.Context
+	// Go runs fn on a goroutine tied to the screen's lifetime.
+	Go(fn func(ctx context.Context))
+	// SetState changes the screen's state on the UI thread and rebuilds it.
+	SetState(fn func())
+}
+
+// Importer is the import of a cassette (SPEC §6.2) for a screen: the Import
+// button that turns into a progress indicator with Cancel, the file dialog, the
+// import on a goroutine, the upgrade confirmation and the messages. The shelf
+// of a student and the cassette list of the admin both use it. Everything
+// except the goroutine runs on the UI thread.
+type Importer struct {
+	host      ImportHost
+	installed func()
+	importing bool
+	cancel    context.CancelFunc
+}
+
+// NewImporter returns the import flow of the screen whose state is host.
+// installed is called on the UI thread after a cassette was installed or
+// upgraded, so the screen can read its list again (it may be nil).
+func NewImporter(host ImportHost, installed func()) *Importer {
+	return &Importer{host: host, installed: installed}
+}
+
+// Importing reports whether an import is running.
+func (i *Importer) Importing() bool { return i.importing }
+
+// Cancel stops the running import and closes the file dialog.
+func (i *Importer) Cancel() {
+	if i.cancel != nil {
+		i.cancel()
+	}
+}
+
+// Start asks for a file and imports it on a goroutine (SPEC §6.2). The screen
+// shows Area meanwhile.
+func (i *Importer) Start() {
+	if i.importing {
 		return
 	}
-	scope := app.ScopeOf(s.Context())
-	ctx, cancel := context.WithCancel(s.Lifetime())
-	s.SetState(func() { s.importing, s.cancel = true, cancel })
-	bc := s.Context()
-	s.Go(func(context.Context) {
+	scope := app.ScopeOf(i.host.Context())
+	ctx, cancel := context.WithCancel(i.host.Lifetime())
+	i.host.SetState(func() { i.importing, i.cancel = true, cancel })
+	bc := i.host.Context()
+	i.host.Go(func(context.Context) {
 		defer cancel()
-		out := s.runImport(ctx, bc, scope)
-		s.SetState(func() {
-			s.importing, s.cancel = false, nil
-			s.finishImport(out)
+		out := i.run(ctx, bc, scope)
+		i.host.SetState(func() {
+			i.importing, i.cancel = false, nil
+			i.finish(out)
 		})
 	})
 }
 
-// runImport is the body of the import goroutine: it never touches a widget.
-func (s *shelfState) runImport(ctx context.Context, bc m.BuildContext, scope *app.Scope) outcome {
+// run is the body of the import goroutine: it never touches a widget.
+func (i *Importer) run(ctx context.Context, bc m.BuildContext, scope *app.Scope) outcome {
 	env := scope.Env()
 	path, ok, err := env.ChooseFile(ctx, bc, app.FileQuestion{
 		Title:        scope.T("student.import.title"),
@@ -61,7 +103,7 @@ func (s *shelfState) runImport(ctx context.Context, bc m.BuildContext, scope *ap
 		return outcome{}
 	}
 	res, err := env.Archive.Import(ctx, path, func(old, upgrade cassette.Version) bool {
-		return s.confirmUpgrade(ctx, old, upgrade)
+		return i.confirmUpgrade(ctx, old, upgrade)
 	})
 	if err != nil {
 		return importFailure(ctx, env, scope.Session().Role == profile.RoleAdmin, err)
@@ -120,11 +162,11 @@ func importFailure(ctx context.Context, env *app.Env, admin bool, err error) out
 // the confirmUpgrade function of archive.Store.Import, so it runs on the import
 // goroutine and blocks it until the user answers (or the import is cancelled).
 // The dialog is opened on the UI thread.
-func (s *shelfState) confirmUpgrade(ctx context.Context, old, upgrade cassette.Version) bool {
+func (i *Importer) confirmUpgrade(ctx context.Context, old, upgrade cassette.Version) bool {
 	answer := make(chan bool, 1)
-	s.SetState(func() {
-		scope := app.ScopeOf(s.Context())
-		ch := m.ShowDialog[bool](s.Context(), func(bc m.BuildContext) m.Widget {
+	i.host.SetState(func() {
+		scope := app.ScopeOf(i.host.Context())
+		ch := m.ShowDialog[bool](i.host.Context(), func(bc m.BuildContext) m.Widget {
 			return upgradeDialog(scope, old, upgrade)
 		})
 		// Only a channel is read here; the dialog's result goes to the import.
@@ -168,18 +210,36 @@ func dialogButton(key, label string, answer, filled bool) m.Widget {
 	})
 }
 
-// finishImport shows the outcome; it runs on the UI thread.
-func (s *shelfState) finishImport(out outcome) {
-	scope := app.ScopeOf(s.Context())
+// finish shows the outcome; it runs on the UI thread.
+func (i *Importer) finish(out outcome) {
+	scope := app.ScopeOf(i.host.Context())
 	switch {
 	case out.message != nil:
-		showMessage(s.Context(), scope.Catalog().Msg(*out.message))
+		showMessage(i.host.Context(), scope.Catalog().Msg(*out.message))
 	case len(out.problems) > 0:
-		m.ShowDialog[bool](s.Context(), func(m.BuildContext) m.Widget { return problemsDialog(scope, out.problems) })
+		m.ShowDialog[bool](i.host.Context(), func(m.BuildContext) m.Widget { return problemsDialog(scope, out.problems) })
 	}
-	if out.reload {
-		s.reload()
+	if out.reload && i.installed != nil {
+		i.installed()
 	}
+}
+
+// Area is the Import button, or the progress indicator with Cancel while an
+// import runs.
+func (i *Importer) Area(bc m.BuildContext, scope *app.Scope) m.Widget {
+	if !i.importing {
+		return m.NewAlign(m.NewFilledButtonIcon(i.Start, m.NewText(scope.T("student.import")), m.FilledButtonIconOpts{
+			Icon: m.NewIcon(m.Icons.FileOpen()),
+			Key:  m.NewValueKey(KeyImport),
+		}), m.AlignOpts{Alignment: m.AlignmentCenterLeft})
+	}
+	return m.NewRow([]m.Widget{
+		m.NewSizedBox(m.NewCircularProgressIndicator(), m.SizedBoxOpts{Width: m.Some(36.0), Height: m.Some(36.0)}),
+		hgap(app.Gap),
+		m.NewExpanded(m.NewText(scope.T("student.import.working"), m.TextOpts{Style: m.ThemeOf(bc).TextTheme.BodyLarge})),
+		hgap(app.Gap),
+		m.NewOutlinedButton(i.Cancel, m.NewText(scope.T("student.import.cancel")), m.OutlinedButtonOpts{Key: m.NewValueKey(KeyImportCancel)}),
+	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})
 }
 
 // problemsDialog lists the problems of an invalid cassette, one "path: message"

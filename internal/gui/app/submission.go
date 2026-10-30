@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/grading"
+	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 	"github.com/rm4n0s/radio-tutor/internal/core/phone"
 	"github.com/rm4n0s/radio-tutor/internal/core/providers"
 	"github.com/rm4n0s/radio-tutor/internal/core/submission"
@@ -40,12 +42,20 @@ type noProviders struct{}
 func (noProviders) Active() (providers.Config, bool) { return providers.Config{}, false }
 
 // openProviders opens providers.json. A file that cannot be read (too open, not
-// JSON) is logged and leaves Env.Providers nil: the admin screens report it;
-// grading says that no checker is set up.
+// JSON) is logged and leaves Env.Providers nil with the reason in
+// Env.ProvidersErr: the admin sees a notice and the providers screen explains
+// it; grading says that no checker is set up. The file is left as it is.
 func (e *Env) openProviders(ctx context.Context) {
-	st, err := providers.Open(ctx, e.Paths.ProvidersFile())
+	path := e.Paths.ProvidersFile()
+	st, err := providers.Open(ctx, path)
 	if err != nil {
+		e.ProvidersErr = err
 		e.Log.Error("providers.json could not be read; grading is unavailable", "err", err)
+		message := err.Error()
+		if appErr, ok := errors.FromError(err); ok {
+			message = appErr.Message
+		}
+		e.Notices = append(e.Notices, i18n.M("notice.providers_unusable", "path", path, "message", message))
 		return
 	}
 	e.Providers = st

@@ -17,6 +17,9 @@ type Screens struct {
 	// username. The shell shows it to a logged-in student, and the admin's
 	// Play as me pushes it as a route.
 	Student func(username string) m.Widget
+	// Admin builds the home of an admin (SPEC §12.1). The shell shows it to a
+	// logged-in admin.
+	Admin func() m.Widget
 }
 
 // FileQuestion describes the file dialog to open: its title, the label of the

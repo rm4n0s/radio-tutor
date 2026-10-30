@@ -45,9 +45,11 @@ type shelfState struct {
 	cards      []card
 	loaded     bool
 	loadFailed bool
-	importing  bool
-	cancel     context.CancelFunc
+	importer   *Importer
 }
+
+// InitState creates the import flow of the shelf.
+func (s *shelfState) InitState() { s.importer = NewImporter(s, s.reload) }
 
 // DidChangeDependencies starts the first load (the Scope cannot be read in
 // InitState).
@@ -94,7 +96,7 @@ func (s *shelfState) Build(bc m.BuildContext) m.Widget {
 	canImport := scope.Session().Role == profile.RoleAdmin || scope.Env().Settings.Get().StudentsCanImport
 	children := []m.Widget{headline(bc, scope.T("home.student.title")), gap(app.Gap)}
 	if canImport {
-		children = append(children, s.importArea(bc, scope), gap(app.Gap))
+		children = append(children, s.importer.Area(bc, scope), gap(app.Gap))
 	}
 	children = append(children, s.shelf(bc, scope))
 	return m.NewScaffold(m.ScaffoldOpts{
@@ -107,31 +109,6 @@ func (s *shelfState) Build(bc m.BuildContext) m.Widget {
 		}),
 		Body: pageBody(shelfMaxWidth, children),
 	})
-}
-
-// importArea is the Import button, or the progress indicator with Cancel while
-// an import runs.
-func (s *shelfState) importArea(bc m.BuildContext, scope *app.Scope) m.Widget {
-	if !s.importing {
-		return m.NewAlign(m.NewFilledButtonIcon(s.startImport, m.NewText(scope.T("student.import")), m.FilledButtonIconOpts{
-			Icon: m.NewIcon(m.Icons.FileOpen()),
-			Key:  m.NewValueKey(KeyImport),
-		}), m.AlignOpts{Alignment: m.AlignmentCenterLeft})
-	}
-	return m.NewRow([]m.Widget{
-		m.NewSizedBox(m.NewCircularProgressIndicator(), m.SizedBoxOpts{Width: m.Some(36.0), Height: m.Some(36.0)}),
-		hgap(app.Gap),
-		m.NewExpanded(m.NewText(scope.T("student.import.working"), m.TextOpts{Style: m.ThemeOf(bc).TextTheme.BodyLarge})),
-		hgap(app.Gap),
-		m.NewOutlinedButton(s.cancelImport, m.NewText(scope.T("student.import.cancel")), m.OutlinedButtonOpts{Key: m.NewValueKey(KeyImportCancel)}),
-	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})
-}
-
-// cancelImport stops the running import (and closes the file dialog).
-func (s *shelfState) cancelImport() {
-	if s.cancel != nil {
-		s.cancel()
-	}
 }
 
 // shelf is the cards, or the message that stands in for them.

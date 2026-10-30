@@ -9,12 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/desktop"
 )
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr, app.Run)
+	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr, desktop.Run)
 	stop()
 	os.Exit(code)
 }
