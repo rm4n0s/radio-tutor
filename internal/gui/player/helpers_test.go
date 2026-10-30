@@ -14,6 +14,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
+	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/student"
 	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
@@ -108,6 +109,9 @@ type config struct {
 	// gate, when set, holds the audio opener (which runs after the narration is
 	// decoded) until it is closed, so the lesson stays in the loading state.
 	gate chan struct{}
+	// sound changes the app-wide settings before the lesson opens (the volume
+	// and the mute the parents or an earlier lesson left).
+	sound func(*settings.Settings)
 	// locale is the LANG of the app.
 	locale string
 	// openLesson opens lesson1 right after the login (the default); false stops
@@ -145,6 +149,11 @@ func pump(t *testing.T, c config) *harness {
 		AudioClock:  h.clock,
 		Screens:     app.Screens{Student: student.HomeBuilder(screens)},
 		Before: func(env *app.Env) {
+			if c.sound != nil {
+				if err := env.Settings.Update(context.Background(), c.sound); err != nil {
+					t.Fatal(err)
+				}
+			}
 			testutil.AddProfile(t, env, "mum", "Mum", profile.RoleAdmin, "parent-secret")
 			testutil.AddProfile(t, env, "mia", "Mia", profile.RoleStudent, password)
 			res, err := env.Archive.Import(context.Background(), writeLesson(t, c.lessonsFirst, c.lastItem), nil)

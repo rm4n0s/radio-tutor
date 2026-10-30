@@ -199,14 +199,17 @@ func TestPromptAudioFollowsTheVolumeSetting(t *testing.T) {
 	tests := []struct {
 		name   string
 		volume int
+		muted  bool
 		factor float32
 	}{
-		{"half the slider is an eighth of the gain", 50, 0.125},
-		{"zero is silence", 0, 0},
+		{"half the slider is an eighth of the gain", 50, false, 0.125},
+		{"zero is silence", 0, false, 0},
+		{"muted is silence", 70, true, 0},
+		{"unmuted comes back at the kept volume", 70, false, 0.343},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := h.Env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume = tt.volume })
+			err := h.Env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume, s.Muted = tt.volume, tt.muted })
 			if err != nil {
 				t.Fatal(err)
 			}

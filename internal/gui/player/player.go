@@ -50,6 +50,10 @@ const (
 	KeyNext = "player-next"
 	// KeySkip is the key of the Skip button (shown only with skip lessons on).
 	KeySkip = "player-skip"
+	// KeyMute is the key of the mute toggle, right after Stop.
+	KeyMute = "player-mute"
+	// KeyVolume is the key of the volume slider.
+	KeyVolume = "player-volume"
 	// KeyProgress is the key of the progress bar.
 	KeyProgress = "player-progress"
 	// KeyTime is the key of the "m:ss / m:ss" text.
@@ -97,7 +101,9 @@ func NewLesson(req student.LessonRequest, opts ...m.WidgetOpts) *Lesson {
 }
 
 // CreateState creates the state.
-func (w *Lesson) CreateState() m.State { return &lessonState{cmds: make(chan command, 8)} }
+func (w *Lesson) CreateState() m.State {
+	return &lessonState{cmds: make(chan command, 8), saveReq: make(chan struct{}, 1)}
+}
 
 // command is what the UI asks of the goroutine that owns the audio player.
 type command int
@@ -114,6 +120,8 @@ type lessonState struct {
 
 	started bool
 	cmds    chan command
+	saveReq chan struct{} // the volume or the mute changed: save them
+	prefs   soundPrefs
 	ticker  *scheduler.Ticker
 
 	// The fields below are touched on the UI thread only.
@@ -131,6 +139,8 @@ type lessonState struct {
 	skip      bool // the student's skip_lessons setting
 	notice    string
 	leaving   bool
+	volume    float64 // the position of the volume slider, in percent
+	muted     bool
 }
 
 // InitState creates the frame ticker.
@@ -152,6 +162,7 @@ func (s *lessonState) DidChangeDependencies() {
 	}
 	s.started = true
 	env, req := app.ScopeOf(s.Context()).Env(), s.Widget().req
+	s.readSound(env)
 	s.Go(func(ctx context.Context) { s.run(ctx, env, req) })
 }
 
@@ -178,6 +189,7 @@ func (s *lessonState) run(ctx context.Context, env *app.Env, req student.LessonR
 		s.eval = timeline.NewEvaluator(tracks)
 		s.captions = captions
 		s.player = ld.player
+		s.applySound(int(s.volume), s.muted)
 		s.duration = ld.player.Duration()
 		s.skip = skip
 		if showNotice {
@@ -192,7 +204,15 @@ func (s *lessonState) run(ctx context.Context, env *app.Env, req student.LessonR
 			s.exec(ctx, env, req, ld.player, c)
 		case <-ended:
 			s.finish(ctx, env, req, ld.player)
+		case <-s.saveReq:
+			s.saveSound(ctx, env)
 		case <-ctx.Done():
+			// A change of the volume right before leaving is still saved.
+			select {
+			case <-s.saveReq:
+				s.saveSound(ctx, env)
+			default:
+			}
 			return
 		}
 	}
@@ -213,7 +233,6 @@ func (s *lessonState) exec(ctx context.Context, env *app.Env, req student.Lesson
 	switch c {
 	case cmdPlay:
 		fresh := pl.State() != audio.StatePaused
-		pl.SetVolume(env.Settings.Get().Volume) // the parents' setting as it is now; a paused clip keeps its volume
 		if err := pl.Play(ctx); err != nil {
 			if ctx.Err() == nil {
 				env.Log.Error("playing a lesson failed", "lesson", req.LessonID, "err", err)

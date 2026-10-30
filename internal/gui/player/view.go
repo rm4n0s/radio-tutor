@@ -118,25 +118,28 @@ func (s *lessonState) controls(bc m.BuildContext, scope *app.Scope) m.Widget {
 	if s.playing {
 		label, icon = scope.T("player.pause"), m.Icons.Pause()
 	}
-	buttons := []m.Widget{
+	// The buttons of the lesson are on the left and wrap onto a second line when
+	// the window is narrow (Greek labels with Skip and Next at the minimum
+	// width); Skip and Next stay on the right.
+	left := m.NewWrap([]m.Widget{
 		m.NewFilledButtonIcon(s.toggle, m.NewText(label), m.FilledButtonIconOpts{Icon: m.NewIcon(icon), Key: m.NewValueKey(KeyPlay)}),
-		hgap(app.Gap),
 		m.NewOutlinedButtonIcon(func() { s.send(cmdStop) }, m.NewText(scope.T("player.stop")), m.OutlinedButtonIconOpts{
 			Icon: m.NewIcon(m.Icons.Stop()),
 			Key:  m.NewValueKey(KeyStop),
 		}),
-		m.NewSpacer(),
-	}
+		m.NewRow([]m.Widget{s.soundButton(scope), s.volumeSlider(scope)}, m.RowOpts{MainAxisSize: m.MainAxisSizeMin, CrossAxisAlignment: m.CrossAxisAlignmentCenter}),
+	}, m.WrapOpts{Spacing: app.Gap, RunSpacing: app.Gap / 2, CrossAxisAlignment: m.WrapCrossAlignmentCenter})
+	buttons := []m.Widget{m.NewExpanded(left)}
 	req := s.Widget().req
 	if s.skip && req.OpenNext != nil {
-		buttons = append(buttons, m.NewTextButton(s.forward, m.NewText(scope.T("player.skip")), m.TextButtonOpts{Key: m.NewValueKey(KeySkip)}), hgap(app.Gap))
+		buttons = append(buttons, hgap(app.Gap), m.NewTextButton(s.forward, m.NewText(scope.T("player.skip")), m.TextButtonOpts{Key: m.NewValueKey(KeySkip)}))
 	}
 	if s.completed {
 		next := scope.T("player.next")
 		if req.OpenNext == nil {
 			next = scope.T("player.done")
 		}
-		buttons = append(buttons, m.NewFilledButton(s.forward, m.NewText(next), m.FilledButtonOpts{Key: m.NewValueKey(KeyNext)}))
+		buttons = append(buttons, hgap(app.Gap), m.NewFilledButton(s.forward, m.NewText(next), m.FilledButtonOpts{Key: m.NewValueKey(KeyNext)}))
 	}
 	return m.NewPadding(m.NewEdgeInsetsSymmetric(app.Gap, app.Gap), m.NewColumn([]m.Widget{
 		bar,
