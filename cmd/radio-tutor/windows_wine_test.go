@@ -341,6 +341,51 @@ func TestWineSmoke(t *testing.T) {
 			t.Errorf("exit %d, output:\n%s", code, out)
 		}
 	})
+	t.Run("cli exe adds and removes the Start-menu shortcut", func(t *testing.T) {
+		// The shortcut goes into the Start menu of the private prefix, never the user's.
+		shortcuts := func() []string {
+			found, err := filepath.Glob(filepath.Join(e.prefix, "drive_c", "users", "*", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Radio Tutor.lnk"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return found
+		}
+		for _, link := range shortcuts() {
+			if err := os.Remove(link); err != nil {
+				t.Fatal(err)
+			}
+		}
+		t.Cleanup(func() {
+			for _, link := range shortcuts() {
+				if err := os.Remove(link); err != nil {
+					t.Error(err)
+				}
+			}
+		})
+		out, code := e.wine(t, nil, cli, "setup-desktop")
+		if code != 0 || !strings.Contains(out, "Radio Tutor.lnk") {
+			t.Fatalf("setup-desktop exit %d, output:\n%s", code, out)
+		}
+		links := shortcuts()
+		if len(links) != 1 {
+			t.Fatalf("the Start menu of the prefix holds %v, want one Radio Tutor.lnk", links)
+		}
+		data, err := os.ReadFile(links[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		// The file stores the target path as plain (ANSI) text as well as Unicode.
+		if !bytes.Contains(data, []byte("radio-tutor.exe")) {
+			t.Errorf("the shortcut does not name radio-tutor.exe")
+		}
+		out, code = e.wine(t, nil, cli, "setup-desktop", "--remove")
+		if code != 0 || !strings.Contains(out, "Radio Tutor.lnk") {
+			t.Fatalf("setup-desktop --remove exit %d, output:\n%s", code, out)
+		}
+		if left := shortcuts(); len(left) != 0 {
+			t.Errorf("the shortcut is still there after --remove: %v", left)
+		}
+	})
 	t.Run("cli exe prints its version", func(t *testing.T) {
 		out, code := e.wine(t, nil, cli, "version")
 		if code != 0 || strings.TrimSpace(out) == "" {
