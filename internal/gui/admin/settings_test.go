@@ -77,6 +77,9 @@ func TestSettingsStudentsCanImport(t *testing.T) {
 	}
 	a.TapKey(KeyImportSwitch)
 	tillTrue(t, a, "the switch to be saved", func() bool { return !a.Env.Settings.Get().StudentsCanImport })
+	// The switch follows the setting only after the save has told the screen
+	// (the "Saved." message): tapping before that flips the old value again.
+	waitText(t, a, "Saved.")
 	a.TapKey(KeyImportSwitch)
 	tillTrue(t, a, "the switch to be saved again", func() bool { return a.Env.Settings.Get().StudentsCanImport })
 }

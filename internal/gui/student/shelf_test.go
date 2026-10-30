@@ -9,8 +9,8 @@ import (
 	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
-	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
+	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 )
 
 const otherID = "org.example.second-2"

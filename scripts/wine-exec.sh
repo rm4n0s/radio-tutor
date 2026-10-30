@@ -27,7 +27,7 @@
 # (go test -p 1).
 #
 # Exit status: the program's own (124 when the timeout ended it); 69 when Wine or Xvfb is not
-# installed; 64 for a usage mistake.
+# installed; 70 when the prefix's audio driver could not be turned off; 64 for a usage mistake.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -105,6 +105,22 @@ if [[ ! -f "$PREFIX/system.reg" ]]; then
       stop
     fi
   ) 9>"$PREFIX.lock"
+fi
+
+# No audio driver in the prefix, asserted on EVERY run. The WINEDLLOVERRIDES above is not enough (a trace
+# showed winealsa.drv still loaded and routed to PipeWire, that is, to the speakers); what works is the
+# registry value HKCU\Software\Wine\Drivers\Audio set to the empty string ("User explicitly chose no
+# driver", waveOutGetNumDevs = 0). user.reg is read while no server runs (the server of the run before is
+# gone: server_gone above), so a grep tells whether the value is already there. The Go test
+# TestWineHasNoAudioDevice (cmd/radio-tutor) checks the result from inside Wine.
+if ! tr -d '\r' < "$PREFIX/user.reg" 2>/dev/null | awk '/^\[Software\\\\Wine\\\\Drivers\]/{s=1;next} /^\[/{s=0} s&&/^"Audio"=""$/{f=1} END{exit !f}'; then
+  "$WINE" reg add 'HKCU\Software\Wine\Drivers' /v Audio /t REG_SZ /d "" /f >/dev/null 2>&1
+  stop
+  server_gone
+fi
+if ! tr -d '\r' < "$PREFIX/user.reg" 2>/dev/null | awk '/^\[Software\\\\Wine\\\\Drivers\]/{s=1;next} /^\[/{s=0} s&&/^"Audio"=""$/{f=1} END{exit !f}'; then
+  echo "wine-exec.sh: could not turn the audio driver of the prefix off; refusing to run (nothing may play on the speakers)" >&2
+  exit 70
 fi
 
 # The prefix of Wine has no font directory, and an app that scans the fonts of Windows would draw no
