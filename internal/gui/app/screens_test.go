@@ -157,3 +157,18 @@ func TestFileChooserUnavailable(t *testing.T) {
 		})
 	}
 }
+
+func TestHomeShowsTheAdminScreenOfTheShell(t *testing.T) {
+	a := testutil.Pump(t, testutil.Options{
+		Screens: app.Screens{Admin: func() m.Widget {
+			return m.NewScaffold(m.ScaffoldOpts{Body: m.NewText("admin home")})
+		}},
+		Before: func(env *app.Env) {
+			testutil.AddProfile(t, env, "mum", "Mum", profile.RoleAdmin, "parent-secret")
+		},
+	})
+	a.TapKey(app.KeyProfilePrefix + "mum")
+	a.EnterKey(app.KeyPassword, "parent-secret")
+	a.TapKey(app.KeySubmit)
+	a.WaitForText(t, "admin home")
+}

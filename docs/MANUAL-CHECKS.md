@@ -71,3 +71,11 @@ scripts/isolated.sh -- go run ./cmd/radio-tutor
 ```
 
 Create the parent account, add a student, import a cassette, log in as the student and open a lesson. Does the picture fit the window with bars at the sides or above and below (resize the window to check), and do the actors move in step with the narration (not ahead of it, not behind it)? Press Pause in the middle, wait, and press Play: does the sound and the picture continue together? Press Stop: does the picture go back to the start? Press Space and Escape. Let it play to the end: do you hear it finish, does the **Next** button appear, and is the lesson marked done on the cassette screen? Then stop the audio server (`systemctl --user stop pipewire-pulse.socket pipewire-pulse.service` or `pulseaudio -k`), start the app again and open a lesson: the notice "No sound device found. The lesson plays without sound." must show once, and the lesson must still play (without sound) to its end. Restart the audio server afterwards.
+
+## 6.2 Admin screens
+
+Uses throw-away data folders (`scripts/isolated.sh`), never your real ones.
+
+1. **Import with the real file dialog, and Test against a real provider.**
+   `scripts/isolated.sh -- go run ./cmd/radio-tutor`
+   Create the parent account. Cassettes: Import a cassette and choose `testdata/cassettes/sample` packed with `go run ./cmd/radio-tutor pack testdata/cassettes/sample /tmp/sample.cassette` (the file dialog opens, the cassette appears with its version; Remove it again with and without the checkbox). Providers: Add from the Ollama preset (or any local server you run) or from a cloud preset with your own key, press Test: does it show "It works", the verdict "correct", the time and the model? Try a wrong key and see the plain-words error. Students: add a child, hide a cassette, log in as the child and check the shelf. Does everything look right at 800x600, in English and in Greek?

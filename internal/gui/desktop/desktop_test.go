@@ -11,3 +11,9 @@ func TestScreensHasTheStudentHome(t *testing.T) {
 		t.Fatal("the student home is not wired")
 	}
 }
+
+func TestScreensHasTheAdminHome(t *testing.T) {
+	if desktop.Screens().Admin == nil {
+		t.Fatal("the admin home is not wired")
+	}
+}

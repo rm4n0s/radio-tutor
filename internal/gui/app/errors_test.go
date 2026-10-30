@@ -45,3 +45,16 @@ func TestErrorMessage(t *testing.T) {
 type plainError string
 
 func (e plainError) Error() string { return string(e) }
+
+func TestErrorMessageIsExported(t *testing.T) {
+	err := errors.New("UsernameTaken", "taken")
+	if got := ErrorMessage(err, true); got.Key != "err.username_taken" {
+		t.Errorf("ErrorMessage = %v", got)
+	}
+	if got := ErrorMessage(errors.New("Other", "x"), true); got.Key != "err.generic_detail" {
+		t.Errorf("detailed message = %v", got)
+	}
+	if got := ErrorMessage(errors.New("Other", "x"), false); got.Key != "err.generic" {
+		t.Errorf("plain message = %v", got)
+	}
+}

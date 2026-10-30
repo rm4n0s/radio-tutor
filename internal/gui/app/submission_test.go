@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 	"os"
 	"strings"
 	"testing"
@@ -47,6 +48,14 @@ func TestStartKeepsGoingWhenProvidersCannotBeRead(t *testing.T) {
 	}
 	if env.Submission == nil {
 		t.Error("the submission service must exist even without providers")
+	}
+	hasRoute(t, env.ProvidersErr, "ProvidersFileTooOpen")
+	if len(env.Notices) != 1 || env.Notices[0].Key != "notice.providers_unusable" {
+		t.Fatalf("notices = %v", env.Notices)
+	}
+	text := i18n.For(i18n.EN).Msg(env.Notices[0])
+	if !strings.Contains(text, paths.ProvidersFile()) || !strings.Contains(text, "chmod 600") {
+		t.Errorf("the notice does not name the file and the fix: %q", text)
 	}
 	data, err := os.ReadFile(paths.LogFile())
 	if err != nil || !strings.Contains(string(data), "providers.json could not be read") {
