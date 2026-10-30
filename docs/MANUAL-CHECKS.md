@@ -55,3 +55,10 @@ ffplay -nodisp -autoexit testdata/cassettes/sample/lessons/quarters/narration.og
 ```
 
 Are the sentences clear at this speed (140 words per minute, `"speed"` in `testdata/cassettes/sample-src/script.json`)? When the lesson player exists (6.3), play both lessons in the app (import `testdata/cassettes/sample.cassette` into a throw-away data folder with `scripts/isolated.sh`) and check that each change on the scene happens while its sentence is spoken.
+## 6.5 Worksheet, QR code and prompt audio
+
+Needs a real display, a phone on the same Wi-Fi, a sound device and (for the last item) an AI provider you trust. The app runs on throw-away data folders (`scripts/isolated.sh`). The wiring of `cmd/radio-tutor` to `desktop.Run` and the cassette import are needed first (6.2 and `cmd`); until then use the sample cassette of step 7.1 installed by hand into the isolated data folder.
+
+1. **The QR code scans.** Open a worksheet as a student, press **Check my answers**, and scan the code with the phone's camera app. Does the phone open the page that lists the selected exercises (open port 8737 as in 4.1 if not)? Compare the address under the code with the one in the phone's browser.
+2. **Prompt audio.** On a worksheet whose exercise has `prompt.ogg`, press **Listen**: you should hear the prompt and the button goes back to **Listen** when it ends; **Stop** stops it at once.
+3. **The whole flow with a real provider.** Send a photo of your own solution and read the results screen: marks, feedback, the star and the new hint.

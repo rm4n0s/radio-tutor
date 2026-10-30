@@ -13,8 +13,10 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/logging"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
+	"github.com/rm4n0s/radio-tutor/internal/core/providers"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage"
+	"github.com/rm4n0s/radio-tutor/internal/core/submission"
 )
 
 // DebugVariable is the environment variable that turns the debug log on.
@@ -35,9 +37,18 @@ type Env struct {
 	Archive *archive.Store
 	// Progress is the store of the students' save files.
 	Progress *progress.Store
+	// Providers is the list of AI providers; nil when providers.json could not
+	// be read (the error is logged).
+	Providers *providers.Store
+	// Submission is the submission service (SPEC §10), created once for the run
+	// of the application and closed by Close.
+	Submission *submission.Service
 	// ChooseFile asks the user for a file (the Import button); the default is
 	// DesktopFileChooser. Tests replace it.
 	ChooseFile FileChooser
+	// SinkFactory opens the audio sink of the screens that play sound; the
+	// default is DefaultSinkFactory. Tests replace it.
+	SinkFactory SinkFactory
 	// Screens are the screens of the other GUI packages that the shell opens.
 	Screens Screens
 	// Notices are the messages for the admin that startup produced (a broken
@@ -60,6 +71,10 @@ type StartOptions struct {
 	Render archive.RenderChecker
 	// ChooseFile replaces DesktopFileChooser (tests).
 	ChooseFile FileChooser
+	// SinkFactory replaces DefaultSinkFactory (tests).
+	SinkFactory SinkFactory
+	// Submission replaces parts of the submission service (tests).
+	Submission SubmissionOptions
 	// Screens are the screens of the other GUI packages.
 	Screens Screens
 	// Now gives the time used to name a quarantined file; the default is time.Now.
@@ -124,6 +139,12 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 	if env.ChooseFile == nil {
 		env.ChooseFile = DesktopFileChooser
 	}
+	env.SinkFactory = opts.SinkFactory
+	if env.SinkFactory == nil {
+		env.SinkFactory = env.DefaultSinkFactory
+	}
+	env.openProviders(ctx)
+	env.openSubmission(ctx, opts.Submission)
 	env.Screens = opts.Screens
 	logger.Info("started", "config", paths.Config, "data", paths.Data, "state", paths.State)
 	return env, nil

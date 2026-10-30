@@ -56,6 +56,12 @@ type Options struct {
 	// ChooseFile answers the file dialogs; the default fails the test, because a
 	// test must not open the dialog of the desktop.
 	ChooseFile app.FileChooser
+	// SinkFactory opens the audio sink of the screens (the default plays real
+	// sound or nothing, so tests that play pass an audio.FakeSink).
+	SinkFactory app.SinkFactory
+	// Submission replaces parts of the submission service (the phone server on
+	// 127.0.0.1, the fake provider, the LAN stub).
+	Submission app.SubmissionOptions
 	// Before runs on the environment after it started and before the window
 	// opens, for example to make profiles.
 	Before func(env *app.Env)
@@ -91,6 +97,8 @@ func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 		ProfileOptions: []profile.Option{profile.WithIterations(hashIterations)},
 		Screens:        opts.Screens,
 		ChooseFile:     choose,
+		SinkFactory:    opts.SinkFactory,
+		Submission:     opts.Submission,
 	})
 	if err != nil {
 		t.Fatalf("testutil.NewEnv: %v", err)

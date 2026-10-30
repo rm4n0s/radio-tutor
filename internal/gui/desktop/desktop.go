@@ -9,13 +9,16 @@ import (
 
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/student"
+	"github.com/rm4n0s/radio-tutor/internal/gui/worksheet"
 )
 
 // Screens returns the screens of the real application. The steps that add
 // screens (the admin area, the lesson player, the worksheet) add them here.
 func Screens() app.Screens {
 	return app.Screens{
-		Student: student.HomeBuilder(student.Screens{}),
+		Student: student.HomeBuilder(student.Screens{
+			Worksheet: worksheet.Builder(),
+		}),
 	}
 }
 

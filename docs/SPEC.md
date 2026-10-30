@@ -279,9 +279,9 @@ The lesson's time is the audio position: the number of samples the sink has actu
 ### 10.1 The flow
 
 1. The app makes a submission (`waiting_photos`), a token (16 random bytes, base32 without padding), and a URL `http://<lan-address>:<port>/s/<token>`. It starts the phone server if it is not running.
-2. A dialog shows the QR code of the URL (at least 280 logical pixels), the URL as text, the exercise labels, and "Scan this with your phone". It shows "Photos received: n" as photos arrive, and **Cancel**.
+2. A full-window screen (opened over the worksheet, with no back arrow) shows the QR code of the URL (at least 280 logical pixels), the URL as text, the exercise labels, and "Scan this with your phone". It shows "Photos received: n" as photos arrive, and **Cancel**.
 3. The phone page shows the cassette title, the exercises (label, title, prompt text), the instruction to write the labels next to the solutions, and a big button **Take photos of the solution**. Each photo the child takes is shown as a thumbnail with a remove (✕) button; up to 6 photos. **Send** uploads them.
-4. When the upload completes, the page shows "Sent! Look at the computer." and the token stops working. The desktop closes the QR dialog, the submission becomes `grading`, and grading runs (§11).
+4. When the upload completes, the page shows "Sent! Look at the computer." and the token stops working. The desktop closes the QR screen for the grading indicator (with Cancel), the submission becomes `grading`, and grading runs (§11).
 5. When grading ends, the child sees a results screen: one row per exercise with its label, a big mark (✓ correct, ~ partial, ✗ incorrect, ? unreadable or not found), the feedback for the child, and the next hint when one was unlocked. Exercises that are now passed show a star. **Back to the worksheet** returns.
 6. If grading fails (network, provider error, invalid reply after the retry of §11.5), the submission is `failed`; the child sees "The checker could not answer. Try again." with **Try again** (grades the same photos again, no new photos needed) and **Cancel**.
 
