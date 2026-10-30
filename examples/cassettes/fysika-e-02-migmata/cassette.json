@@ -1,0 +1,80 @@
+{
+  "format": 1,
+  "id": "dev.radiotutor.examples.fysika-e.02-migmata",
+  "version": "1.0.0",
+  "title": "Μίγματα και διαλύματα",
+  "description": "Τι είναι ένα μίγμα, ετερογενή και ομογενή μίγματα, διαχωρισμός των συστατικών, διαλύματα και διαλύτες. Τρία μαθήματα και τρία φύλλα ασκήσεων με μολύβι και χαρτί. Βασισμένο στην ύλη του κεφαλαίου «Μίγματα» του βιβλίου «Φυσικά Ε΄ Δημοτικού – Ερευνώ και Ανακαλύπτω» (ΙΤΥΕ Διόφαντος).",
+  "language": "el",
+  "subject": "Φυσικά",
+  "ages": [
+    10,
+    11
+  ],
+  "authors": [
+    "Claude (Anthropic), για το Radio Tutor"
+  ],
+  "source": "«Φυσικά Ε΄ Δημοτικού – Ερευνώ και Ανακαλύπτω» (ΙΤΥΕ Διόφαντος), κεφάλαιο «Μίγματα»: Βιβλίο Μαθητή σ. 18–23, Τετράδιο Εργασιών σ. 30–37",
+  "grader_instructions": "Μίλα στο παιδί με ζεστασιά και απλά λόγια, στον ενικό. Επαίνεσε την προσπάθεια, ακόμα κι όταν η απάντηση δεν είναι σωστή. Το παιδί είναι 10 έως 11 ετών και γράφει με το χέρι: μην βγάζεις λάθος για ορθογραφία, για τόνους ή για κακό γραφικό χαρακτήρα, αρκεί να καταλαβαίνεται η απάντηση. Δέξου κάθε σωστή απάντηση που λέει το ίδιο με άλλα λόγια. Όταν κάτι είναι λάθος, εξήγησε σε μία ή δύο προτάσεις τι να σκεφτεί, χωρίς να δώσεις αμέσως όλη τη λύση. Οι όροι του μαθήματος είναι: μίγμα, συστατικά, καθαρή ουσία, ετερογενές, ομογενές (διάλυμα), διαλύτης, διαλυμένη ουσία, ίζημα, διαλογή, διήθηση, κράμα.",
+  "items": [
+    {
+      "type": "lesson",
+      "id": "ti-einai-migma"
+    },
+    {
+      "type": "exercise",
+      "id": "katastaseis-ylon"
+    },
+    {
+      "type": "exercise",
+      "id": "kathari-i-migma"
+    },
+    {
+      "type": "exercise",
+      "id": "swsto-lathos-migmata"
+    },
+    {
+      "type": "exercise",
+      "id": "etiketa-portokalada"
+    },
+    {
+      "type": "lesson",
+      "id": "eterogena-kai-diaxorismos"
+    },
+    {
+      "type": "exercise",
+      "id": "methodoi-diaxorismou"
+    },
+    {
+      "type": "exercise",
+      "id": "anakinhste-kala"
+    },
+    {
+      "type": "exercise",
+      "id": "kadoi-anakyklosis"
+    },
+    {
+      "type": "exercise",
+      "id": "swsto-lathos-eterogena"
+    },
+    {
+      "type": "lesson",
+      "id": "dialymata"
+    },
+    {
+      "type": "exercise",
+      "id": "omogenes-eterogenes"
+    },
+    {
+      "type": "exercise",
+      "id": "dialytis-kai-dialymena"
+    },
+    {
+      "type": "exercise",
+      "id": "zesto-i-kryo"
+    },
+    {
+      "type": "exercise",
+      "id": "plires-pothari"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Η ετικέτα της πορτοκαλάδας",
+  "label": "4",
+  "prompt": "Στην ετικέτα μιας πορτοκαλάδας διαβάζεις: «Συστατικά: νερό, ζάχαρη, χυμός πορτοκαλιού, διοξείδιο του άνθρακα».\nα) Η πορτοκαλάδα είναι καθαρή ουσία ή μίγμα;\nβ) Πόσα συστατικά γράφει η ετικέτα;\nγ) Ποιο συστατικό είναι στερεό και ποιο αέριο;\nδ) Γράψε δύο άλλα μίγματα που υπάρχουν στην κουζίνα.",
+  "reference_solution": "α) Μίγμα.\nβ) Τέσσερα (4).\nγ) Στερεό: η ζάχαρη. Αέριο: το διοξείδιο του άνθρακα.\nδ) Για παράδειγμα: σαλάτα, λαδόξιδο, τσάι, γάλα με κακάο, μαγιονέζα (οποιαδήποτε δύο σωστά μίγματα).",
+  "grading": "Correct: α = μίγμα; β = 4 (τέσσερα); γ = ζάχαρη (solid) and διοξείδιο του άνθρακα (gas); δ = two valid mixtures. Partial: three of the four parts right. Incorrect: fewer. For δ accept any real mixture from a kitchen (σαλάτα, λαδόξιδο, τσάι, χυμός, γάλα με κακάο, αναψυκτικό, σούπα, μαγιονέζα...). Do not accept a single pure substance such as νερό, ζάχαρη or αλάτι alone, and do not accept the soft drink from the label again. Common mistakes: (1) answering 'καθαρή ουσία' in α: tell the child that the label lists several ingredients, so it is a mixture; (2) counting 3 or 5 ingredients in β: tell the child to count the words separated by commas.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Αν η ετικέτα λέει πολλά συστατικά, η πορτοκαλάδα είναι καθαρή ουσία ή μίγμα;",
+    "Μέτρα τα συστατικά που χωρίζονται με κόμμα.",
+    "Η ζάχαρη είναι σαν κρύσταλλοι ή σκόνη. Το αέριο είναι οι φυσαλίδες."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Ομογενές ή ετερογενές;",
+  "label": "9",
+  "prompt": "Για κάθε μίγμα γράψε αν είναι ομογενές (διάλυμα) ή ετερογενές.\nα) αλατόνερο\nβ) σαλάτα\nγ) νερό με λάδι\nδ) νερό με ζάχαρη, καλά ανακατεμένο\nε) νερό με χώμα\nστ) καθαρός αέρας",
+  "reference_solution": "α) ομογενές\nβ) ετερογενές\nγ) ετερογενές\nδ) ομογενές\nε) ετερογενές\nστ) ομογενές",
+  "grading": "Correct: all six right (ομογενή: αλατόνερο, νερό με ζάχαρη, καθαρός αέρας; ετερογενή: σαλάτα, νερό με λάδι, νερό με χώμα). Partial: four or five right. Incorrect: three or fewer. Accept 'διάλυμα' for ομογενές. Accept abbreviations such as Ο / Ε only if the child clearly defined them; otherwise ask for the words. Do not penalise spelling. Common mistakes: (1) calling the sugar water ετερογενές: tell the child that the sugar has dissolved, so we cannot see it any more, and then the mixture is ομογενές; (2) calling the air ετερογενές: tell the child that clean air is a solution of gases; (3) calling the salad ομογενές: tell the child that we can see every piece.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Ομογενές: δεν μπορούμε να δούμε τα συστατικά, ούτε με μικροσκόπιο. Ετερογενές: τα βλέπουμε.",
+    "Όταν ένα στερεό διαλύεται στο νερό, το βλέπουμε ακόμα;",
+    "Στη σαλάτα, στο λάδι με το νερό και στο χώμα με το νερό ξεχωρίζουν τα συστατικά."
+  ]
+}

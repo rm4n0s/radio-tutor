@@ -1,0 +1,2195 @@
+{
+  "format": 1,
+  "title": "Τι είναι ένα μίγμα;",
+  "summary": "Καθαρές ουσίες και μίγματα: τα συστατικά, οι ιδιότητες και παραδείγματα από την κουζίνα.",
+  "tracks": [
+    {
+      "actor": "title",
+      "origin": [
+        800,
+        170
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 0.3,
+          "opacity": 0,
+          "scale": 1
+        },
+        {
+          "t": 1.1,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 1.104,
+          "scale": 1.0,
+          "ease": "in-out"
+        },
+        {
+          "t": 11.154,
+          "opacity": 1
+        },
+        {
+          "t": 11.554,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "card-a",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 8.74,
+          "opacity": 0
+        },
+        {
+          "t": 9.34,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 11.154,
+          "opacity": 1
+        },
+        {
+          "t": 11.554,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "card-b",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 10.157,
+          "opacity": 0
+        },
+        {
+          "t": 10.757,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 11.154,
+          "opacity": 1
+        },
+        {
+          "t": 11.554,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "h-pure",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 11.954,
+          "opacity": 0
+        },
+        {
+          "t": 12.454,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-window",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 15.212,
+          "opacity": 0
+        },
+        {
+          "t": 15.712,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-window-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 15.512,
+          "opacity": 0
+        },
+        {
+          "t": 16.012,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-coil",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 18.892,
+          "opacity": 0
+        },
+        {
+          "t": 19.392,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-coil-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 19.192,
+          "opacity": 0
+        },
+        {
+          "t": 19.692,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-thermo",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 21.756,
+          "opacity": 0
+        },
+        {
+          "t": 22.256,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-thermo-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 22.056,
+          "opacity": 0
+        },
+        {
+          "t": 22.556,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-drop",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 28.692,
+          "opacity": 0
+        },
+        {
+          "t": 29.192,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "pure-drop-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 28.992,
+          "opacity": 0
+        },
+        {
+          "t": 29.492,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "br-elements",
+      "reveal_box": [
+        120,
+        190,
+        960,
+        120
+      ],
+      "keys": [
+        {
+          "t": 26.106,
+          "reveal": 0
+        },
+        {
+          "t": 27.592,
+          "reveal": 1
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "br-compound",
+      "reveal_box": [
+        1180,
+        190,
+        330,
+        120
+      ],
+      "keys": [
+        {
+          "t": 33.476,
+          "reveal": 0
+        },
+        {
+          "t": 34.898,
+          "reveal": 1
+        },
+        {
+          "t": 35.198,
+          "opacity": 1
+        },
+        {
+          "t": 35.598,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "h-mix",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 35.998,
+          "opacity": 0
+        },
+        {
+          "t": 36.498,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "ing-red",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 36.298,
+          "opacity": 0
+        },
+        {
+          "t": 36.898,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "ing-blue",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 36.298,
+          "opacity": 0
+        },
+        {
+          "t": 36.898,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "ing-yellow",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 36.298,
+          "opacity": 0
+        },
+        {
+          "t": 36.898,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bowl-back",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 36.298,
+          "opacity": 0
+        },
+        {
+          "t": 36.898,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "mix-dots",
+      "reveal_box": [
+        600,
+        690,
+        400,
+        130
+      ],
+      "reveal_from": "bottom",
+      "keys": [
+        {
+          "t": 45.497,
+          "reveal": 0
+        },
+        {
+          "t": 46.697,
+          "reveal": 1
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bowl-front",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 36.298,
+          "opacity": 0
+        },
+        {
+          "t": 36.898,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "lab-mix",
+      "reveal_box": [
+        1060,
+        630,
+        520,
+        140
+      ],
+      "reveal_from": "right",
+      "keys": [
+        {
+          "t": 40.408,
+          "reveal": 0
+        },
+        {
+          "t": 41.208,
+          "reveal": 1
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "fly-red",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 44.097,
+          "opacity": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "t": 44.247,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 45.397,
+          "opacity": 1
+        },
+        {
+          "t": 45.597,
+          "x": 290,
+          "y": 430,
+          "ease": "in-out"
+        },
+        {
+          "t": 45.601,
+          "opacity": 0,
+          "ease": "in"
+        },
+        {
+          "t": 53.236,
+          "opacity": 0
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "fly-blue",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 44.447,
+          "opacity": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "t": 44.597,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 45.747,
+          "opacity": 1
+        },
+        {
+          "t": 45.947,
+          "x": 0,
+          "y": 430,
+          "ease": "in-out"
+        },
+        {
+          "t": 45.951,
+          "opacity": 0,
+          "ease": "in"
+        },
+        {
+          "t": 53.236,
+          "opacity": 0
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "fly-yellow",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 44.797,
+          "opacity": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "t": 44.947,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 46.097,
+          "opacity": 1
+        },
+        {
+          "t": 46.297,
+          "x": -290,
+          "y": 430,
+          "ease": "in-out"
+        },
+        {
+          "t": 46.301,
+          "opacity": 0,
+          "ease": "in"
+        },
+        {
+          "t": 53.236,
+          "opacity": 0
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "br-comp",
+      "reveal_box": [
+        310,
+        430,
+        980,
+        160
+      ],
+      "keys": [
+        {
+          "t": 51.127,
+          "reveal": 0
+        },
+        {
+          "t": 52.536,
+          "reveal": 1
+        },
+        {
+          "t": 53.236,
+          "opacity": 1
+        },
+        {
+          "t": 53.636,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "h-soda",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 54.236,
+          "opacity": 0
+        },
+        {
+          "t": 54.736,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bottle",
+      "origin": [
+        420,
+        700
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 54.436,
+          "opacity": 0
+        },
+        {
+          "t": 55.036,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "card",
+      "reveal_box": [
+        750,
+        220,
+        780,
+        580
+      ],
+      "reveal_from": "top",
+      "keys": [
+        {
+          "t": 56.778,
+          "reveal": 0
+        },
+        {
+          "t": 57.778,
+          "reveal": 1
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "row-nero",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 60.41,
+          "opacity": 0
+        },
+        {
+          "t": 60.91,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "row-zahari",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 62.698,
+          "opacity": 0
+        },
+        {
+          "t": 63.198,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "row-co2",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 65.05,
+          "opacity": 0
+        },
+        {
+          "t": 65.55,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 73.106,
+          "opacity": 1
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bubble-0",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 64.95,
+          "opacity": 0,
+          "y": 0
+        },
+        {
+          "t": 65.25,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 66.65,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 66.75,
+          "y": -230
+        },
+        {
+          "t": 66.76,
+          "opacity": 0.0
+        },
+        {
+          "t": 66.764,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 67.06,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 68.46,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 68.56,
+          "y": -230
+        },
+        {
+          "t": 68.57,
+          "opacity": 0.0
+        },
+        {
+          "t": 68.574,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 68.87,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 70.27,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 70.37,
+          "y": -230
+        },
+        {
+          "t": 70.38,
+          "opacity": 0.0
+        },
+        {
+          "t": 70.384,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 70.68,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 72.08,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 72.18,
+          "y": -230
+        },
+        {
+          "t": 73.106,
+          "opacity": 0.0
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bubble-1",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 65.45,
+          "opacity": 0,
+          "y": 0
+        },
+        {
+          "t": 65.75,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 67.15,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 67.25,
+          "y": -230
+        },
+        {
+          "t": 67.26,
+          "opacity": 0.0
+        },
+        {
+          "t": 67.264,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 67.56,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 68.96,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 69.06,
+          "y": -230
+        },
+        {
+          "t": 69.07,
+          "opacity": 0.0
+        },
+        {
+          "t": 69.074,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 69.37,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 70.77,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 70.87,
+          "y": -230
+        },
+        {
+          "t": 70.88,
+          "opacity": 0.0
+        },
+        {
+          "t": 70.884,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 71.18,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 72.58,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 72.68,
+          "y": -230
+        },
+        {
+          "t": 73.106,
+          "opacity": 0.0
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bubble-2",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 65.95,
+          "opacity": 0,
+          "y": 0
+        },
+        {
+          "t": 66.25,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 67.65,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 67.75,
+          "y": -230
+        },
+        {
+          "t": 67.76,
+          "opacity": 0.0
+        },
+        {
+          "t": 67.764,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 68.06,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 69.46,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 69.56,
+          "y": -230
+        },
+        {
+          "t": 69.57,
+          "opacity": 0.0
+        },
+        {
+          "t": 69.574,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 69.87,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 71.27,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 71.37,
+          "y": -230
+        },
+        {
+          "t": 73.106,
+          "opacity": 0.0
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "bubble-3",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 66.35,
+          "opacity": 0,
+          "y": 0
+        },
+        {
+          "t": 66.65,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 68.05,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 68.15,
+          "y": -230
+        },
+        {
+          "t": 68.16,
+          "opacity": 0.0
+        },
+        {
+          "t": 68.164,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 68.46,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 69.86,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 69.96,
+          "y": -230
+        },
+        {
+          "t": 69.97,
+          "opacity": 0.0
+        },
+        {
+          "t": 69.974,
+          "y": 0,
+          "ease": "step"
+        },
+        {
+          "t": 70.27,
+          "opacity": 0.9,
+          "ease": "out"
+        },
+        {
+          "t": 71.67,
+          "opacity": 0.0,
+          "ease": "in"
+        },
+        {
+          "t": 71.77,
+          "y": -230
+        },
+        {
+          "t": 73.106,
+          "opacity": 0.0
+        },
+        {
+          "t": 73.606,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "h-prop",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 73.506,
+          "opacity": 0
+        },
+        {
+          "t": 74.006,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-salt",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 77.838,
+          "opacity": 0
+        },
+        {
+          "t": 78.338,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-salt-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 78.676,
+          "opacity": 0
+        },
+        {
+          "t": 79.176,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-plus",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 80.886,
+          "opacity": 0
+        },
+        {
+          "t": 81.286,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-water",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 80.886,
+          "opacity": 0
+        },
+        {
+          "t": 81.386,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-eq",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 81.372,
+          "opacity": 0
+        },
+        {
+          "t": 81.772,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-res",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 81.372,
+          "opacity": 0
+        },
+        {
+          "t": 81.872,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "a-res-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 82.714,
+          "opacity": 0
+        },
+        {
+          "t": 83.214,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-sugar",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 84.99,
+          "opacity": 0
+        },
+        {
+          "t": 85.49,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-sugar-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 85.869,
+          "opacity": 0
+        },
+        {
+          "t": 86.369,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-coffee",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 86.586,
+          "opacity": 0
+        },
+        {
+          "t": 87.086,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-coffee-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 87.434,
+          "opacity": 0
+        },
+        {
+          "t": 87.934,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-plus",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 86.186,
+          "opacity": 0
+        },
+        {
+          "t": 86.586,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-eq",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 89.282,
+          "opacity": 0
+        },
+        {
+          "t": 89.682,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-res",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 89.482,
+          "opacity": 0
+        },
+        {
+          "t": 89.982,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-res-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 90.538,
+          "opacity": 0
+        },
+        {
+          "t": 91.038,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "b-res-l2",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 91.066,
+          "opacity": 0
+        },
+        {
+          "t": 91.566,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 92.69,
+          "opacity": 1
+        },
+        {
+          "t": 93.19,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "h-kit",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 93.09,
+          "opacity": 0
+        },
+        {
+          "t": 93.59,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-salad",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 96.163,
+          "opacity": 0
+        },
+        {
+          "t": 96.663,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-salad-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 96.363,
+          "opacity": 0
+        },
+        {
+          "t": 96.863,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-vin",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 96.949,
+          "opacity": 0
+        },
+        {
+          "t": 97.449,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-vin-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 97.149,
+          "opacity": 0
+        },
+        {
+          "t": 97.649,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-oj",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 97.806,
+          "opacity": 0
+        },
+        {
+          "t": 98.306,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-oj-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 98.006,
+          "opacity": 0
+        },
+        {
+          "t": 98.506,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-tea",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 99.591,
+          "opacity": 0
+        },
+        {
+          "t": 100.091,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-tea-l",
+      "keys": [
+        {
+          "t": 0,
+          "opacity": 0
+        },
+        {
+          "t": 99.791,
+          "opacity": 0
+        },
+        {
+          "t": 100.291,
+          "opacity": 1,
+          "ease": "out"
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    },
+    {
+      "actor": "k-final",
+      "reveal_box": [
+        300,
+        790,
+        1000,
+        80
+      ],
+      "keys": [
+        {
+          "t": 103.916,
+          "reveal": 0
+        },
+        {
+          "t": 106.2,
+          "reveal": 1
+        },
+        {
+          "t": 110.594,
+          "opacity": 1
+        },
+        {
+          "t": 111.394,
+          "opacity": 0,
+          "ease": "in"
+        }
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "start": 0.5,
+      "end": 5.93,
+      "text": "Γεια σου! Σήμερα θα γνωρίσουμε τα μίγματα."
+    },
+    {
+      "start": 6.23,
+      "end": 11.0,
+      "text": "Τα υλικά γύρω μας είναι δύο ειδών: καθαρές ουσίες και μίγματα."
+    },
+    {
+      "start": 12.05,
+      "end": 14.81,
+      "text": "Ας ξεκινήσουμε με τις καθαρές ουσίες."
+    },
+    {
+      "start": 15.11,
+      "end": 18.14,
+      "text": "Το αλουμίνιο στα παράθυρα είναι καθαρή ουσία."
+    },
+    {
+      "start": 18.79,
+      "end": 21.01,
+      "text": "Το ίδιο και ο χαλκός στα σύρματα."
+    },
+    {
+      "start": 21.66,
+      "end": 23.65,
+      "text": "Και ο υδράργυρος στο θερμόμετρο."
+    },
+    {
+      "start": 24.3,
+      "end": 27.74,
+      "text": "Αυτές οι ουσίες λέγονται χημικά στοιχεία."
+    },
+    {
+      "start": 28.59,
+      "end": 31.54,
+      "text": "Καθαρή ουσία είναι και το αποσταγμένο νερό."
+    },
+    {
+      "start": 31.84,
+      "end": 35.05,
+      "text": "Τέτοιες ουσίες λέγονται χημικές ενώσεις."
+    },
+    {
+      "start": 36.1,
+      "end": 40.01,
+      "text": "Τις περισσότερες φορές όμως τα υλικά δεν είναι καθαρές ουσίες."
+    },
+    {
+      "start": 40.31,
+      "end": 42.71,
+      "text": "Είναι μίγματα."
+    },
+    {
+      "start": 43.56,
+      "end": 48.11,
+      "text": "Όταν ανακατεύουμε δύο ή περισσότερες ουσίες, φτιάχνουμε ένα μίγμα."
+    },
+    {
+      "start": 48.96,
+      "end": 52.99,
+      "text": "Οι ουσίες που ανακατεύουμε λέγονται συστατικά του μίγματος."
+    },
+    {
+      "start": 54.34,
+      "end": 56.28,
+      "text": "Ας δούμε ένα αναψυκτικό."
+    },
+    {
+      "start": 56.58,
+      "end": 59.56,
+      "text": "Στην ετικέτα του διαβάζουμε τα συστατικά του."
+    },
+    {
+      "start": 60.31,
+      "end": 61.95,
+      "text": "Το νερό είναι υγρό."
+    },
+    {
+      "start": 62.6,
+      "end": 64.3,
+      "text": "Η ζάχαρη είναι στερεή."
+    },
+    {
+      "start": 64.95,
+      "end": 67.82,
+      "text": "Το διοξείδιο του άνθρακα είναι αέριο."
+    },
+    {
+      "start": 68.57,
+      "end": 72.26,
+      "text": "Το αναψυκτικό είναι μίγμα από υγρό, στερεό και αέριο."
+    },
+    {
+      "start": 73.61,
+      "end": 76.99,
+      "text": "Ένα μίγμα κρατάει τις ιδιότητες των συστατικών του."
+    },
+    {
+      "start": 77.74,
+      "end": 79.26,
+      "text": "Το αλάτι είναι αλμυρό."
+    },
+    {
+      "start": 79.91,
+      "end": 83.84,
+      "text": "Αν το ρίξουμε στο νερό, το αλατόνερο είναι κι αυτό αλμυρό."
+    },
+    {
+      "start": 84.89,
+      "end": 88.43,
+      "text": "Η ζάχαρη είναι γλυκιά και ο καφές έχει σκούρο χρώμα."
+    },
+    {
+      "start": 89.08,
+      "end": 91.84,
+      "text": "Ο καφές με ζάχαρη είναι σκούρος και γλυκός."
+    },
+    {
+      "start": 93.19,
+      "end": 95.82,
+      "text": "Στην κουζίνα φτιάχνουμε συχνά μίγματα."
+    },
+    {
+      "start": 96.12,
+      "end": 101.2,
+      "text": "Η σαλάτα, το λαδόξιδο, ο χυμός πορτοκαλιού και το τσάι είναι μίγματα."
+    },
+    {
+      "start": 102.25,
+      "end": 106.35,
+      "text": "Μίγμα φτιάχνουμε όταν ανακατεύουμε δύο ή περισσότερες ουσίες."
+    },
+    {
+      "start": 106.65,
+      "end": 109.74,
+      "text": "Στο επόμενο μάθημα θα δούμε πώς είναι τα μίγματα."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480">
+<rect width="1000" height="480" fill="#ffffff"/>
+<path d="M140.0 220.0 L150.0 360 L350.0 360 L360.0 220.0 Z" fill="#81d4fa" opacity="0.9"/><path d="M130.0 80 L150.0 360 L350.0 360 L370.0 80" fill="none" stroke="#78909c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="185" cy="345" r="12" fill="#ffffff" stroke="#78909c" stroke-width="3" /><circle cx="215" cy="337" r="12" fill="#ffffff" stroke="#78909c" stroke-width="3" /><circle cx="245" cy="345" r="12" fill="#ffffff" stroke="#78909c" stroke-width="3" /><circle cx="275" cy="337" r="12" fill="#ffffff" stroke="#78909c" stroke-width="3" /><circle cx="305" cy="345" r="12" fill="#ffffff" stroke="#78909c" stroke-width="3" />
+<text x="250" y="420" font-family="sans-serif" font-size="38" font-weight="bold" fill="#0277bd" text-anchor="middle" >μισογεμάτο ποτήρι</text>
+<text x="250" y="462" font-family="sans-serif" font-size="36" font-weight="bold" fill="#263238" text-anchor="middle" >λίγες κουταλιές αλάτι</text>
+<path d="M632.0 108.0 L650.0 360 L850.0 360 L868.0 108.0 Z" fill="#81d4fa" opacity="0.9"/><path d="M630.0 80 L650.0 360 L850.0 360 L870.0 80" fill="none" stroke="#78909c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+<text x="750" y="420" font-family="sans-serif" font-size="38" font-weight="bold" fill="#0277bd" text-anchor="middle" >γεμάτο ποτήρι</text>
+<text x="750" y="462" font-family="sans-serif" font-size="36" font-weight="bold" fill="#263238" text-anchor="middle" >πόσες κουταλιές;</text>
+</svg>

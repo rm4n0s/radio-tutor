@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Το ποτήρι που γέμισε ίζημα",
+  "label": "12",
+  "prompt": "Η Μαρία ρίχνει κουταλιές αλάτι σε ένα μισογεμάτο ποτήρι νερό και ανακατεύει. Μετά από λίγες κουταλιές το αλάτι δε διαλύεται πια και μένει στον πάτο.\nα) Πώς λέγεται αυτό που μένει στον πάτο;\nβ) Ποιο είναι ο διαλύτης και ποια η διαλυμένη ουσία;\nγ) Η Μαρία κάνει το ίδιο με ένα γεμάτο ποτήρι (ίδια θερμοκρασία). Θα διαλυθούν περισσότερες ή λιγότερες κουταλιές αλάτι; Γράψε γιατί.",
+  "reference_solution": "α) Ίζημα.\nβ) Διαλύτης: το νερό. Διαλυμένη ουσία: το αλάτι.\nγ) Περισσότερες, γιατί υπάρχει περισσότερος διαλύτης (περισσότερο νερό) και έτσι χωράει περισσότερο αλάτι.",
+  "grading": "Correct: α ίζημα; β νερό = διαλύτης, αλάτι = διαλυμένη ουσία; γ 'περισσότερες' with a reason mentioning that there is more water (more solvent). Partial: two of three right, or all three answers right but the reason in γ missing. Incorrect: otherwise. Do not penalise spelling. Common mistakes: (1) writing 'λιγότερες' in γ: tell the child that the more solvent we have, the more of the substance can be dissolved; (2) naming the sediment 'διάλυμα' or 'διαλύτης': tell the child the settled amount is called ίζημα; (3) swapping solvent and dissolved substance in β: tell the child that the water has the larger quantity.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Η ποσότητα που δε διαλύεται και κατακάθεται έχει ένα ειδικό όνομα. Ξεκινάει από ί.",
+    "Ο διαλύτης είναι το συστατικό που έχει τη μεγαλύτερη ποσότητα.",
+    "Αν το ποτήρι έχει περισσότερο νερό, χωράει περισσότερο αλάτι;"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "title": "Σωστό ή λάθος για τα ετερογενή",
+  "label": "8",
+  "prompt": "Γράψε Σ (σωστό) ή Λ (λάθος). Στις λάθος προτάσεις γράψε τη σωστή.\nα) Σε ένα ετερογενές μίγμα μπορούμε να δούμε τα συστατικά με το μάτι ή με μικροσκόπιο.\nβ) Το ίζημα είναι το στερεό που μαζεύεται στον πάτο του δοχείου.\nγ) Με τη διήθηση αφαιρούμε τα πετραδάκια από τις φακές με το χέρι.\nδ) Η φυγοκέντριση και η απόσταξη είναι απλές μέθοδοι, που κάνουμε κάθε μέρα στο σπίτι.",
+  "reference_solution": "α) Σ\nβ) Σ\nγ) Λ. Σωστά: αυτό λέγεται διαλογή (η διήθηση είναι όταν περνάμε ένα υγρό από φίλτρο).\nδ) Λ. Σωστά: είναι πιο σύνθετες μέθοδοι και γίνονται σε ειδικές εγκαταστάσεις.",
+  "grading": "Correct: α Σ, β Σ, γ Λ with the right correction (it is διαλογή), δ Λ with the right correction (they are complex methods used in special facilities). Partial: all four Σ/Λ right but one correction missing or wrong; or three of four Σ/Λ right. Incorrect: otherwise. Accept any wording with the same meaning. Do not penalise spelling. Common mistakes: marking γ as Σ: tell the child that picking stones out by hand is διαλογή, while διήθηση needs a filter or strainer.",
+  "show_work": false,
+  "max_attempts": 3,
+  "hints": [
+    "Ετερογενές είναι το μίγμα που βλέπουμε τα συστατικά του.",
+    "Θυμήσου ποια μέθοδο χρησιμοποιούμε για τα πετραδάκια στις φακές.",
+    "Η φυγοκέντριση, η απόσταξη και η χρωματογραφία χρειάζονται ειδικές εγκαταστάσεις."
+  ]
+}
