@@ -29,7 +29,14 @@ func defaultPlatformEnv() PlatformEnv { return PlatformEnv{ProgramsDir: programs
 // (SHGetKnownFolderPath), as %APPDATA%\Microsoft\Windows\Start Menu\Programs
 // can be moved or redirected. It fails with the tag ProgramsDirUnknown.
 func programsDir() (string, error) {
-	dir, err := windows.KnownFolderPath(windows.FOLDERID_Programs, windows.KF_FLAG_DEFAULT)
+	return programsDirFrom(func() (string, error) {
+		return windows.KnownFolderPath(windows.FOLDERID_Programs, windows.KF_FLAG_DEFAULT)
+	})
+}
+
+// programsDirFrom is programsDir with the shell's answer given as a function.
+func programsDirFrom(known func() (string, error)) (string, error) {
+	dir, err := known()
 	if err != nil {
 		return "", errors.NewErr("ProgramsDirUnknown", err)
 	}
