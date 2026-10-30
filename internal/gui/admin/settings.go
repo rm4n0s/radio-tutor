@@ -97,7 +97,7 @@ func (s *settingsState) save(change func(*settings.Settings)) {
 // its own: it follows the drag in s.volume, and the setting is saved when the
 // drag ends.
 func (s *settingsState) volumeRow(scope *app.Scope) m.Widget {
-	percent := scope.T("admin.settings.volume_value", "value", itoa(int(s.volume)))
+	percent := itoa(int(s.volume)) + "%" // the same in every language
 	return m.NewRow([]m.Widget{
 		m.NewExpanded(m.NewSlider(s.volume, func(v float64) {
 			s.SetState(func() { s.volume = v })

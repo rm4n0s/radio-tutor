@@ -235,7 +235,6 @@ var messagesEN = map[string]string{
 	"admin.settings.import_hint":       "When this is off, only parents can import.",
 	"admin.settings.volume":            "Volume",
 	"admin.settings.volume_hint":       "The loudness of the lessons and of the exercise prompts, for every profile.",
-	"admin.settings.volume_value":      "{value}%",
 	"admin.settings.phone":             "Phone",
 	"admin.settings.phone_hint":        "The page that takes the photos of the exercises is served to the phone on your home network.",
 	"admin.settings.port":              "Port",

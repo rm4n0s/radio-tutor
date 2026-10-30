@@ -234,7 +234,6 @@ var messagesEL = map[string]string{
 	"admin.settings.import_hint":       "Όταν είναι ανενεργό, μόνο οι γονείς μπορούν να εισάγουν.",
 	"admin.settings.volume":            "Ένταση ήχου",
 	"admin.settings.volume_hint":       "Πόσο δυνατά ακούγονται τα μαθήματα και οι εκφωνήσεις των ασκήσεων, για όλα τα προφίλ.",
-	"admin.settings.volume_value":      "{value}%",
 	"admin.settings.phone":             "Κινητό",
 	"admin.settings.phone_hint":        "Η σελίδα που παίρνει τις φωτογραφίες των ασκήσεων σερβίρεται στο κινητό μέσα από το δίκτυο του σπιτιού σου.",
 	"admin.settings.port":              "Θύρα",
