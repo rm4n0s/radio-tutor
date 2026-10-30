@@ -30,7 +30,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 | D4 | One scene and one narration track per lesson; the audio is the lesson's clock | animation and narration never drift apart; longer material is split into more lessons |
 | D5 | The player has Play, Pause and Stop only (no seeking in v1); a lesson is completed when it plays to its end | keeps lessons from being skipped; seeking can come later |
 | D6 | The UI uses Glutter's `widgets` and `material` packages | Material's buttons, dialogs, text fields and progress indicators save much work |
-| D7 | Narration audio is Ogg Vorbis, decoded by `github.com/jfreymuth/oggvorbis` and played through `github.com/jfreymuth/pulse` (PulseAudio protocol, which PipeWire also serves) | pure Go; one format to support; `ffmpeg -c:a libvorbis` produces it |
+| D7 | Narration audio is Ogg Vorbis, decoded by `github.com/jfreymuth/oggvorbis` and played through `internal/core/pulse`, a copy of `github.com/jfreymuth/pulse` v0.1.3 (MIT) that we own and fixed (PulseAudio protocol, which PipeWire also serves) | pure Go; one format to support; `ffmpeg -c:a libvorbis` produces it; upstream's connection loop deadlocks on pause and resume, and the copy lets us fix that |
 | D8 | AI providers are reached through the OpenAI-compatible Chat Completions protocol with `net/http`; no AI SDK. The provider config has a `protocol` field (only `openai` in v1) so a native protocol can be added later | one client covers OpenAI, Ollama, llama.cpp, LM Studio, vLLM, OpenRouter, Gemini's and Anthropic's OpenAI-compatible endpoints; no dependency |
 | D9 | The app owns the grading prompt and the reply schema; the cassette supplies data (reference solutions, grading instructions, tone) that is put in the prompt as data | any model can grade; the reply is validated; text in cassettes and on the paper cannot take over the grader |
 | D10 | One photo submission can hold the solutions of several exercises; the AI must separate them, helped by the exercise **labels** the child writes next to each solution | children solve a whole worksheet on one page |
@@ -103,6 +103,7 @@ internal/core/timeline           timeline model and evaluation (state at time t)
 internal/core/cassette           cassette documents: parse and validate manifest, lesson, exercise
 internal/core/scene              split scene.svg into layers, list actors
 internal/core/audio              Ogg Vorbis decoding, the player, its clock, sinks (fake, silent, PulseAudio)
+internal/core/pulse              the PulseAudio client library: a copy of github.com/jfreymuth/pulse v0.1.3 (MIT, internal/core/pulse/LICENSE), with the proto subpackage and pulsetest, a fake server for tests
 internal/core/archive            read and write cassette zips with limits; full validation; the cassette store (import, upgrade, remove, list)
 internal/core/profile            profiles, passwords, login
 internal/core/progress           save files, unlock rules, attempts, overrides, settings per student and cassette
@@ -131,6 +132,8 @@ Rules (checked by `internal/archtest`):
 - `internal/gui/...` may import `internal/core/...`.
 - Only `internal/core/grading/openai` and `internal/core/providers` make outbound HTTP requests; only `internal/core/phone` listens.
 - No package imports `os/exec`, except the test helpers of `internal/core/audio` behind the `radiotutor_audio` tag and the developer tools under `scripts/` (they are not part of the application).
+
+- `internal/core/pulse` and `internal/core/pulse/proto` are copied third-party code (MIT, see the LICENSE in their folder) and are project code now: errors from `github.com/rm4n0s/errors`, doc comments, tests. **Exception to the `context.Context` rule:** they keep upstream's API (`NewClient`, `Start`, `Pause`... take no `ctx`; the client has a request timeout, 1 s by default, 2 s as `PulseSink` sets it), so that they stay comparable with upstream; `PulseSink` (`internal/core/audio`) is the wrapper that takes a `ctx`, and the library's connect and stream start are never waited for without a bound there. The connection's read loop must never block on delivering an event.
 
 The core exposes plain Go services; the GUI calls them on goroutines and gets results back through `SetState` or the binding's `Post`. Long operations take a `ctx`.
 
@@ -262,7 +265,7 @@ On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark n
 ### 8.1 Audio
 
 - `internal/core/audio` decodes the whole Ogg Vorbis file into memory as 32-bit float samples when the lesson opens (on a goroutine, with a "loading" indicator). Narration is short (CASSETTE-FORMAT §6), so this is bounded.
-- The player gives its samples to a **sink**, which pulls them as the device wants more (the PulseAudio protocol asks for data; nothing is pushed). Sinks: `pulse` (the PulseAudio protocol through `PULSE_SERVER` or `$XDG_RUNTIME_DIR/pulse/native`), `silent` (a wall clock, no sound) and `fake` (tests).
+- The player gives its samples to a **sink**, which pulls them as the device wants more (the PulseAudio protocol asks for data; nothing is pushed). Sinks: `pulse` (the PulseAudio protocol through `PULSE_SERVER` or `$XDG_RUNTIME_DIR/pulse/native`; Pause corks the one stream and Resume uncorks it), `silent` (a wall clock, no sound) and `fake` (tests).
 - If no PulseAudio server answers, the player uses the `silent` sink and shows "No sound device found. The lesson plays without sound." once per run; the lesson can still be completed.
 
 ### 8.2 The clock

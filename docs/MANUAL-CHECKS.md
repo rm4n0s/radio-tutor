@@ -31,9 +31,19 @@ Needs a running PulseAudio or PipeWire (with `pipewire-pulse`) server on your de
 go test -tags radiotutor_audio -run TestRealServerTone -count=1 -v ./internal/core/audio
 ```
 
-You should hear a 1 s tone (440 Hz, quiet), with a gap of about 0.3 s in the middle where the test pauses and resumes it. The test passes when no server error occurs, the position never goes backwards, the pause holds the position, and the clip ends by itself after about 1.3 s of wall time. If no sound server answers, the test fails with the reason the app would show as "No sound device found".
+You should hear a 1 s tone (440 Hz, quiet), with two gaps where the test pauses and resumes it: about 0.3 s at 0.3 s into the tone and about 0.2 s at 0.7 s. Each pause corks the stream and each resume uncorks the same stream. The test passes when no server error occurs, the position never goes backwards, each pause holds the position, each resume succeeds, and the clip ends by itself after about 1.5 s of wall time. If no sound server answers, the test fails with the reason the app would show as "No sound device found".
 
 Also look at the volume control of your desktop while it runs: the stream is named "Radio Tutor".
+
+## 5.2 Pause and resume on the copy of the pulse library
+
+The copy in `internal/core/pulse` fixes the deadlock of upstream's connection loop that made Radio Tutor close and reopen the stream on every pause. This checks that corking and uncorking one stream works against your real server (PipeWire's `pipewire-pulse` is the one that showed the bug). Run the test of 5.1 three times in a row, and listen for a click, a repeated or skipped piece of the tone around the gaps, or a delay of seconds at the end:
+
+```
+go test -tags radiotutor_audio -run TestRealServerTone -count=3 -v ./internal/core/audio
+```
+
+Then in the app (`scripts/isolated.sh -- go run ./cmd/radio-tutor`, the sample cassette): open a lesson, press Pause and Play ten times quickly and then let it play to the end, and press Stop in the middle of another play. Pause and Play must answer at once (no wait of 2 s or 4 s), the narration must continue exactly where it stopped, and Stop and the end of the lesson must be prompt.
 
 ## 6.1 App shell and login
 

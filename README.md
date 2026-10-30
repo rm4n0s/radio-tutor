@@ -159,6 +159,10 @@ It asks twice for the new password without showing it, and saves it. The passwor
 
 BSD 3-Clause, see [LICENSE](LICENSE).
 
+## Third-party code
+
+`internal/core/pulse` is a copy of [github.com/jfreymuth/pulse](https://github.com/jfreymuth/pulse) v0.1.3 (Copyright (c) 2019 Johann Freymuth, MIT License), the PulseAudio client Radio Tutor plays sound with. It is changed for Radio Tutor (it no longer blocks when a stream is paused and resumed, and it uses this project's error handling). The license is in [internal/core/pulse/LICENSE](internal/core/pulse/LICENSE) and every copied file says where it comes from.
+
 ## For developers
 
 Radio Tutor is Go on [Glutter](https://github.com/rm4n0s/glutter), without cgo. Start with [CLAUDE.md](CLAUDE.md) (rules and commands), [docs/SPEC.md](docs/SPEC.md) (the specification), [docs/CASSETTE-FORMAT.md](docs/CASSETTE-FORMAT.md), [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) (the plan) and [docs/IMPLEMENTED.md](docs/IMPLEMENTED.md) (what each step built). The checks that must pass:
