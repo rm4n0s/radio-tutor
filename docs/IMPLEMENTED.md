@@ -645,3 +645,21 @@ Manual checks: pending, see docs/MANUAL-CHECKS.md ("7.2 Full walkthrough": the s
 
 Later:
 - The version string is "(devel)" in a `go run` build; `go install` of a tag gives the module version.
+
+## 7.3 User documentation
+2026-10-30
+
+Built:
+- `README.md` (new): what Radio Tutor is and the child's flow in five steps; requirements; install (`go install ...@latest` and from a clone); first run (parent account, student, provider, importing `testdata/cassettes/sample.cassette`, `validate`); the firewall (firewalld commands for the default port 8737 and how to remove the rule, ufw); choosing an AI provider (cloud vs local, the privacy note, Ollama with `ollama pull qwen2.5vl:7b`, the model of the Ollama preset, the Test button, `providers.json` permissions); making cassettes (links to `docs/CASSETTE-AUTHORING-PROMPT.md` and `docs/CASSETTE-FORMAT.md`, `validate` and `pack`); where the data lives (the XDG folders of SPEC §4); backing up and restoring; `radio-tutor reset-password <username>`; troubleshooting (no sound, the phone cannot open the page, "already running", "The checker could not answer", no file dialog); the license; a "For developers" section with the check commands. The texts of the buttons and notices it quotes were checked against `internal/core/i18n/en.go`, and the commands against the code (`cmd/radio-tutor`, `internal/core/storage`, `internal/core/providers/presets.go`).
+- `docs/MANUAL-CHECKS.md`: the checks are ordered by step (3.3, 4.1, 5.1, 6.1, 6.2, 6.4, 6.5, 7.1, 7.2, 7.3); stale "until 6.2 / 6.3 / cmd exists" remarks removed; the firewall command is no longer repeated (the README has it); new item 7.3 (follow the README on a clean account). The real-phone checks (4.1, 6.5, 7.2) and the real-provider checks (3.3, 6.2, 7.2) were already there and keep their exact commands.
+
+Commands run (on isolated or read-only data): `go run ./cmd/radio-tutor validate testdata/cassettes/sample.cassette` (valid, exit 0), `version` (`(devel)`), `pack` of the sample folder (writes the same bytes as the committed cassette; refuses to overwrite without `--force`), `reset-password nobody` under `scripts/isolated.sh` (reports "no user named", exit 1). The GUI was not run.
+
+Tests: none (documentation only).
+
+Deviations from the spec: none.
+
+Manual checks: pending, see docs/MANUAL-CHECKS.md ("7.3 The README, followed on a clean account").
+
+Later:
+- `go install ...@latest` only works once the module is published with a tag; until then build from a clone.
