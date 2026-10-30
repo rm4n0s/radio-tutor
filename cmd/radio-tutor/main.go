@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	// os.Interrupt is Ctrl+C on both systems; SIGTERM is the termination signal on
+	// Linux and, in Go, what Windows sends when a console is closed or the user logs
+	// off or shuts down (SPEC §4).
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	info, ok := debug.ReadBuildInfo()
 	version := versionOf(info, ok)
