@@ -18,6 +18,10 @@ const (
 	ContentMaxWidth = 640.0
 )
 
+// buttonLabelSize is the size of a button's label before textScale (Material's
+// is 14): the buttons are large, so their labels are too.
+const buttonLabelSize = 16
+
 // textScale makes the Material 3 type scale larger than the default, for
 // children.
 const textScale = 1.25
@@ -35,7 +39,7 @@ func textTheme() *m.TextTheme {
 		HeadlineLarge: sized(32), HeadlineMedium: sized(28), HeadlineSmall: sized(24),
 		TitleLarge: sized(22), TitleMedium: sized(16), TitleSmall: sized(14),
 		BodyLarge: sized(16), BodyMedium: sized(14), BodySmall: sized(12),
-		LabelLarge: sized(16), LabelMedium: sized(12), LabelSmall: sized(11),
+		LabelLarge: sized(14), LabelMedium: sized(12), LabelSmall: sized(11),
 	})
 }
 
@@ -45,13 +49,11 @@ func textTheme() *m.TextTheme {
 func NewTheme() *m.ThemeData {
 	seed := m.Colors.Blue.Primary
 	text := textTheme()
-	// Glutter: a ButtonStyle whose TextStyle is set (FilledButtonStyleFrom with
-	// TextStyle) draws no label at all, even with a ForegroundColor, so the
-	// buttons get their larger label from the theme's LabelLarge instead.
 	buttonOpts := m.ButtonStyleFromOpts{
 		MinimumSize: m.Some(m.Size{Width: ButtonMinWidth, Height: ButtonHeight}),
 		Padding:     m.NewEdgeInsetsSymmetric(12, 28),
 		Shape:       m.NewStadiumBorder(),
+		TextStyle:   sized(buttonLabelSize),
 	}
 	return m.NewThemeData(m.ThemeDataOpts{
 		ColorSchemeSeed:   m.Some(seed),

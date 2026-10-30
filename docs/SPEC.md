@@ -24,7 +24,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 
 | Id | Decision | Why |
 |---|---|---|
-| D1 | Go, cgo-free, Linux and Windows desktop (Windows 10 version 1809 or later; D20), UI on Glutter v1.9.5 or newer | the owner's stack; Glutter draws SVG (its §26) and runs on Linux and Windows (its §25) |
+| D1 | Go, cgo-free, Linux and Windows desktop (Windows 10 version 1809 or later; D20), UI on Glutter v1.9.7 or newer | the owner's stack; Glutter draws SVG (its §26) and runs on Linux and Windows (its §25) |
 | D2 | A cassette is a zip file with the extension `.cassette`, format in `docs/CASSETTE-FORMAT.md` | simple to produce for an AI agent with a shell; one file to share |
 | D3 | Animation is Radio Tutor's own keyframe timeline over the top-level groups (`<g id>`) of one SVG scene, not SMIL or CSS animation | Glutter draws static SVG only; a JSON keyframe list is easy for an AI agent to write and for the app to validate; it composes with Glutter's transform, opacity and clip widgets |
 | D4 | One scene and one narration track per lesson; the audio is the lesson's clock | animation and narration never drift apart; longer material is split into more lessons |
