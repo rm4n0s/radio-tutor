@@ -1,5 +1,7 @@
 package audio
 
+import "math"
+
 // MaxVolume is the loudest volume setting, in percent: the samples are played
 // as they are.
 const MaxVolume = 100
@@ -14,13 +16,37 @@ func Gain(volume int) float32 {
 	return f * f * f
 }
 
-// SetVolume sets the volume, in percent, of the sound the Player starts from
-// now on (SPEC §8.1); the default is MaxVolume. A clip that already plays, or
-// is paused, keeps the volume it started with. Volume 0 plays silence: the
-// clip still runs and ends. It is safe for concurrent use.
+// SetVolume sets the volume, in percent, of the sound of the Player (SPEC
+// §8.1); the default is MaxVolume. It takes effect at once: the clip that plays
+// goes on from the next samples the sink pulls (a sink may have a short buffer
+// of samples already, so the change is heard within a fraction of a second), and
+// a clip started or resumed later plays at the new volume. Volume 0 plays
+// silence: the clip still runs and ends. The volume is kept while the Player is
+// muted. It is safe for concurrent use, also from the goroutine that is
+// starting a clip, and it never blocks on the sound server.
 func (p *Player) SetVolume(volume int) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.gain = Gain(volume)
-	p.gainSet = true
+	p.volMu.Lock()
+	defer p.volMu.Unlock()
+	p.vol = Gain(volume)
+	p.applyLevelLocked()
+}
+
+// SetMuted mutes the Player or lets it sound again, with the volume it was set
+// to (SPEC §8.1). Like SetVolume it takes effect at once and is safe for
+// concurrent use. A muted clip still runs and ends.
+func (p *Player) SetMuted(muted bool) {
+	p.volMu.Lock()
+	defer p.volMu.Unlock()
+	p.muted = muted
+	p.applyLevelLocked()
+}
+
+// applyLevelLocked publishes the gain to the sink's goroutine. p.volMu must be
+// held.
+func (p *Player) applyLevelLocked() {
+	gain := p.vol
+	if p.muted {
+		gain = 0
+	}
+	p.level.Store(math.Float32bits(gain))
 }

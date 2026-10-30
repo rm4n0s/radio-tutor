@@ -2,6 +2,8 @@ package audio
 
 import (
 	"context"
+	"math"
+	"sync/atomic"
 	"testing"
 )
 
@@ -68,43 +70,121 @@ func TestPlayerVolumeScalesTheSamples(t *testing.T) {
 	}
 }
 
-func TestPlayerVolumeTakesEffectOnTheNextStart(t *testing.T) {
+func TestPlayerVolumeChangesTheSoundThatPlays(t *testing.T) {
+	// Every step plays 100 ms of the clip (100 samples), then changes the sound.
+	type step struct {
+		name   string
+		change func(p *Player)
+		factor float32 // of the 100 samples played after the change
+	}
+	steps := []step{
+		{"starts at full volume", func(*Player) {}, 1},
+		{"volume to 50 is an eighth", func(p *Player) { p.SetVolume(50) }, 0.125},
+		{"mute is silence", func(p *Player) { p.SetMuted(true) }, 0},
+		{"a volume set while muted stays silent", func(p *Player) { p.SetVolume(80) }, 0},
+		{"unmute restores the volume that was set", func(p *Player) { p.SetMuted(false) }, Gain(80)},
+		{"volume 0 is silence", func(p *Player) { p.SetVolume(0) }, 0},
+		{"full volume again", func(p *Player) { p.SetVolume(100) }, 1},
+	}
 	clip := rampClip(1000)
 	p, sink, clock := newTestPlayer(t, clip)
-	p.SetVolume(100)
+	if err := p.Play(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	for i, st := range steps {
+		st.change(p)
+		clock.Advance(ms(100))
+		p.Position() // pulls the samples that played
+		got := sink.Played()
+		if len(got) != 100*(i+1) {
+			t.Fatalf("%s: the device took %d samples, want %d", st.name, len(got), 100*(i+1))
+		}
+		for j := 100 * i; j < len(got); j++ {
+			want := clip.Samples[j] * st.factor
+			if got[j] < want-1e-6 || got[j] > want+1e-6 {
+				t.Fatalf("%s: sample %d = %v, want %v", st.name, j, got[j], want)
+			}
+		}
+	}
+	// The clip ran on all the way, and still ends.
+	clock.Advance(ms(400))
+	if p.State() != StateEnded {
+		t.Errorf("state = %v after the clip's length", p.State())
+	}
+}
+
+func TestPlayerMutedClipStillRunsAndEnds(t *testing.T) {
+	clip := rampClip(500)
+	p, sink, clock := newTestPlayer(t, clip)
+	p.SetMuted(true)
+	if err := p.Play(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(ms(600))
+	for i, v := range sink.Played() {
+		if v != 0 {
+			t.Fatalf("sample %d = %v while muted", i, v)
+		}
+	}
+	if p.State() != StateEnded || endedCount(p) != 1 {
+		t.Errorf("state = %v, ends = %d", p.State(), endedCount(p))
+	}
+}
+
+func TestPlayerVolumeSetWhilePausedAppliesOnResume(t *testing.T) {
+	clip := rampClip(1000)
+	p, sink, clock := newTestPlayer(t, clip)
 	if err := p.Play(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	clock.Advance(ms(200))
-	p.SetVolume(0)
 	p.Pause()
+	p.SetMuted(true)
 	if err := p.Play(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	clock.Advance(ms(200))
+	p.Position()
 	played := sink.Played()
 	if len(played) != 400 {
 		t.Fatalf("the device took %d samples, want 400", len(played))
 	}
 	for i, v := range played {
-		if v != clip.Samples[i] {
-			t.Fatalf("sample %d changed by a volume set while it played: %v", i, v)
+		want := clip.Samples[i]
+		if i >= 200 {
+			want = 0
 		}
-	}
-	p.Stop()
-	if err := p.Play(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	clock.Advance(ms(300))
-	for i, v := range sink.Played() {
-		if v != 0 {
-			t.Fatalf("sample %d = %v after the volume went to 0", i, v)
+		if v != want {
+			t.Fatalf("sample %d = %v, want %v", i, v, want)
 		}
 	}
 }
 
+func TestPlayerVolumeIsSafeAcrossGoroutines(t *testing.T) {
+	clip := rampClip(1000)
+	p, _, clock := newTestPlayer(t, clip)
+	if err := p.Play(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := range 200 {
+			p.SetVolume(i % 101)
+			p.SetMuted(i%7 == 0)
+		}
+	}()
+	for range 10 {
+		clock.Advance(ms(50))
+		p.Position()
+	}
+	<-done
+}
+
 func TestClipSourceClampsAfterTheGain(t *testing.T) {
-	s := &clipSource{samples: []float32{0.25, -0.25, 0.9, -0.9}, channels: 2, scaled: true, gain: 2}
+	level := new(atomic.Uint32)
+	level.Store(math.Float32bits(2))
+	s := &clipSource{samples: []float32{0.25, -0.25, 0.9, -0.9}, channels: 2, level: level}
 	dst := make([]float32, 4)
 	if n := s.Read(dst); n != 4 {
 		t.Fatalf("read %d samples", n)

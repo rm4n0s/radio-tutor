@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rm4n0s/errors"
@@ -81,8 +82,14 @@ type Player struct {
 	gen    uint64 // changes whenever the end timer is replaced or cancelled
 	closed bool
 
-	gain    float32 // the factor of the samples of the next start (SetVolume)
-	gainSet bool    // SetVolume was called; otherwise the gain is 1
+	// level is the gain the sink's goroutine applies to the samples it reads,
+	// the bits of a float32, changed by SetVolume and SetMuted while the clip
+	// plays. volMu guards the setting behind it; neither needs mu, so that the
+	// UI can change the volume while a Play waits for the sound server.
+	level atomic.Uint32
+	volMu sync.Mutex
+	vol   float32 // the gain of the volume setting (SetVolume)
+	muted bool    // SetMuted: the level is 0, whatever the volume
 }
 
 // NewPlayer returns a Player that plays through sink and reads time from
@@ -92,7 +99,9 @@ func NewPlayer(sink Sink, clock Clock) *Player {
 	if clock == nil {
 		clock = SystemClock()
 	}
-	return &Player{sink: sink, clock: clock, ended: make(chan struct{}, 1)}
+	p := &Player{sink: sink, clock: clock, ended: make(chan struct{}, 1), vol: 1}
+	p.level.Store(math.Float32bits(1))
+	return p
 }
 
 // Ended returns a channel that receives one value each time a clip plays to
@@ -155,7 +164,7 @@ func (p *Player) Play(ctx context.Context) error {
 		return nil
 	}
 	f := Format{SampleRate: p.clip.SampleRate, Channels: p.clip.Channels}
-	src := &clipSource{samples: p.clip.Samples, channels: p.clip.Channels, scaled: p.gainSet, gain: p.gain}
+	src := &clipSource{samples: p.clip.Samples, channels: p.clip.Channels, level: &p.level}
 	if err := p.sink.Start(ctx, src, f); err != nil {
 		return err
 	}
@@ -312,13 +321,13 @@ func (p *Player) onTimer(gen uint64) {
 }
 
 // clipSource is the Source of a Clip: the samples from the start, multiplied by
-// gain when scaled is set (the zero value plays the samples as they are).
+// the gain in level, which may change between two reads. A nil level plays the
+// samples as they are.
 type clipSource struct {
 	samples  []float32
 	channels int
 	pos      int
-	scaled   bool
-	gain     float32
+	level    *atomic.Uint32
 }
 
 func (s *clipSource) SeekFrame(frame int64) {
@@ -331,12 +340,16 @@ func (s *clipSource) Read(dst []float32) int {
 	if n <= 0 {
 		return 0
 	}
-	if !s.scaled || s.gain == 1 {
+	gain := float32(1)
+	if s.level != nil {
+		gain = math.Float32frombits(s.level.Load())
+	}
+	if gain == 1 {
 		copy(dst, s.samples[s.pos:s.pos+n])
 	} else {
 		for i, v := range s.samples[s.pos : s.pos+n] {
 			// Clamp after the gain so a gain above 1 could not overflow.
-			dst[i] = min(max(v*s.gain, -1), 1)
+			dst[i] = min(max(v*gain, -1), 1)
 		}
 	}
 	s.pos += n
