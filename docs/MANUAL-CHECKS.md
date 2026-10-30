@@ -21,7 +21,7 @@ A real phone on the same Wi-Fi as this computer. The firewall must allow port 87
 
 1. **The page on Android Chrome and iOS Safari.**
    `go test -tags radiotutor_phone ./internal/core/phone -run TestServeForRealPhone -v` (set `RADIO_TUTOR_LANG=el` for Greek, `RADIO_TUTOR_INTERFACE=<name>` to pick the Wi-Fi interface)
-   Type the printed URL on the phone. Does the page show the title (with the odd characters as text), both exercises with their badges, and the big button? Does the button open the camera? Take 2 photos, remove one with the ✕, take another, press Send: does the progress bar move, and does the page then say "Sent! Look at the computer." while the test log says "received 2 photos"? Reload the page afterwards: it must say the link has expired.
+   Type the printed URL on the phone. Does the page show the title (with the odd characters as text), both exercises with their badges, and the big button? Does the button open the camera? Take 2 photos, remove one with the ✕, take another, press Send: does the progress bar move, and does the page then say "Sent! Look at the computer." while the test log says "received 2 photos"? The test then offers a second submission (exercise 3) on the same page: after about ten seconds of "Sent!" the page must switch to it by itself, with no reload and no new scan, and a second Send must work. Reload the page: it shows the waiting or the exercises, not an error. (The test ends after the second submission arrives; the link then ends and a reload says it has expired.)
 
 ## 5.1 Real sound through the audio server
 
@@ -83,6 +83,19 @@ Needs a real display, a phone on the same Wi-Fi, a sound device and (for the las
 1. **The QR code scans.** Open a worksheet as a student, press **Check my answers**, and scan the code with the phone's camera app. Does the phone open the page that lists the selected exercises (open the port as in 4.1 if not)? Compare the address under the code with the one in the phone's browser.
 2. **Prompt audio.** On a worksheet whose exercise has `prompt.ogg`, press **Listen**: you should hear the prompt and the button goes back to **Listen** when it ends; **Stop** stops it at once.
 3. **The whole flow with a real provider.** Send a photo of your own solution and read the results screen: marks, feedback, the star and the new hint.
+
+## 6.5 (phone link) The phone page stays open between worksheets
+
+Needs a real display, a phone on the same Wi-Fi (the port open as in 4.1), a sound device is not needed. An AI provider is needed for the grading; you may use the fake path by cancelling instead of sending in steps 6 and 9 if you only want to check the page. The app runs on throw-away data folders (`scripts/isolated.sh`). Import `testdata/cassettes/sample.cassette` first (see 6.2) and add a student `mia`.
+
+1. `scripts/isolated.sh -- go run ./cmd/radio-tutor`, log in as `mia`, open a worksheet and press **Check my answers**. The QR code is large; the screen does not say "Your phone is ready".
+2. Scan the code once with the phone's camera app. The phone shows the exercises of the worksheet; the computer says "Your phone opened the page."
+3. Take a photo, press Send. The phone says "Sent! Look at the computer. Leave this page open for the next one." (in Greek: «Στάλθηκε! Κοίτα τον υπολογιστή. Άφησε αυτή τη σελίδα ανοιχτή για την επόμενη.»). The computer grades and shows the results.
+4. **Keep the page open on the phone** (do not close the tab). On the computer press **Back to the worksheet**, go to another worksheet (or the same one if exercises are still open) and press **Check my answers**. The computer says "Your phone is ready: the page updated by itself", the address under the smaller code is the same as before, and **the phone page switches to the new exercises by itself**, without a reload and without scanning. Send a photo: it works as before.
+5. Press **Check my answers** once more and then **Cancel** on the computer: the phone page goes back to "Waiting for the next exercise…" by itself within a few seconds.
+6. Press **Check my answers** again, then lock the phone for about a minute and unlock it. Within a few seconds the page still shows the exercises (or the waiting message if you cancelled meanwhile) and works: send a photo. Repeat with Wi-Fi switched off on the phone for 20 seconds: the page shows "The connection was lost. Trying again…" and recovers when the Wi-Fi is back, with no reload.
+7. Cancel, then **Log out** on the computer. On the phone, within about 30 seconds (or at once when you unlock it or switch back to the tab) the page says "This link has expired". Reload it: the same. Log in as `mia` again and **Check my answers**: the QR code is large again (a new link); the old phone page stays expired.
+8. `pgrep -a radio-tutor` must show nothing left.
 
 ## 7.1 Sample cassette: listen to it
 

@@ -7,7 +7,7 @@ A session of a child:
 1. The child logs in with a name and a password and picks a cassette from the shelf.
 2. The child plays a lesson: an animated picture, a narrator and captions.
 3. The child solves the worksheet **on paper** and presses **Check my answers**.
-4. The app shows a QR code. The child scans it with a phone, takes photos of the paper and sends them.
+4. The app shows a QR code. The child scans it with a phone (once per login: the page stays open and switches to the next worksheet by itself), takes photos of the paper and sends them.
 5. The AI reads the photos and tells the child, for each exercise, whether it is right and why. When every exercise of a lesson is passed, the next lesson unlocks.
 
 Everything stays on your computer, except the photos and the exercise text, which go to the AI provider you choose (see [Choosing an AI provider](#choosing-an-ai-provider)).
@@ -80,7 +80,7 @@ sudo firewall-cmd --remove-port=8737/tcp --permanent && sudo firewall-cmd --relo
 
 On Ubuntu and other systems with ufw: `sudo ufw allow 8737/tcp`.
 
-The address is `http://<this computer's address on your network>:8737/s/<one-time code>`. The link works for 30 minutes, until the photos are sent, or until the child presses Cancel. The page uses plain HTTP and is only meant for your home network.
+The address is `http://<this computer's address on your network>:8737/p/<secret code>`. It belongs to the student who is logged in: the page on the phone stays open between worksheets and switches to the next one when the child presses Check my answers, so the code is scanned once. The link ends when the student logs out, when Radio Tutor closes, or after an hour in which no photos were sent through it; a submission waits for its photos for 30 minutes, or until the child presses Cancel, and then the page goes back to waiting. The page uses plain HTTP and is only meant for your home network.
 
 ## Choosing an AI provider
 
@@ -150,7 +150,7 @@ It asks twice for the new password without showing it, and saves it. The passwor
 ## Troubleshooting
 
 - **No sound.** The lesson shows "No sound device found. The lesson plays without sound." and plays silently. Check that PulseAudio or PipeWire is running in your desktop session (`pactl info`; with PipeWire the `pipewire-pulse` service must run), then start the app again.
-- **The phone cannot open the page.** The phone must be on the same network as the computer (not a guest network that isolates devices). Type the address shown under the QR code. Open the port as described [above](#let-the-phone-reach-the-computer). If the computer has several networks, pick the right one in Settings, "Network interface for the phone page". "This computer is not connected to a network" means no private address was found. A page saying the link has expired needs a new Check my answers. If the port is taken by another program, choose another one in Settings.
+- **The phone cannot open the page.** The phone must be on the same network as the computer (not a guest network that isolates devices). Type the address shown under the QR code. Open the port as described [above](#let-the-phone-reach-the-computer). If the computer has several networks, pick the right one in Settings, "Network interface for the phone page". "This computer is not connected to a network" means no private address was found. A page saying the link has expired needs a new Check my answers and a new scan (the link ends when the student logs out). If the port is taken by another program, choose another one in Settings.
 - **"Radio Tutor is already running."** Only one copy can run. Find it with `pgrep -a radio-tutor`, close it and start again.
 - **"The checker could not answer."** The AI provider did not give a usable answer. The child can press Try again (the same photos are checked again). A parent should open AI providers, press **Test** and fix the address, key or model; check that the provider is the active one and that a local server is running. The child sees the short message; a parent sees the details in the Progress screen and the log.
 - **A file chooser does not open.** The import needs a desktop file dialog (xdg-desktop-portal with a backend for your desktop).
