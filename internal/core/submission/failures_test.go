@@ -36,9 +36,9 @@ func TestPhotosThatCannotBeStoredFailWithoutRetry(t *testing.T) {
 	unlock := lockDir(t, e.paths.PhotosDir())
 	defer unlock()
 
-	// The phone is told the link is gone: the photos were not kept.
-	if status, _ := upload(t, s.URL, photo(t, 40, 40)); status != 410 {
-		t.Errorf("upload status %d", status)
+	// The phone is told the submission is not waiting any more: the photos were not kept.
+	if status, _ := upload(t, s, photo(t, 40, 40)); status != 409 {
+		t.Errorf("upload status %d, want 409 (stale)", status)
 	}
 	expect[UploadStarted](t, s)
 	failed := expect[Failed](t, s)
@@ -68,8 +68,8 @@ func TestWritingAPhotoFails(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "1.jpg"), []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if status, _ := upload(t, s.URL, photo(t, 40, 40)); status != 410 {
-		t.Errorf("upload status %d", status)
+	if status, _ := upload(t, s, photo(t, 40, 40)); status != 409 {
+		t.Errorf("upload status %d, want 409 (stale)", status)
 	}
 	expect[UploadStarted](t, s)
 	failed := expect[Failed](t, s)
@@ -101,7 +101,7 @@ func TestSaveFailureAtReceiveCanBeRetried(t *testing.T) {
 	defer unlock()
 
 	// The photos arrived, so the phone sees "Sent!"; the save file could not be written.
-	if status, body := upload(t, s.URL, photo(t, 40, 40)); status != 200 {
+	if status, body := upload(t, s, photo(t, 40, 40)); status != 200 {
 		t.Fatalf("upload: %d %s", status, body)
 	}
 	expect[UploadStarted](t, s)
@@ -142,7 +142,7 @@ func TestApplyFailureKeepsTheAnswerForRetry(t *testing.T) {
 	})
 	e.use(prov)
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	expect[UploadStarted](t, s)
 	expect[PhotosReceived](t, s)
 	expect[Grading](t, s)
@@ -186,7 +186,7 @@ func TestSaveFileThatBrokeMeanwhileIsSetAside(t *testing.T) {
 	if err := os.WriteFile(file, []byte("garbage"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	untilGraded(t, s)
 	matches, err := filepath.Glob(file + ".broken-*")
 	if err != nil || len(matches) != 1 {
@@ -276,7 +276,7 @@ func TestRetryAfterANonFailureAndSaveErrorsAreTagged(t *testing.T) {
 	boom := errors.New("OpenAIRateLimited", "slow down", "retry_after_seconds", 30)
 	e.use(fake.New("Fake provider", fake.Fail(boom)))
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	for range 3 {
 		next(t, s)
 	}

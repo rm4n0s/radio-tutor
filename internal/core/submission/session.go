@@ -9,6 +9,7 @@ import (
 
 	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/cassette"
+	"github.com/rm4n0s/radio-tutor/internal/core/phone"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 )
 
@@ -40,14 +41,20 @@ type Session struct {
 	CassetteID string
 	// Exercises are the ids of the exercises, in the order selected.
 	Exercises []string
-	// Token is the phone token. It is empty until Open returns.
+	// Token is the token of the student's phone link (the same for every
+	// session of the student while the link lives).
 	Token string
-	// URL is the address the phone opens (shown as the QR code).
+	// URL is the address of the phone link (shown as the QR code).
 	URL string
+	// PhoneReady is true when a phone had the link open as the session was
+	// made: its page switched to this submission by itself and the QR code is
+	// only for another phone (SPEC §10.1).
+	PhoneReady bool
 	// ExpiresAt is when the session stops waiting for photos.
 	ExpiresAt time.Time
 
 	svc       *Service
+	offer     *phone.Offer
 	cass      *cassette.Cassette
 	createdAt time.Time
 	events    chan Event
@@ -101,11 +108,14 @@ func (s *Session) emit(ev Event) {
 }
 
 // finish ends the life of the session after its terminal event: the timers are
-// stopped, the token is revoked, the channel is closed and the session leaves
-// the registry. The caller holds s.mu.
+// stopped, the offer is withdrawn (the phone's page goes back to waiting; the
+// link stays), the channel is closed and the session leaves the registry. The
+// caller holds s.mu.
 func (s *Session) finish() {
 	s.stopTimers()
-	s.svc.opts.Phone.Close(s.Token)
+	if s.offer != nil {
+		s.offer.Withdraw()
+	}
 	if !s.closed {
 		s.closed = true
 		close(s.events)
@@ -125,7 +135,7 @@ func (s *Session) stopTimers() {
 	}
 }
 
-// pageOpened is the Opened handler of the phone token.
+// pageOpened is the Opened handler of the offer.
 func (s *Session) pageOpened() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

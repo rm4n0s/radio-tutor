@@ -14,6 +14,7 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -105,7 +106,7 @@ func newEnv(t *testing.T) *env {
 		cass:      testCassette(),
 	}
 	e.progress = progress.NewStore(e.paths)
-	e.phone = phone.New(phone.Options{ListenHost: "127.0.0.1"})
+	e.phone = phone.New(phone.Options{ListenHost: "127.0.0.1", Clock: e.clock.Now})
 	ctx, cancel := context.WithCancel(context.Background())
 	e.svc = New(ctx, Options{
 		Paths:     e.paths,
@@ -240,9 +241,9 @@ func photo(t *testing.T, w, h int) []byte {
 	return buf.Bytes()
 }
 
-// upload posts the photos to the session's URL the way the phone page does and
-// returns the status and the body.
-func upload(t *testing.T, url string, photos ...[]byte) (int, string) {
+// upload posts the photos for the session's offer the way the phone page does
+// and returns the status and the body.
+func upload(t *testing.T, sess *Session, photos ...[]byte) (int, string) {
 	t.Helper()
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
@@ -261,7 +262,7 @@ func upload(t *testing.T, url string, photos ...[]byte) (int, string) {
 	if err := mw.Close(); err != nil {
 		t.Fatal(err)
 	}
-	resp, err := http.Post(url+"/photos", mw.FormDataContentType(), &body)
+	resp, err := http.Post(sess.URL+"/photos?offer="+strconv.FormatUint(sess.offer.ID(), 10), mw.FormDataContentType(), &body)
 	if err != nil {
 		t.Fatal(err)
 	}

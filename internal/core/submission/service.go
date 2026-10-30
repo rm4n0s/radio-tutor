@@ -1,9 +1,10 @@
 // Package submission is the submission service (SPEC §9, §10 and §11): it ties
 // the progress store, the phone server, the grader and the active provider
 // together. A student opens a submission for some exercises of a worksheet; the
-// service makes a token and a URL for the phone, stores the photos that arrive,
-// grades them on a goroutine, applies the results to the save file and tells
-// the UI what happens through typed events.
+// service offers it on the student's phone link (made by the first submission,
+// reused by the next ones, SPEC §10.1), stores the photos that arrive, grades
+// them on a goroutine, applies the results to the save file and tells the UI
+// what happens through typed events.
 //
 // # Threads
 //
@@ -18,6 +19,17 @@
 //	       |             |
 //	       |             +-> failed -> (Retry) -> grading
 //	       +-> cancelled (Cancel, a newer Open, Close, or 30 minutes)
+//
+// # The phone link
+//
+// A student has one phone link while the app runs: the first Open makes it, the
+// later ones reuse it, so the page that is open on the phone switches to the
+// next submission by itself. A session only offers its exercises on the link;
+// when the session ends the offer is withdrawn and the link stays. The link
+// ends with EndLinks (the user logged out), when an Open is made for another
+// student, when the phone server stops (Close), when the language or the LAN
+// address changed, and after an hour in which no submission was sent on it (the
+// phone server's rule). An Open after that makes a new link.
 //
 // One session is open per student: Open cancels the student's earlier one. The
 // 30 minute expiry covers the wait for the photos only (the phone token has the
@@ -113,7 +125,7 @@ type Service struct {
 	opts Options
 	base context.Context
 
-	openMu sync.Mutex // serializes Open and Close
+	openMu sync.Mutex // serializes Open, EndLinks and Close
 
 	// onReceiving, when set by a test, runs when an upload has been accepted
 	// and before its photos are stored.
@@ -122,6 +134,14 @@ type Service struct {
 	mu       sync.Mutex
 	sessions map[string]*Session // live sessions by submission id
 	byUser   map[string]*Session // the live session of each student
+	links    map[string]userLink // the phone link of each student
+}
+
+// userLink is the phone link of a student with what it was made for.
+type userLink struct {
+	link *phone.Link
+	host string    // the LAN address in its URL
+	lang i18n.Lang // the language of its page
 }
 
 // New returns a Service. ctx is the life of the application: the phone server
@@ -152,6 +172,7 @@ func New(ctx context.Context, opts Options) *Service {
 		base:     ctx,
 		sessions: map[string]*Session{},
 		byUser:   map[string]*Session{},
+		links:    map[string]userLink{},
 	}
 }
 
@@ -160,9 +181,12 @@ func New(ctx context.Context, opts Options) *Service {
 //
 // Each exercise must be available for the student (progress.States); in free
 // navigation any exercise of the cassette is accepted. The student's earlier
-// open session, if any, is cancelled. The phone server is started if it is not
-// running, the submission is stored in the save file as waiting_photos, and the
-// Session carries the URL and token for the QR code and the channel of events.
+// open session, if any, is cancelled, and the phone links of other students
+// end. The phone server is started if it is not running, the student's phone
+// link is made or reused (Session.PhoneReady says whether a phone has it open),
+// the submission is stored in the save file as waiting_photos and offered on
+// the link, and the Session carries the URL of the link for the QR code and the
+// channel of events.
 //
 // It fails with the tags SubmissionOpenCancelled, SubmissionExerciseCount,
 // SubmissionExerciseDuplicate, SubmissionExerciseUnknown,
@@ -199,7 +223,12 @@ func (svc *Service) Open(ctx context.Context, username string, c *cassette.Casse
 	}
 
 	svc.cancelOf(ctx, username)
+	svc.endLinksExcept(username)
 	if err := svc.ensurePhone(ctx, cfg); err != nil {
+		return nil, err
+	}
+	link, err := svc.linkOf(username, lan.IP.String(), cfg.Language)
+	if err != nil {
 		return nil, err
 	}
 
@@ -215,23 +244,26 @@ func (svc *Service) Open(ctx context.Context, username string, c *cassette.Casse
 		events:     make(chan Event, EventBuffer),
 		state:      stWaiting,
 	}
-	token, url, err := svc.opts.Phone.Open(lan.IP.String(), pageData(cfg.Language, c, exerciseIDs), phone.Handlers{
+	s.Token, s.URL = link.Token, link.URL
+	// No handler runs before s.mu is released, even if a phone is waiting.
+	s.mu.Lock()
+	offer, seen, err := link.Offer(pageData(c, exerciseIDs), phone.Handlers{
 		Opened:   s.pageOpened,
 		Started:  s.uploadStarted,
 		Received: s.received,
 	})
 	if err != nil {
+		s.mu.Unlock()
 		return nil, err
 	}
-	// The token reaches nobody before Open returns, so no handler runs yet.
-	s.mu.Lock()
-	s.Token, s.URL = token, url
+	s.offer = offer
+	s.PhoneReady, s.opened = seen, seen
 	s.mu.Unlock()
 	if err := s.persist(ctx, func(_ *progress.Progress, sub *progress.Submission) error {
 		sub.Status = progress.SubmissionWaitingPhotos
 		return nil
 	}); err != nil {
-		svc.opts.Phone.Close(token)
+		offer.Withdraw()
 		return nil, err
 	}
 
@@ -261,6 +293,17 @@ func (svc *Service) Retry(ctx context.Context, sessionID string) error {
 	return s.retry(ctx)
 }
 
+// EndLinks ends every phone link: the pages that are open on phones show "This
+// link has expired" and the next Open makes a new link. The UI calls it when
+// the user logs out. It does not cancel sessions. It waits for an Open that is
+// in progress (so that the link that Open makes ends too), so call it from a
+// goroutine, not from the UI thread.
+func (svc *Service) EndLinks() {
+	svc.openMu.Lock()
+	defer svc.openMu.Unlock()
+	svc.endLinksExcept("")
+}
+
 // Cancel ends the session: the phone token stops working, grading in progress
 // is abandoned, the submission is stored as cancelled and the Cancelled event
 // is sent. Photos already stored stay on disk. Cancelling a session that has
@@ -274,7 +317,8 @@ func (svc *Service) Cancel(ctx context.Context, sessionID string) error {
 	return nil
 }
 
-// Close cancels every open session and stops the phone server.
+// Close cancels every open session, ends the phone links and stops the phone
+// server.
 func (svc *Service) Close(ctx context.Context) error {
 	svc.openMu.Lock()
 	defer svc.openMu.Unlock()
@@ -287,6 +331,7 @@ func (svc *Service) Close(ctx context.Context) error {
 	for _, s := range open {
 		s.end(ctx, []state{stWaiting, stReceiving, stGrading, stFailed}, Cancelled{}, "")
 	}
+	svc.endLinksExcept("")
 	return svc.opts.Phone.Stop(ctx)
 }
 
@@ -295,6 +340,46 @@ func (svc *Service) find(id string) *Session {
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
 	return svc.sessions[id]
+}
+
+// linkOf returns the student's phone link: the one they have when it is open
+// and was made for the same address and language, otherwise a new one (the old
+// one ends). The caller holds openMu.
+func (svc *Service) linkOf(username, host string, lang i18n.Lang) (*phone.Link, error) {
+	svc.mu.Lock()
+	ul, ok := svc.links[username]
+	svc.mu.Unlock()
+	if ok {
+		if ul.host == host && ul.lang == lang && ul.link.Alive() {
+			return ul.link, nil
+		}
+		ul.link.End()
+	}
+	link, err := svc.opts.Phone.OpenLink(host, lang)
+	if err != nil {
+		return nil, err
+	}
+	svc.mu.Lock()
+	svc.links[username] = userLink{link: link, host: host, lang: lang}
+	svc.mu.Unlock()
+	return link, nil
+}
+
+// endLinksExcept ends the phone links of every student but keep (all of them
+// when keep is empty).
+func (svc *Service) endLinksExcept(keep string) {
+	svc.mu.Lock()
+	var ended []*phone.Link
+	for name, ul := range svc.links {
+		if name != keep || keep == "" {
+			ended = append(ended, ul.link)
+			delete(svc.links, name)
+		}
+	}
+	svc.mu.Unlock()
+	for _, link := range ended {
+		link.End()
+	}
 }
 
 // cancelOf cancels the student's open session, if any.
@@ -429,8 +514,8 @@ func (svc *Service) newID(now time.Time, p *progress.Progress) (string, error) {
 }
 
 // pageData is what the phone page shows (SPEC §10.1).
-func pageData(lang i18n.Lang, c *cassette.Cassette, ids []string) phone.PageData {
-	page := phone.PageData{Lang: lang, Title: c.Manifest.Title}
+func pageData(c *cassette.Cassette, ids []string) phone.PageData {
+	page := phone.PageData{Title: c.Manifest.Title}
 	for _, id := range ids {
 		ex := c.Exercises[id]
 		page.Exercises = append(page.Exercises, phone.PageExercise{Label: ex.Label, Title: ex.Title, Prompt: ex.Prompt})

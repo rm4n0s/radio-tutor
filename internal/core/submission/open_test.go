@@ -165,7 +165,7 @@ func TestOpenFailures(t *testing.T) {
 		}
 		if e.phone.Running() {
 			// The token made for it was revoked: nothing is left to scan.
-			if st, _ := get(t, "http://127.0.0.1:"+strconv.Itoa(e.phone.Port())+"/s/abc"); st != 410 {
+			if st, _ := get(t, "http://127.0.0.1:"+strconv.Itoa(e.phone.Port())+"/p/abc"); st != 410 {
 				t.Errorf("status %d", st)
 			}
 		}

@@ -31,7 +31,7 @@ func TestFullFlow(t *testing.T) {
 	if s.Username != "ann" || s.CassetteID != "org.example.sub-1" || !slices.Equal(s.Exercises, []string{"e1", "e2"}) {
 		t.Errorf("session %+v", s)
 	}
-	if len(s.Token) != 26 || !strings.HasPrefix(s.URL, "http://127.0.0.1:") || !strings.HasSuffix(s.URL, "/s/"+s.Token) {
+	if len(s.Token) != 26 || !strings.HasPrefix(s.URL, "http://127.0.0.1:") || !strings.HasSuffix(s.URL, "/p/"+s.Token) {
 		t.Errorf("token %q, url %q", s.Token, s.URL)
 	}
 	if want := e.clock.Now().Add(30 * time.Minute); !s.ExpiresAt.Equal(want) {
@@ -54,7 +54,7 @@ func TestFullFlow(t *testing.T) {
 	get(t, s.URL) // a second opening is not announced again
 
 	p1, p2 := photo(t, 80, 60), photo(t, 60, 80)
-	if status, body := upload(t, s.URL, p1, p2); status != 200 {
+	if status, body := upload(t, s, p1, p2); status != 200 {
 		t.Fatalf("upload: %d %s", status, body)
 	}
 	expect[UploadStarted](t, s)
@@ -121,9 +121,9 @@ func TestFullFlow(t *testing.T) {
 		wantMode(t, d, 0o700)
 	}
 
-	// The token is used up, and the finished session has nothing to cancel or retry.
-	if status, _ := upload(t, s.URL, p1); status != 410 {
-		t.Errorf("second upload: %d, want 410", status)
+	// The offer is used up, and the finished session has nothing to cancel or retry.
+	if status, _ := upload(t, s, p1); status != 409 {
+		t.Errorf("second upload: %d, want 409 (stale)", status)
 	}
 	if err := e.svc.Cancel(context.Background(), s.ID); err != nil {
 		t.Errorf("Cancel of a graded session: %v", err)
@@ -141,7 +141,7 @@ func TestFailureThenRetry(t *testing.T) {
 	e.use(prov)
 	s := e.open("ann", "e1", "e2")
 
-	if status, body := upload(t, s.URL, photo(t, 50, 50)); status != 200 {
+	if status, body := upload(t, s, photo(t, 50, 50)); status != 200 {
 		t.Fatalf("upload: %d %s", status, body)
 	}
 	expect[UploadStarted](t, s)
@@ -198,7 +198,7 @@ func TestNoActiveProvider(t *testing.T) {
 	e.providers.set(false)
 	e.use(fake.New("Fake provider", fake.Reply(reply(res("e1", grading.VerdictCorrect)))))
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	expect[UploadStarted](t, s)
 	expect[PhotosReceived](t, s)
 	expect[Grading](t, s)
@@ -232,7 +232,7 @@ func TestProviderBuildFailure(t *testing.T) {
 	e.svc.opts.BuildProvider = func(providers.Config, *slog.Logger) (grading.Provider, bool, error) {
 		return nil, false, errors.New("OpenAIConfigModel", "no model")
 	}
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	expect[UploadStarted](t, s)
 	expect[PhotosReceived](t, s)
 	expect[Grading](t, s)
@@ -247,7 +247,7 @@ func TestStoredPhotoMissingFailsTheRetry(t *testing.T) {
 	e := newEnv(t)
 	e.use(fake.New("Fake provider", fake.Fail(errors.New("OpenAITimeout", "slow"))))
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	expect[UploadStarted](t, s)
 	expect[PhotosReceived](t, s)
 	expect[Grading](t, s)
@@ -271,7 +271,7 @@ func TestResultsOutsideTheSessionAreIgnored(t *testing.T) {
 		res("e1", grading.VerdictCorrect), res("e3", grading.VerdictCorrect), res("nope", grading.VerdictIncorrect),
 	))))
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	graded := untilGraded(t, s)
 	if len(graded.Results) != 1 || graded.Results[0].ExerciseID != "e1" {
 		t.Errorf("results %+v", graded.Results)
@@ -289,7 +289,7 @@ func TestDowngradeIsReported(t *testing.T) {
 		Meta: grading.Meta{Model: "m", FinishReason: "stop", Downgraded: grading.StructuredJSONObject},
 	}))
 	s := e.open("ann", "e1")
-	upload(t, s.URL, photo(t, 40, 40))
+	upload(t, s, photo(t, 40, 40))
 	if graded := untilGraded(t, s); graded.Downgraded != grading.StructuredJSONObject {
 		t.Errorf("Downgraded = %q", graded.Downgraded)
 	}
@@ -309,7 +309,7 @@ func TestAttemptsRunOutAndHintsUnlock(t *testing.T) {
 		needsReview     bool
 	}{{1, 1, "", false}, {1, 1, "", false}, {2, 1, progress.StateNeedsReview, true}} {
 		s := e.open("ann", "e2")
-		upload(t, s.URL, photo(t, 40, 40))
+		upload(t, s, photo(t, 40, 40))
 		graded := untilGraded(t, s)
 		ep := e.load("ann").Exercises["e2"]
 		if ep.Attempts != want.attempts || ep.HintsShown != want.hints || ep.State != want.state ||

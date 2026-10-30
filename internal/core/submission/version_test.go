@@ -78,7 +78,7 @@ func TestVersionReachesTheUserAgent(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Open: %v", err)
 			}
-			if status, body := upload(t, s.URL, photo(t, 80, 60)); status != 200 {
+			if status, body := upload(t, s, photo(t, 80, 60)); status != 200 {
 				t.Fatalf("upload: %d %s", status, body)
 			}
 			for {
