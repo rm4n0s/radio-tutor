@@ -83,6 +83,14 @@ if [[ -z "$number" ]]; then
 fi
 
 export DISPLAY=":$number"
+# Mesa software drivers ONLY, never the GPU (the owner's rule): Vulkan is lavapipe, EGL and GLX are Mesa's,
+# and OpenGL is software. Do not make this overridable.
+export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
+export __GLX_VENDOR_LIBRARY_NAME=mesa
+export LIBGL_ALWAYS_SOFTWARE=1
+unset DRI_PRIME __NV_PRIME_RENDER_OFFLOAD __VK_LAYER_NV_optimus
 unset WAYLAND_DISPLAY WAYLAND_SOCKET
 
 # Run the command and keep its exit status; the trap stops the server.

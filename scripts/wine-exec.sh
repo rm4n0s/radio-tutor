@@ -15,8 +15,9 @@
 #   - sets WINEDLLOVERRIDES="mscoree,mshtml=;winepulse.drv,winealsa.drv,wineoss.drv=d" (no Mono or
 #     Gecko prompt, and NO AUDIO DRIVER: a test never plays on the speakers of the machine, the
 #     waveOut of Wine then has no device) with PULSE_SERVER=unix:/nonexistent as a second guard,
-#     WINEDEBUG=-all (RADIO_TUTOR_WINEDEBUG overrides it), WINEARCH=win64, and VK_DRIVER_FILES to
-#     lavapipe's ICD (the only Vulkan driver that presents on Xvfb) unless it is set;
+#     WINEDEBUG=-all (RADIO_TUTOR_WINEDEBUG overrides it), WINEARCH=win64, and the Mesa software
+#     drivers only (VK_DRIVER_FILES and VK_ICD_FILENAMES to lavapipe, Mesa's EGL and GLX vendor,
+#     LIBGL_ALWAYS_SOFTWARE=1, DRI_PRIME unset): the GPU is never used;
 #   - lowers the core-file limit (ulimit -c 1), so that a crash of Wine never writes a core file or
 #     reaches the system's crash reporter;
 #   - runs the program under `timeout -k 10` (RADIO_TUTOR_WINE_TIMEOUT seconds, 600 by default);
@@ -59,9 +60,14 @@ export PULSE_SERVER="unix:/nonexistent"
 unset PIPEWIRE_REMOTE
 export WINEDEBUG="${RADIO_TUTOR_WINEDEBUG:--all}"
 unset WAYLAND_DISPLAY WAYLAND_SOCKET
-if [[ -z "${VK_DRIVER_FILES:-}" && -f /usr/share/vulkan/icd.d/lvp_icd.x86_64.json ]]; then
-  export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-fi
+# Mesa software drivers ONLY, never the GPU (the owner's rule): Vulkan is lavapipe, EGL and GLX are Mesa's,
+# and OpenGL is software. Do not make this overridable.
+export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
+export __GLX_VENDOR_LIBRARY_NAME=mesa
+export LIBGL_ALWAYS_SOFTWARE=1
+unset DRI_PRIME __NV_PRIME_RENDER_OFFLOAD __VK_LAYER_NV_optimus
 ulimit -c 1
 
 # Outside the X server: start it and run this script again inside it.
