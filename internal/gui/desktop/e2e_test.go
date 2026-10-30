@@ -354,12 +354,6 @@ func TestWalkthrough(t *testing.T) {
 	w.tap(student.KeyImport)
 	w.waitText(sampleTitle)
 	w.waitText("The cassette \"" + sampleTitle + "\" was added.")
-	// The message is a snack bar that covers the bottom of the next screens
-	// until it times out (4 seconds of the test clock).
-	for range 8 {
-		w.Pump(time.Second)
-	}
-	w.PumpAndSettle()
 	w.mu.Lock()
 	choosings := w.choosings
 	w.mu.Unlock()

@@ -65,9 +65,13 @@ func (s *Scope) SetLanguage(l i18n.Lang) { s.act.setLanguage(l) }
 // LogIn makes p the logged-in user. It may be called from any goroutine.
 func (s *Scope) LogIn(p profile.Profile) { s.act.logIn(p) }
 
-// LogOut closes every screen above the first one and logs the user out, which
-// shows the login screen again.
+// LogOut closes every screen above the first one, removes the snack bars (a
+// message for one user must not stay on the screens of the next) and logs the
+// user out, which shows the login screen again.
 func (s *Scope) LogOut(bc m.BuildContext) {
+	messenger := m.ScaffoldMessengerOf(bc)
+	messenger.ClearSnackBars()
+	messenger.RemoveCurrentSnackBar()
 	m.NavigatorPopUntil(bc, func(r m.Route) bool { return r.IsFirst() })
 	s.act.logOut()
 }

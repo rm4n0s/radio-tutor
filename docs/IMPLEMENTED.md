@@ -632,7 +632,7 @@ Built:
 - `internal/gui/testutil`: `Options.Render` and `Options.Location` (UTC by default).
 
 What the tests found, and the fixes:
-- Nothing in the core or the screens failed the walkthrough. Two things in the test setup are worth knowing: a snack bar from the parent's import stays on screen (it is in the ScaffoldMessenger above the routes) and covers the bottom of the next screens, including the Play button, until its four seconds have passed, even after a log out; the test lets it time out. A child could be hit by this only when the parent logs out within four seconds of an import, so it was left as it is. The worksheet opens with every available exercise ticked, so the test unticks and ticks one instead of ticking both.
+- One bug: a snack bar from the parent's import stays on screen (it is in the ScaffoldMessenger above the routes) and covers the bottom of the next screens, including the Play button, until its four seconds have passed, even after a log out. **Fixed:** `Scope.LogOut` now clears the snack bars (`ScaffoldMessengerOf(bc).ClearSnackBars()` then `RemoveCurrentSnackBar()`), so a message for one user never covers the next user's screen; `TestLogOutRemovesSnackBars` (`internal/gui/app`) shows a snack bar, logs out, logs in as a student and checks that no snack bar is shown and a button at the bottom-left is tappable at once (it fails without the fix); the walkthrough no longer waits for the snack bar. Also worth knowing: the worksheet opens with every available exercise ticked, so the test unticks and ticks one instead of ticking both.
 
 Cleanups collected by the manager:
 - (a) No test changes `time.Local` any more: `app.Env.Location` (`StartOptions.Location`, default `time.Local`) is the zone the admin screens format dates in (`formatTime(loc, t)` in `internal/gui/admin/review.go`, used by the submissions and the item cards); `testutil` defaults it to UTC. `inUTC` in `progress_golden_test.go` is gone, and the tests use `formatTime(time.UTC, ...)`. `TestStartVersionAndLocation` in `internal/gui/app`.
@@ -644,5 +644,4 @@ Deviations from the spec: SPEC §5 lists `internal/gui/marks` and `internal/core
 Manual checks: pending, see docs/MANUAL-CHECKS.md ("7.2 Full walkthrough": the same story on a real display, a real phone and a real provider).
 
 Later:
-- Clear the snack bars when the user logs out.
 - The version string is "(devel)" in a `go run` build; `go install` of a tag gives the module version.
