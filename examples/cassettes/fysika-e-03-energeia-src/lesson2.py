@@ -12,7 +12,8 @@ SENTENCES = [
     ("s3", "Η φύση έχει φτιάξει πολλές τέτοιες αποθήκες.", 0.8),
     ("s4", "Ο Ήλιος μας στέλνει φωτεινή ενέργεια, και τα φυτά τη χρησιμοποιούν για να μεγαλώσουν.", 1.2),
     ("s5", "Το πετρέλαιο και τα κάρβουνα είναι αποθήκες χημικής ενέργειας. Η ενέργειά τους ήρθε από τον Ήλιο πριν από εκατομμύρια χρόνια.", 1.2),
-    ("s6", "Το νερό που πέφτει ορμητικά από έναν καταρράκτη έχει κινητική ενέργεια, και μπορεί να γυρίσει έναν νερόμυλο.", 1.5),
+    ("s6", "Το νερό που πέφτει ορμητικά από έναν καταρράκτη έχει κινητική ενέργεια, και μπορεί να κινήσει μηχανές.", 1.0),
+    ("s6b", "Και ο άνεμος που φυσάει έχει κινητική ενέργεια.", 1.5),
     ("s7", "Κάποιες φορές αποθηκεύουμε εμείς την ενέργεια, για να τη χρησιμοποιήσουμε αργότερα.", 1.0),
     ("s8", "Η μπαταρία έχει αποθηκευμένη χημική ενέργεια.", 0.6),
     ("s9", "Όταν τη συνδέσουμε με ένα λαμπάκι, η ενέργειά της γίνεται ηλεκτρική και μετά φωτεινή.", 1.5),
@@ -30,7 +31,7 @@ SENTENCES = [
 ]
 
 SH1, SH2 = 400, 790     # shelf boards
-X1 = [190, 520, 800, 1090, 1390]   # sun, oil, coal, waterfall, mill
+X1 = [190, 520, 800, 1090, 1390]   # sun, oil, coal, waterfall, wind
 
 
 def label(sc, aid, x, y, s, col="#3e2723"):
@@ -55,12 +56,13 @@ def build(T):
     sc.actor("fall", g(waterfall(), X1[3], 305, 1.0), origin=(X1[3], 305))
     sc.actor("drops", "".join(f'<line x1="{X1[3]+dx}" y1="{y}" x2="{X1[3]+dx}" y2="{y+28}" stroke="#e1f5fe" stroke-width="9" stroke-linecap="round"/>'
                               for dx, y in [(-18, 250), (0, 300), (18, 260)]))
-    sc.actor("mill", g(water_wheel(), X1[4], 310, 0.85), origin=(X1[4], 310))
+    sc.actor("wind", "".join(f'<path d="M{X1[4]-110} {y} Q{X1[4]-70} {y-26} {X1[4]-30} {y} T{X1[4]+50} {y} T{X1[4]+110} {y}" fill="none" stroke="#78909c" stroke-width="12" stroke-linecap="round"/>' for y in (250, 310, 370))
+             + g(leaf("#8bc34a"), X1[4] + 60, 280, 0.9, rot=-20))
     label(sc, "lab-sun", X1[0] + 60, 470, "Ήλιος")
     label(sc, "lab-oil", X1[1], 470, "πετρέλαιο")
     label(sc, "lab-coal", X1[2], 470, "κάρβουνο")
     label(sc, "lab-fall", X1[3], 470, "καταρράκτης")
-    label(sc, "lab-mill", X1[4], 470, "νερόμυλος")
+    label(sc, "lab-wind", X1[4], 470, "άνεμος")
 
     # stores we make (shelf 2)
     xb = 280
@@ -94,13 +96,14 @@ def build(T):
     L.fade_in("drops", s("s6", 0.4), 0.4)
     for i in range(10):
         L.k("drops", s("s6", 0.9 + 0.4 * i), y=0 if i % 2 == 0 else 40, ease="linear")
-    L.pop("mill", s("s6", 4.0), 0.6)
-    L.spin("mill", s("s6", 4.0), s("s7"), 240)
+    L.fade_in("wind", s("s6b"), 0.6)
+    for i in range(6):
+        L.k("wind", s("s6b", 0.8 + 0.7 * i), x=30 if i % 2 == 0 else -30, ease="in-out")
     L.write("lab-sun", s("s4"), 0.8)
     L.write("lab-oil", s("s5"), 1.0)
     L.write("lab-coal", s("s5", 2.0), 0.9)
     L.write("lab-fall", s("s6"), 1.2)
-    L.write("lab-mill", s("s6", 4.2), 0.9)
+    L.write("lab-wind", s("s6b", 0.3), 0.8)
     L.fade_in("sub2", s("s7"), 0.6)
     L.pop("battery", s("s8"), 0.5)
     L.write("lab-bat", s("s8", 0.5), 0.8)
@@ -120,10 +123,9 @@ def build(T):
     L.pop("can", s("s13"), 0.5)
     L.write("lab-can", s("s13", 0.5), 0.8)
     # clear the shelves for the rule
-    for a in ("sub1", "sub2", "lab-sun", "lab-oil", "lab-coal", "lab-fall", "lab-mill", "sun", "plant", "oil", "coal", "fall", "drops", "mill"):
-        L.fade_out(a, s("s17", -0.3), 0.7) if a not in ("sun", "mill") else None
+    for a in ("sub1", "sub2", "lab-sun", "lab-oil", "lab-coal", "lab-fall", "lab-wind", "sun", "plant", "oil", "coal", "fall", "drops", "wind"):
+        L.fade_out(a, s("s17", -0.3), 0.7) if a not in ("sun",) else None
     L.fade_out("sun", s("s17", -0.3), 0.7)
-    L.fade_out("mill", s("s17", -0.3), 0.7)
     L.write("rule", s("s17", 1.0), 2.4)
     L.write("rule2", s("s18", 0.8), 2.4)
     L.bob("battery", s("s19"), 1, 20, 0.6)
