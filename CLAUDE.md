@@ -3,7 +3,7 @@
 Guidance for Claude Code when working in this repository (Go, hosted on GitHub).
 
 ## Project
-Radio Tutor is a desktop tutoring application for children, written in Go. Its user interface is built on [Glutter](https://github.com/rm4n0s/glutter), a cgo-free GUI toolkit for Go with Flutter's framework API. Radio Tutor targets the Linux desktop only. Content comes in **cassettes**: zip files with lessons (an SVG scene animated by a timeline and narrated by an audio track, with captions) and exercises. The child solves exercises on paper, takes photos of the page with a phone (the app serves a page on the local network and shows its address as a QR code), and a vision-capable AI model, cloud or offline, grades each solution by the instructions the cassette gives. Parents (admins) manage the students, see the progress and review every photo.
+Radio Tutor is a desktop tutoring application for children, written in Go. Its user interface is built on [Glutter](https://github.com/rm4n0s/glutter), a cgo-free GUI toolkit for Go with Flutter's framework API. Radio Tutor targets the Linux desktop and Windows 10/11 (amd64 tested under Wine, arm64 built and vetted only; SPEC D20). Content comes in **cassettes**: zip files with lessons (an SVG scene animated by a timeline and narrated by an audio track, with captions) and exercises. The child solves exercises on paper, takes photos of the page with a phone (the app serves a page on the local network and shows its address as a QR code), and a vision-capable AI model, cloud or offline, grades each solution by the instructions the cassette gives. Parents (admins) manage the students, see the progress and review every photo.
 
 **`docs/SPEC.md` is the source of truth**, together with `docs/CASSETTE-FORMAT.md`, which defines the cassette format and is part of the spec. Read the sections that cover a task before starting it. If the code and the spec disagree, or a task needs a decision the spec doesn't make, ask instead of guessing. When a decision changes, update the spec on the same branch.
 
@@ -11,6 +11,8 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 - Build: `go build ./...`. Radio Tutor is cgo-free; `CGO_ENABLED=0 go build ./...` must always work
 - Test all: `GOMEMLIMIT=3GiB go test -race -p 2 ./...` (the race detector needs cgo, so this one needs a C compiler)
 - Test the cgo-free path: `CGO_ENABLED=0 go test ./...`
+- Windows build and vet: `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...` (and the same with `GOARCH=arm64`), `GOOS=windows golangci-lint run`
+- Test on Windows, under Wine: `scripts/heavy.sh -- scripts/test-windows.sh` (every package; one package: `scripts/test-windows.sh ./internal/core/storage/...`). Wine runs with a private prefix in `.wine-test/`, with audio drivers disabled and Mesa software rendering only (never the GPU, never a sound): see SPEC §16
 - Test one package: `go test ./internal/core/timeline -run TestName -v`
 - Tests that need a real display or a real audio server: `go test -tags radiotutor_display ./...`, `go test -tags radiotutor_audio ./...`
 - Update golden images: `go test <package> -run Golden -update-goldens` (per package: each package with goldens defines the flag, so `./...` would fail in the others), then review every changed golden
@@ -27,12 +29,14 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 ## Definition of done
 Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go vet ./...`, `golangci-lint run` and `go test -race ./...`, and fix anything they report. Say so explicitly if any step was skipped or failed. Also:
 - `CGO_ENABLED=0 go build ./...` and `CGO_ENABLED=0 go test ./...` pass (proves the app stays cgo-free)
+- `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...`, the same build and vet with `GOARCH=arm64`, `GOOS=windows golangci-lint run`, and `scripts/heavy.sh -- scripts/test-windows.sh` pass (the app stays Windows-clean; a test skipped on Windows says why in `t.Skip`)
 - `scripts/error-tags.sh --untested` prints nothing (every error Tag has a test that asserts its route; `docs/ERROR-TAGS-UNTESTED.md` is the only exception list)
 - Every new exported identifier has a doc comment
 - Every changed golden image has been looked at, not just regenerated
 
 ## Layout
 - `cmd/radio-tutor/` is the app's `main` package (the desktop app and the CLI subcommands)
+- OS-specific code lives in `_linux.go` (constraint `!windows`) and `_windows.go` files with the same function names; shared logic stays in plain files tested on both (SPEC §5)
 - `internal/core/...` is the core: storage, cassettes, timelines, scenes, audio, profiles, progress, grading, the phone server and the submission service. It never imports Glutter or `internal/gui`, so it is tested without a UI
 - `internal/gui/...` is the UI on Glutter: screens, the lesson player, dialogs. It imports the core, never the other way round
 - `internal/archtest/` checks the package boundaries and forbidden imports (SPEC §5)

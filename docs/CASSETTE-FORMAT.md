@@ -24,8 +24,8 @@ Nothing else may be in the zip: the validator reports any other file (including 
 ## 2. Common rules
 
 - All text files are UTF-8 without a byte order mark. JSON files are objects; unknown fields are errors (catches typos), and so is a field that appears twice. Text lengths count characters, not bytes.
-- **Ids** of lessons and exercises: `^[a-z0-9][a-z0-9-]{0,62}$`, unique across the whole cassette (a lesson and an exercise cannot share an id).
-- **The cassette id** is reverse-domain style: `^[a-z0-9]+(\.[a-z0-9][a-z0-9-]*)+$`, e.g. `org.family-smith.math.fractions-1`. Two different cassettes never share an id.
+- **Ids** of lessons and exercises: `^[a-z0-9][a-z0-9-]{0,62}$`, unique across the whole cassette (a lesson and an exercise cannot share an id), and not a name that Windows reserves for a device: `con`, `prn`, `aux`, `nul`, `com1` to `com9`, `lpt1` to `lpt9` (an id becomes a folder name, and a cassette must install on Windows too).
+- **The cassette id** is reverse-domain style: `^[a-z0-9]+(\.[a-z0-9][a-z0-9-]*)+$`, e.g. `org.family-smith.math.fractions-1`. Two different cassettes never share an id. Its first label (the part before the first dot) is not one of the reserved names above either (`con.family.math` is refused), because the id is a folder name.
 - **The version** is `MAJOR.MINOR.PATCH` (numbers only: digits, no leading zeros except `0` itself, at most 9 digits each). A cassette with a new version of the same id replaces the old one, and the child's progress is kept **by id**. Therefore:
   - **Never rename an id** in a new version.
   - **Never reuse an id for different content.** If an exercise changes so that an old answer would no longer be right, give it a new id.

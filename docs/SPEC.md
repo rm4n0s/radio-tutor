@@ -4,7 +4,7 @@ Status: version 1, written on 2026-10-30. This document and `docs/CASSETTE-FORMA
 
 ## 1. Overview
 
-Radio Tutor is a Linux desktop app for children, built in Go on Glutter. It plays **cassettes**: zip files that hold lessons and exercises made for one subject (math, language, history, anything a book teaches). An AI agent writes the cassettes; parents give it a book or a subject with the prompt template of `docs/CASSETTE-AUTHORING-PROMPT.md`.
+Radio Tutor is a desktop app for children (Linux, and Windows 10 and 11), built in Go on Glutter. It plays **cassettes**: zip files that hold lessons and exercises made for one subject (math, language, history, anything a book teaches). An AI agent writes the cassettes; parents give it a book or a subject with the prompt template of `docs/CASSETTE-AUTHORING-PROMPT.md`.
 
 A session of a child:
 
@@ -24,7 +24,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 
 | Id | Decision | Why |
 |---|---|---|
-| D1 | Go, cgo-free, Linux desktop only, UI on Glutter v1.9.5 or newer | the owner's stack; Glutter draws SVG (its §26) |
+| D1 | Go, cgo-free, Linux and Windows desktop (Windows 10 version 1809 or later; D20), UI on Glutter v1.9.5 or newer | the owner's stack; Glutter draws SVG (its §26) and runs on Linux and Windows (its §25) |
 | D2 | A cassette is a zip file with the extension `.cassette`, format in `docs/CASSETTE-FORMAT.md` | simple to produce for an AI agent with a shell; one file to share |
 | D3 | Animation is Radio Tutor's own keyframe timeline over the top-level groups (`<g id>`) of one SVG scene, not SMIL or CSS animation | Glutter draws static SVG only; a JSON keyframe list is easy for an AI agent to write and for the app to validate; it composes with Glutter's transform, opacity and clip widgets |
 | D4 | One scene and one narration track per lesson; the audio is the lesson's clock | animation and narration never drift apart; longer material is split into more lessons |
@@ -35,7 +35,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 | D9 | The app owns the grading prompt and the reply schema; the cassette supplies data (reference solutions, grading instructions, tone) that is put in the prompt as data | any model can grade; the reply is validated; text in cassettes and on the paper cannot take over the grader |
 | D10 | One photo submission can hold the solutions of several exercises; the AI must separate them, helped by the exercise **labels** the child writes next to each solution | children solve a whole worksheet on one page |
 | D11 | Profiles with username and password, two roles: `admin` and `student`; passwords hashed with PBKDF2-HMAC-SHA256 (stdlib `crypto/pbkdf2`) | the owner's requirement; no new dependency |
-| D12 | All data is local, in the XDG folders; JSON files written atomically | the owner's requirement; easy to inspect and back up |
+| D12 | All data is local, in the XDG folders on Linux and in `%LOCALAPPDATA%\radio-tutor` on Windows (D21); JSON files written atomically | the owner's requirement; easy to inspect and back up |
 | D13 | The phone page is plain HTTP on the local network, on a fixed port (8737 by default), with an unguessable token per **phone link** (one link per logged-in student, reused by their submissions, §10.1); photos are taken with `<input type="file" accept="image/*" capture="environment" multiple>` | the camera through a file input works without HTTPS (getUserMedia needs a secure context); a fixed port can be opened in the firewall once |
 | D14 | QR codes are made by `rsc.io/qr` | pure Go, small |
 | D15 | Only `correct` passes an exercise; `partial` and `incorrect` use an attempt; `unreadable` and `not_found` do not | the owner's agreement in the design discussion |
@@ -43,6 +43,12 @@ Everything stays on the computer, except the photos and the exercise text that a
 | D17 | Unlock rule: an item is unlocked when every lesson before it is completed and every exercise before it is passed or waiting for a parent (`needs_review`). Per student and cassette the parent can turn on **skip lessons** (lessons need not be completed) and **free navigation** (everything is open) | the owner: "some kids skip and we don't want that unless parents enable skipping lessons" |
 | D18 | Progress is kept by item id; importing a newer version of a cassette keeps the progress of the ids it still has | ids are stable by rule of the format |
 | D19 | The UI is in English and Greek, chosen in the settings; a cassette's content is in its own language | the owner's family speaks Greek; children who cannot read English |
+| D20 | Windows 10 version 1809 or later (Go and Glutter need it), `amd64` built and tested under Wine (§16), `arm64` built and vetted only. *Chosen 2026-10-30 on the owner's word "Glutter can run on windows, which means that you should make it run on windows as well, test it with wine"; the details of D20 to D25 are not yet confirmed by the owner.* | the owner asked for Windows; Wine is the only Windows runner the project has |
+| D21 | Data folders on Windows: one root, `%LOCALAPPDATA%\radio-tutor`, with `config`, `data` and `state` inside (§4). Not `%APPDATA%` (the roaming folder): it syncs to domain servers and OneDrive, and `providers.json` holds API keys and `photos` a child's work. *Chosen 2026-10-30, not yet confirmed by the owner.* | the secrets and the photos must stay on this PC |
+| D22 | Win32 calls go through `golang.org/x/sys/windows` (part of `golang.org/x/sys`, which Glutter brings in), or `syscall` lazy procedures where it has no wrapper; no cgo, no other dependency. *Chosen 2026-10-30, not yet confirmed by the owner.* | CLAUDE.md allows `golang.org/x/sys` |
+| D23 | Sound on Windows is winmm's `waveOut` (it exists on every Windows 10 and 11 and in Wine); volume and mute stay in software as on Linux (§8.1). *Chosen 2026-10-30, not yet confirmed by the owner.* | no dependency, no audio server to find |
+| D24 | Packaging for Windows: no installer and no code signing (an unsigned `.exe` makes SmartScreen warn, which the README says). `radio-tutor.exe` is a GUI program (`-H=windowsgui`, built with Glutter's `glutter-windows build`, with manifest and icon); the command-line subcommands (§14) are offered by a console build of the same package. *Chosen 2026-10-30, not yet confirmed by the owner.* | the owner does not sign; a GUI program has no console to print to |
+| D25 | Names that become files or folders are portable: a username, a cassette id and a lesson or exercise id must not be a name Windows reserves for a device (`con`, `prn`, `aux`, `nul`, `com1` to `com9`, `lpt1` to `lpt9`, also as the first label before a dot), on every operating system, so that profiles and cassettes move between Linux and Windows. All the other name rules already fit Windows: they allow only lowercase `a-z`, `0-9`, `_`, `-` and `.` (CASSETTE-FORMAT §9; usernames `a-z`, `0-9`, `_`), so there are no case clashes, no trailing dot or space and no illegal characters. *Chosen 2026-10-30, not yet confirmed by the owner.* | a folder named `con` cannot be made on Windows |
 
 ## 3. Users and roles
 
@@ -72,12 +78,12 @@ One user is logged in at a time. **Log out** returns to the login screen and end
 
 ## 4. Storage
 
-All paths come from `internal/core/storage`, which reads the XDG variables (`XDG_DATA_HOME`, default `~/.local/share`; `XDG_CONFIG_HOME`, default `~/.config`; `XDG_STATE_HOME`, default `~/.local/state`).
+All paths come from `internal/core/storage`. On Linux it reads the XDG variables (`XDG_DATA_HOME`, default `~/.local/share`; `XDG_CONFIG_HOME`, default `~/.config`; `XDG_STATE_HOME`, default `~/.local/state`); the folders below are written with them. **On Windows** everything is under `%LOCALAPPDATA%\radio-tutor` (D21; when `LOCALAPPDATA` is not an absolute path, `%USERPROFILE%\AppData\Local`): `%LOCALAPPDATA%\radio-tutor\config` is the settings folder, `...\data` the data folder and `...\state` the state folder, with the same files inside. The XDG variables mean nothing on Windows. The code that differs is in `_linux.go` and `_windows.go` files (§5).
 
 ```
 $XDG_CONFIG_HOME/radio-tutor/
     settings.json            app settings (§12.4)
-    providers.json           AI providers, with API keys; mode 0600 (§11.6)
+    providers.json           AI providers, with API keys; private to the user (§11.6)
 $XDG_DATA_HOME/radio-tutor/
     profiles.json            profiles (§3.1)
     cassettes/<cassette-id>/ the installed version, extracted (§6.2)
@@ -89,16 +95,17 @@ $XDG_STATE_HOME/radio-tutor/
 ```
 
 - Every JSON file has a `"format": 1` field. Files are written atomically: write to a temporary file in the same folder, `fsync`, rename, `fsync` the folder.
-- Folders are made with mode 0700, files with 0600.
-- One instance runs at a time: the app takes an exclusive `flock` on the lock file; a second instance says "Radio Tutor is already running" on stderr and exits with code 2; when it was started with a display (no terminal), a small window shows the same message first.
-- SIGTERM and SIGINT close the app exactly as closing the window does: the run ends, the deferred cleanups run (audio stopped, phone server stopped, files flushed, the lock released) and the exit code is 0 (`app.QuitOnDone`).
+- Folders are made with mode 0700, files with 0600. Windows has no such mode bits: the folders and files take the ACL of the profile folder they are in (readable by the user, SYSTEM and administrators), and the one file that holds a secret, `providers.json`, gets its own (§11.6).
+- **Replacing a file** on Windows fails while another process has the old one open (a virus scanner, a backup tool), so the rename of an atomic write is retried for about 200 ms (`RenameFailed` if it still fails). A folder cannot be flushed on Windows, so that last `fsync` is skipped there (NTFS journals the rename).
+- One instance runs at a time: the app takes an exclusive lock on the lock file, `flock` on Linux and `LockFileEx` (exclusive, fail at once) on Windows, with the same tag `AlreadyRunning`; a second instance says "Radio Tutor is already running" on stderr and exits with code 2; when it was started with a display (no terminal), a small window shows the same message first.
+- SIGTERM and SIGINT close the app exactly as closing the window does (on Windows, Ctrl+C of a console build, the closing of its console and a log-off or shutdown arrive the same way; a GUI program has no console, so only closing the window ends it): the run ends, the deferred cleanups run (audio stopped, phone server stopped, files flushed, the lock released) and the exit code is 0 (`app.QuitOnDone`).
 - A JSON file that cannot be parsed is not overwritten: it is renamed to `<name>.broken-<time>`, the error is logged and shown to the admin, and the app starts with an empty value for it.
 
 ## 5. Architecture and packages
 
 ```
 cmd/radio-tutor/                 main: the desktop app and the CLI subcommands
-internal/core/storage            XDG paths, atomic JSON, the lock, the test helper that isolates XDG folders
+internal/core/storage            the folders (XDG on Linux, %LOCALAPPDATA% on Windows), atomic JSON, the lock, the test helper that isolates those folders
 internal/core/logging            slog to the rotated log file
 internal/core/timeline           timeline model and evaluation (state at time t)
 internal/core/cassette           cassette documents: parse and validate manifest, lesson, exercise
@@ -132,6 +139,7 @@ Rules (checked by `internal/archtest`):
 - `internal/core/...` never imports `github.com/rm4n0s/glutter/...` or `internal/gui/...`.
 - `internal/gui/...` may import `internal/core/...`.
 - Only `internal/core/grading/openai` and `internal/core/providers` make outbound HTTP requests; only `internal/core/phone` listens.
+- Code that differs between operating systems lives in files named `<name>_linux.go` (build constraint `!windows`, so that other Unix systems still build) and `<name>_windows.go`, with the shared logic in plain files that are tested on both systems; the platform files have the same function names, and the tests of each carry the same suffix. `GOOS=windows go build ./...` and `go vet ./...` pass for `amd64` and `arm64` (CLAUDE.md, Definition of done).
 - No package imports `os/exec`, except the test helpers of `internal/core/audio` behind the `radiotutor_audio` tag and the developer tools under `scripts/` (they are not part of the application).
 
 - `internal/core/pulse` and `internal/core/pulse/proto` are copied third-party code (MIT, see the LICENSE in their folder) and are project code now: errors from `github.com/rm4n0s/errors`, doc comments, tests. **Exception to the `context.Context` rule:** they keep upstream's API (`NewClient`, `Start`, `Pause`... take no `ctx`; the client has a request timeout, 1 s by default, 2 s as `PulseSink` sets it), so that they stay comparable with upstream; `PulseSink` (`internal/core/audio`) is the wrapper that takes a `ctx`, and the library's connect and stream start are never waited for without a bound there. The connection's read loop must never block on delivering an event.
@@ -300,15 +308,15 @@ A submission waits for its photos for 30 minutes, until the photos are sent or u
 
 ### 10.2 The server
 
-- `internal/core/phone` listens on `0.0.0.0:<port>` (setting `phone.port`, default 8737). If the port is taken, the error is shown with the port number and a pointer to the setting.
-- **LAN address:** the first IPv4 address of an interface that is up, not loopback, and in a private range (10/8, 172.16/12, 192.168/16), preferring the interface of the default route (from `/proc/net/route`); the other interfaces are tried in the system's order, skipping virtual ones (names starting with `docker`, `br-`, `veth`, `virbr`, `lo`, `tun`, `tap`, `wg`) are skipped, so with no default route a Docker bridge does not win over Wi-Fi; the admin can pick an interface in the settings (a named interface, and the interface of the default route, are used even if the name looks virtual). With no such address, the dialog says "This computer is not connected to a network." and offers no QR.
+- `internal/core/phone` listens on `0.0.0.0:<port>` (setting `phone.port`, default 8737). If the port is taken (EADDRINUSE on Linux, WSAEADDRINUSE on Windows), the error is shown with the port number and a pointer to the setting.
+- **LAN address:** the first IPv4 address of an interface that is up, not loopback, and in a private range (10/8, 172.16/12, 192.168/16), preferring the interface of the default route (on Linux from `/proc/net/route`; on Windows, which has none, from the address the system picks for a UDP socket "connected" to a public address, which sends no packet); the other interfaces are tried in the system's order, skipping virtual ones (names starting, in any letter case, with `docker`, `br-`, `veth`, `virbr`, `lo`, `tun`, `tap`, `wg`, and on Windows `vethernet`, `loopback`, `virtualbox`, `vmware`, `bluetooth`, `isatap`, `teredo`) are skipped, so with no default route a Docker bridge does not win over Wi-Fi; the admin can pick an interface in the settings (a named interface, and the interface of the default route, are used even if the name looks virtual). With no such address, the dialog says "This computer is not connected to a network." and offers no QR.
 - Routes: `GET /p/<token>` (the page), `GET /p/<token>/state?v=<version>` (the state, a long poll, below), `POST /p/<token>/photos?offer=<n>` (multipart upload), `GET /static/...` (the page's CSS and JS, embedded). Anything else is 404. An unknown, ended or expired link gives a friendly "This link has expired" page with status 410 (the state and the upload answer 410 with JSON).
 - **Long polling.** The page learns about changes by asking `GET /p/<token>/state?v=<n>` where `n` is the last version it knows. The state is `{v, state: "waiting"|"ready", title, offer, exercises: [{label, title, lines}]}`; `v` goes up on every change (a submission offered, ended or sent, the link ended). When the server's version differs from `n` it answers at once; otherwise it holds the request until the state changes or about 25 seconds pass and then answers with the unchanged state, and the page asks again at once. A page that is only open therefore makes about 2 or 3 requests a minute, far below the limit of 30 per address. The page ignores an answer older than what it shows, asks again at once when it becomes visible again (`visibilitychange`: a phone that slept lost its connection), and after a network error retries with a backoff (1 s, doubling, at most 15 s) and shows "The connection was lost. Trying again...".
 - **Uploads go to the submission that is ready at that moment.** The page names the submission it shows (`offer`, a number that grows with each submission offered on the link). An upload for another one (it was cancelled, it expired, it was already sent, a newer one replaced it) is refused with status 409 and "These exercises are not waiting for photos any more. Wait for the next ones."; the page then goes back to *waiting*. A second upload for the same submission while the first is being received answers 409 "busy".
 - Uploads: at most 6 files, each at most 20 MiB, total at most 80 MiB (`http.MaxBytesReader`). Accepted: JPEG and PNG (by content sniffing, not by name). Others give "Only photos can be sent" (status 415).
 - Per remote address, at most 30 requests per minute (long polling keeps an open page far below it).
 - The page is plain HTML with a small embedded script (it draws the state it gets from the server; all text goes in with `textContent`), no external resources, works on current Android Chrome and iOS Safari, large touch targets, in the UI language (§17).
-- The README explains opening the port in firewalld (`sudo firewall-cmd --add-port=8737/tcp --permanent && sudo firewall-cmd --reload`); the QR dialog shows a hint about the firewall when no phone has opened the page 60 seconds after it appeared (not when a phone already has the link open).
+- On Windows, Windows Defender Firewall asks the first time the app listens whether to allow it on private networks; the child's phone reaches the page only when the answer is yes (README). The README explains opening the port in firewalld (`sudo firewall-cmd --add-port=8737/tcp --permanent && sudo firewall-cmd --reload`); the QR dialog shows a hint about the firewall when no phone has opened the page 60 seconds after it appeared (not when a phone already has the link open).
 
 ### 10.3 Photos
 
@@ -392,9 +400,9 @@ The block is YAML-like. Every text value (title, language, grader instructions, 
 
 ### 11.6 Provider settings
 
-`providers.json` (mode 0600) holds the list and the active provider's name. The admin screen has **Test**: it sends a small fixed test image (a handwritten-style "2 + 3 = 5" rendered by the app, embedded) with a one-exercise request and shows whether a valid reply came back, its verdict and the time it took.
+`providers.json` holds the list and the active provider's name. The admin screen has **Test**: it sends a small fixed test image (a handwritten-style "2 + 3 = 5" rendered by the app, embedded) with a one-exercise request and shows whether a valid reply came back, its verdict and the time it took.
 
-`providers.json` is `{"format": 1, "active": "<name>", "providers": [<provider of §11.1>, ...]}`. Names are unique; `protocol` defaults to `openai`, `timeout_seconds` to 180, `structured_output` to `json_schema`; `kind` is required. The file is written with mode 0600. A file that group or others can access is **not read**: the app reports `ProvidersFileTooOpen` and tells the admin to run `chmod 600 <path>`. The first provider added is not made active automatically; no active provider means grading is unavailable until the admin picks one. Deleting the active provider leaves none active. The presets of §11.1 only fill the form (base URL, an example vision model, `kind`, `structured_output`; the Anthropic preset uses `json_object` because that endpoint may not enforce `json_schema`); the models are suggestions the parent edits. **Test** also reports a `structured_output` downgrade (§11.2) so the parent can change the setting.
+`providers.json` is `{"format": 1, "active": "<name>", "providers": [<provider of §11.1>, ...]}`. Names are unique; `protocol` defaults to `openai`, `timeout_seconds` to 180, `structured_output` to `json_schema`; `kind` is required. **What protects the API keys.** *Linux:* the file is written with mode 0600 in a 0700 folder; a file that group or others can access is **not read**: the app reports `ProvidersFileTooOpen` and tells the admin to run `chmod 600 <path>`. *Windows:* the file lives in the local, non-roaming `%LOCALAPPDATA%\radio-tutor\config` (D21), and the temporary file of every write gets, before the key is written to it, a **protected DACL** that grants full access to the current user's SID only (`SetNamedSecurityInfo` with `PROTECTED_DACL_SECURITY_INFORMATION`: no inherited entry survives, so other users of the PC and the Users group cannot read it; the rename keeps it; failure is the tag `FilePrivateFailed`); SYSTEM and administrators can still take ownership, as with every file. The file is not checked again when read on Windows (a file that was copied in keeps the ACL of its folder). Neither OS encrypts the key (§18). The first provider added is not made active automatically; no active provider means grading is unavailable until the admin picks one. Deleting the active provider leaves none active. The presets of §11.1 only fill the form (base URL, an example vision model, `kind`, `structured_output`; the Anthropic preset uses `json_object` because that endpoint may not enforce `json_schema`); the models are suggestions the parent edits. **Test** also reports a `structured_output` downgrade (§11.2) so the parent can change the setting.
 
 ### 11.7 Privacy
 
@@ -436,23 +444,26 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 
 - `radio-tutor validate [--json] <file.cassette|folder>`: validates (CASSETTE-FORMAT §10) including rendering each layer and prompt picture through Glutter's SVG parser and decoding the audio; prints each problem on stdout as `path: message` (a warning starts with `warning: `), or with `--json` a JSON array of `{path, message, warning}` (`[]` when there is none); a one-line summary goes to stderr (not with `--json`). Exits 0 when valid (warnings are allowed), 1 when not or when the path cannot be read, 2 on usage errors.
 - `radio-tutor pack [--force] <folder> <out.cassette>`: validates the folder as `validate` does (including the rendering; on errors the problems go to stderr, nothing is written and the exit code is 1), then writes the zip (entries sorted, deflate, no extra fields, every entry's modification time fixed to 1980-01-01 00:00:00 so that the same folder always gives the same file), refuses to overwrite an existing file unless `--force`.
-- `radio-tutor reset-password <username>`: reads the new password twice from the terminal without echo (echo is turned off with `golang.org/x/sys/unix` termios ioctls, restored on exit and on interrupt; when stdin is not a terminal it reads one line per password) and saves it. Works only while the app is not running (it takes the lock).
+- `radio-tutor reset-password <username>`: reads the new password twice from the terminal without echo (on Linux the echo is turned off with `golang.org/x/sys/unix` termios ioctls, on Windows by clearing `ENABLE_ECHO_INPUT` of the console input mode with `GetConsoleMode` and `SetConsoleMode`; restored on exit and on interrupt; when stdin is not a terminal or a console it reads one line per password, and a line ending of `\r\n` is accepted) and saves it. Works only while the app is not running (it takes the lock).
 - `radio-tutor version`: prints the version (from `runtime/debug.ReadBuildInfo`).
+
+On Windows the GUI build of `radio-tutor.exe` has no console, so a subcommand prints nowhere and a console build of the same package (D24) is used for them.
 
 ## 15. Errors and logging
 
 - Errors follow CLAUDE.md (`github.com/rm4n0s/errors`, a unique Tag per failure, route tests).
-- The log is `slog` JSON lines in `$XDG_STATE_HOME/radio-tutor/radio-tutor.log`, level Info (Debug with `RADIO_TUTOR_DEBUG=1`), rotated at 10 MiB, 3 files kept. API keys and passwords are never logged; request bodies to AI providers are not logged (their size and timing are).
+- The log is `slog` JSON lines in `radio-tutor.log` of the state folder (§4), level Info (Debug with `RADIO_TUTOR_DEBUG=1`), rotated at 10 MiB, 3 files kept. API keys and passwords are never logged; request bodies to AI providers are not logged (their size and timing are).
 - The UI shows errors as short, friendly messages to the child ("Something went wrong. Ask a parent.") and as the full message to the admin, with the tag.
 
 ## 16. Testing and isolation
 
-- `internal/core/storage` has a test helper (`storagetest.Isolate(t)`) that points every `XDG_*` variable at `t.TempDir()` folders. Every test that touches storage uses it.
+- `internal/core/storage` has a test helper (`storagetest.Isolate(t)`) that points every `XDG_*` variable at `t.TempDir()` folders, and on Windows `LOCALAPPDATA`, `APPDATA`, `USERPROFILE` and `HOME` too, so that a test under Wine never touches the AppData of the Wine prefix. Every test that touches storage uses it. `storagetest.SkipWithoutUnixModes(t)` skips, with a reason, a test that needs permission bits (Windows has none).
 - `scripts/isolated.sh [--keep] -- <command>` runs a command with fresh `XDG_*` folders under a temporary folder (deleted at the end unless `--keep`).
 - The fake AI provider returns scripted replies; `httptest` servers emulate the OpenAI-compatible protocol for the provider's tests, including `json_schema` rejection, invalid JSON, `length` and timeouts.
 - The fake audio sink records what was written and advances its position when the test says so.
 - UI tests use `gluttertest` with the fake clock; golden images for the shelf, the cassette screen, the player at fixed times, the worksheet, the QR dialog and the results screen.
 - An end-to-end test (core) imports the sample cassette, completes a lesson with the fake sink, makes a submission, uploads a photo through the real phone server on `127.0.0.1`, grades it with the fake provider, and checks that the next lesson unlocked.
+- **Windows under Wine.** `scripts/test-windows.sh [packages]` (default `./...`, every package, because the whole app must work on Windows) runs `GOOS=windows GOARCH=amd64 go test -exec scripts/wine-exec.sh -p 1`. `scripts/wine-exec.sh` (adapted from Glutter's) runs each test binary under Wine on a headless X server (`scripts/headless-x11.sh`, Xvfb) with a private prefix in `.wine-test/prefix` (git-ignored; the user's `~/.wine` is never touched), made on the first run under a lock with Glutter's first-boot workaround, under `timeout -k`, with `ulimit -c 1` and `wineserver -k` at the end. **It never makes a sound and never uses the GPU:** the Wine audio drivers are disabled (`WINEDLLOVERRIDES="mscoree,mshtml=;winepulse.drv,winealsa.drv,wineoss.drv=d"`, `PULSE_SERVER=unix:/nonexistent`) and only Mesa's software drivers are used (lavapipe as `VK_DRIVER_FILES` and `VK_ICD_FILENAMES`, Mesa's EGL and GLX vendor, `LIBGL_ALWAYS_SOFTWARE=1`, `DRI_PRIME` unset). A full run is a heavy command (`scripts/heavy.sh -- scripts/test-windows.sh`). A test that cannot run on Windows says why in `t.Skip` (permission bits, `chmod` to force a failure, a pseudo-terminal); goldens are never regenerated from Windows. What Wine cannot show (a real console, two real instances, the firewall, real folders) is in `docs/MANUAL-CHECKS.md`.
 - Build tags: `radiotutor_display` (real windows), `radiotutor_audio` (a real sound device: PulseAudio or PipeWire on Linux, waveOut on Windows), `radiotutor_ai` (a real provider: `RADIO_TUTOR_AI_BASE_URL`, `RADIO_TUTOR_AI_MODEL`, `RADIO_TUTOR_AI_KEY`, and optionally `RADIO_TUTOR_AI_KIND`, `cloud` or `local`, default `local`).
 
 ## 17. Languages of the UI
@@ -463,4 +474,4 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 
 ## 18. Not in version 1
 
-Seeking in lessons, chapters; several scenes per lesson; video; drawing or typing answers in the app; a native (non-OpenAI-compatible) AI protocol; HTTPS for the phone page; syncing between computers; cassette signing; an editor for cassettes; Windows and macOS builds; storing the API key in the desktop keyring.
+Seeking in lessons, chapters; several scenes per lesson; video; drawing or typing answers in the app; a native (non-OpenAI-compatible) AI protocol; HTTPS for the phone page; syncing between computers; cassette signing; an editor for cassettes; macOS builds (Windows is supported, D20; a Windows installer and code signing are not, D24); storing the API key in the desktop keyring.
