@@ -213,6 +213,7 @@ func (s *lessonState) exec(ctx context.Context, env *app.Env, req student.Lesson
 	switch c {
 	case cmdPlay:
 		fresh := pl.State() != audio.StatePaused
+		pl.SetVolume(env.Settings.Get().Volume) // the parents' setting as it is now; a paused clip keeps its volume
 		if err := pl.Play(ctx); err != nil {
 			if ctx.Err() == nil {
 				env.Log.Error("playing a lesson failed", "lesson", req.LessonID, "err", err)

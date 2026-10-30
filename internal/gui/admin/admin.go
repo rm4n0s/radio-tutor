@@ -67,6 +67,10 @@ const (
 
 	// KeyImportSwitch is the key of the "Students can import" switch.
 	KeyImportSwitch = "students-can-import"
+	// KeyVolume is the key of the volume slider.
+	KeyVolume = "volume"
+	// KeyVolumeValue is the key of the text that shows the volume in percent.
+	KeyVolumeValue = "volume-value"
 	// KeyPort is the key of the phone port field.
 	KeyPort = "phone-port"
 	// KeyPortSave is the key of the button that saves the phone port.

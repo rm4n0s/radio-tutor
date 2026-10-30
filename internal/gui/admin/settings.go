@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"math"
 	"strconv"
 	"strings"
 
@@ -17,10 +18,12 @@ import (
 const (
 	minPort = 1024
 	maxPort = 65535
+	// volumeStep is the step of the volume slider, in percent.
+	volumeStep = 5
 )
 
 // Settings is the screen of settings.json (SPEC §12.4): language, whether
-// students can import, the phone port and the network interface.
+// students can import, the volume, the phone port and the network interface.
 type Settings struct {
 	m.StatefulWidget
 	screens Screens
@@ -39,6 +42,7 @@ type settingsState struct {
 	m.StateOf[*Settings]
 	port       *m.TextEditingController
 	started    bool
+	volume     float64 // the position of the slider, in percent
 	interfaces []phone.Interface
 	err        *i18n.Message
 }
@@ -55,7 +59,9 @@ func (s *settingsState) DidChangeDependencies() {
 	}
 	s.started = true
 	env := app.ScopeOf(s.Context()).Env()
-	s.port.SetText(strconv.Itoa(env.Settings.Get().Phone.Port))
+	cur := env.Settings.Get()
+	s.port.SetText(strconv.Itoa(cur.Phone.Port))
+	s.volume = float64(cur.Volume)
 	list := phone.ListInterfaces
 	if f := s.Widget().screens.Interfaces; f != nil {
 		list = f
@@ -85,6 +91,33 @@ func (s *settingsState) save(change func(*settings.Settings)) {
 			showMessage(s.Context(), scope.T("admin.settings.saved"))
 		})
 	})
+}
+
+// volumeRow is the volume slider with its value. The slider keeps no value of
+// its own: it follows the drag in s.volume, and the setting is saved when the
+// drag ends.
+func (s *settingsState) volumeRow(scope *app.Scope) m.Widget {
+	percent := scope.T("admin.settings.volume_value", "value", itoa(int(s.volume)))
+	return m.NewRow([]m.Widget{
+		m.NewExpanded(m.NewSlider(s.volume, func(v float64) {
+			s.SetState(func() { s.volume = v })
+		}, m.SliderOpts{
+			Key:         m.NewValueKey(KeyVolume),
+			Min:         0,
+			Max:         m.Some(float64(settings.MaxVolume)),
+			Divisions:   m.Some(settings.MaxVolume / volumeStep),
+			Label:       m.Some(percent),
+			OnChangeEnd: s.saveVolume,
+		})),
+		hgap(app.Gap),
+		m.NewSizedBox(m.NewText(percent, m.TextOpts{Key: m.NewValueKey(KeyVolumeValue), TextAlign: m.TextAlignEnd}), m.SizedBoxOpts{Width: m.Some(64.0)}),
+	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})
+}
+
+// saveVolume saves the volume when the drag ends.
+func (s *settingsState) saveVolume(v float64) {
+	volume := int(math.Round(v))
+	s.save(func(st *settings.Settings) { st.Volume = volume })
 }
 
 // savePort checks the port and saves it.
@@ -122,6 +155,10 @@ func (s *settingsState) Build(bc m.BuildContext) m.Widget {
 			Subtitle:       m.NewText(scope.T("admin.settings.import_hint")),
 			ContentPadding: m.NewEdgeInsetsAll(0),
 		}),
+		gap(app.Gap * 1.5),
+		s.section(bc, scope.T("admin.settings.volume")),
+		body(bc, scope.T("admin.settings.volume_hint")),
+		s.volumeRow(scope),
 		gap(app.Gap * 1.5),
 		s.section(bc, scope.T("admin.settings.phone")),
 		body(bc, scope.T("admin.settings.phone_hint")),

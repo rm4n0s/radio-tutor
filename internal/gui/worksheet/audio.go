@@ -67,6 +67,7 @@ func (a *promptAudio) Toggle(ctx context.Context, id string, changed func(playin
 	if err := a.player.Load(clip); err != nil {
 		return a.current, err
 	}
+	a.player.SetVolume(a.env.Settings.Get().Volume) // the volume of the parents' setting, as it is now
 	if err := a.player.Play(ctx); err != nil {
 		a.current = ""
 		return "", err

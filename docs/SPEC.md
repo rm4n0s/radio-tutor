@@ -266,6 +266,7 @@ On any exercise the admin can: **Mark passed** (`passed_by: "parent"`), **Mark n
 
 - `internal/core/audio` decodes the whole Ogg Vorbis file into memory as 32-bit float samples when the lesson opens (on a goroutine, with a "loading" indicator). Narration is short (CASSETTE-FORMAT §6), so this is bounded.
 - The player gives its samples to a **sink**, which pulls them as the device wants more (the PulseAudio protocol asks for data; nothing is pushed). Sinks: `pulse` (the PulseAudio protocol through `PULSE_SERVER` or `$XDG_RUNTIME_DIR/pulse/native`; Pause corks the one stream and Resume uncorks it), `silent` (a wall clock, no sound) and `fake` (tests).
+- **Volume:** one setting for the whole app, `volume` in `settings.json` (§12.4), shared by every profile and changed only by parents on the Settings screen. The Player multiplies the samples by a gain before it gives them to the sink, so every sink (`pulse`, `silent`, `fake`) behaves the same. The slider is perceptual: `gain = (volume / 100)³` (volume 50 is a gain of 0.125), the curve of the volume sliders of desktops; the result is clamped to -1..1. Volume 0 is silence, but the lesson still plays and its clock still runs, so a lesson can be completed. The volume applies to all sound the app plays: lesson narration and exercise prompt audio. A change takes effect for sound started after it; a clip that already plays (or is paused) keeps the volume it started with. Each screen that plays sound reads the setting when it starts a clip.
 - If no PulseAudio server answers, the player uses the `silent` sink and shows "No sound device found. The lesson plays without sound." once per run; the lesson can still be completed.
 
 ### 8.2 The clock
@@ -410,7 +411,7 @@ Pick a student, then a cassette: the items in order with their states, attempts,
 
 ### 12.4 Settings
 
-`settings.json`: `language` (`en` or `el`, default from `LANG`, else `en`), `students_can_import` (default true), `phone.port` (default 8737), `phone.interface` (default automatic: the empty string), `hidden_cassettes` (per username). A field missing from the file keeps its default; a missing file is the defaults (it is written by the first change). The providers (§11.6) have their own screen.
+`settings.json`: `language` (`en` or `el`, default from `LANG`, else `en`), `students_can_import` (default true), `phone.port` (default 8737), `phone.interface` (default automatic: the empty string), `volume` (an integer 0 to 100, default 100; a file without the field keeps 100, and 0 is a value, not a missing field; a value out of range is refused with the tag `SettingsVolumeInvalid`), `hidden_cassettes` (per username). A field missing from the file keeps its default; a missing file is the defaults (it is written by the first change). The Settings screen has a **Volume** row: a slider from 0 to 100 in steps of 5 with the value shown as a percentage; the setting is saved when the drag ends, not on every move. The providers (§11.6) have their own screen.
 
 ## 13. The student area
 

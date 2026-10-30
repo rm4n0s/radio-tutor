@@ -9,6 +9,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/providers"
+	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
 )
@@ -89,6 +90,11 @@ func TestGoldens(t *testing.T) {
 		}},
 		{"settings_en", "en_US.UTF-8", nil, func(t *testing.T, a *testutil.App) { openSettings(t, a) }},
 		{"settings_el", "el_GR.UTF-8", nil, func(t *testing.T, a *testutil.App) { openSettings(t, a) }},
+		{"settings_volume_en", "en_US.UTF-8", func(t *testing.T, env *app.Env) {
+			if err := env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume = 35 }); err != nil {
+				t.Fatal(err)
+			}
+		}, func(t *testing.T, a *testutil.App) { openSettings(t, a) }},
 		{"providers_en", "en_US.UTF-8", withProviders, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},
 		{"providers_empty_en", "en_US.UTF-8", nil, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},
 		{"providers_el", "el_GR.UTF-8", withProviders, func(t *testing.T, a *testutil.App) { openProviders(t, a) }},

@@ -9,6 +9,7 @@ import (
 	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
+	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 )
 
 const bannerText = "Solve the exercises on paper. Write the number of each exercise next to its solution."
@@ -169,4 +170,56 @@ func (h *harness) stateOf() *screenState {
 		h.t.Fatal("no worksheet state")
 	}
 	return st
+}
+
+func TestPromptAudioFollowsTheVolumeSetting(t *testing.T) {
+	clock := audio.NewFakeClock(time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC))
+	sink := audio.NewFakeSink(clock)
+	h := pump(t, config{sink: func(context.Context) (audio.Sink, error) { return sink, nil }})
+	// listen plays the prompt from the start for a while, stops it and returns
+	// what the fake device took.
+	listen := func() []float32 {
+		h.tap(KeySpeakerPrefix + exShade)
+		h.whileBusy("the Stop button", func() bool { return h.has("Stop") })
+		clock.Advance(100 * time.Millisecond)
+		got := sink.Played()
+		h.tap(KeySpeakerPrefix + exShade)
+		h.whileBusy("the Listen button", func() bool { return h.has("Listen") })
+		return got
+	}
+	full := listen()
+	loud := false
+	for _, v := range full {
+		loud = loud || v != 0
+	}
+	if len(full) == 0 || !loud {
+		t.Fatalf("the prompt at full volume has %d samples and is silent: %v", len(full), loud)
+	}
+
+	tests := []struct {
+		name   string
+		volume int
+		factor float32
+	}{
+		{"half the slider is an eighth of the gain", 50, 0.125},
+		{"zero is silence", 0, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := h.Env.Settings.Update(context.Background(), func(s *settings.Settings) { s.Volume = tt.volume })
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := listen()
+			if len(got) != len(full) {
+				t.Fatalf("the device took %d samples, want %d", len(got), len(full))
+			}
+			for i, v := range got {
+				want := full[i] * tt.factor
+				if v < want-1e-6 || v > want+1e-6 {
+					t.Fatalf("sample %d = %v, want %v", i, v, want)
+				}
+			}
+		})
+	}
 }
