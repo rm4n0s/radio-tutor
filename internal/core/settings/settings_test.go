@@ -46,6 +46,9 @@ func TestOpen(t *testing.T) {
 		{"volume 0 is not missing", `{"format":1,"volume":0}`, "", func(s *Settings) { s.Volume = 0 }, ""},
 		{"volume 35", `{"format":1,"volume":35}`, "", func(s *Settings) { s.Volume = 35 }, ""},
 		{"volume 100", `{"format":1,"volume":100}`, "", func(s *Settings) { s.Volume = 100 }, ""},
+		{"muted on", `{"format":1,"muted":true}`, "", func(s *Settings) { s.Muted = true }, ""},
+		{"muted off", `{"format":1,"muted":false,"volume":40}`, "", func(s *Settings) { s.Volume = 40 }, ""},
+		{"muted keeps the volume", `{"format":1,"muted":true,"volume":35}`, "", func(s *Settings) { s.Muted, s.Volume = true, 35 }, ""},
 		{"volume above 100", `{"format":1,"volume":101}`, "", nil, "Open->validate.SettingsVolumeInvalid"},
 		{"volume below 0", `{"format":1,"volume":-1}`, "", nil, "Open->validate.SettingsVolumeInvalid"},
 		{"format 2", `{"format":2}`, "", nil, "Open->validate.SettingsFormatUnsupported"},
@@ -107,7 +110,7 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 	if err := st.SetLanguage(ctx, i18n.EL); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.Update(ctx, func(s *Settings) { s.Volume = 0 }); err != nil {
+	if err := st.Update(ctx, func(s *Settings) { s.Volume, s.Muted = 0, true }); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.Update(ctx, func(s *Settings) { s.HiddenCassettes["mia"] = []string{"a", "b"} }); err != nil {
@@ -127,6 +130,9 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 	got := again.Get()
 	if got.Volume != 0 {
 		t.Errorf("volume 0 came back as %d", got.Volume)
+	}
+	if !got.Muted {
+		t.Error("muted came back as false")
 	}
 	if got.Language != i18n.EL || !reflect.DeepEqual(got.HiddenCassettes["mia"], []string{"a", "b"}) {
 		t.Errorf("reopened = %+v", got)

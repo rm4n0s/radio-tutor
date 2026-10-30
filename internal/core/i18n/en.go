@@ -173,6 +173,9 @@ var messagesEN = map[string]string{
 	"player.no_sound":    "No sound device found. The lesson plays without sound.",
 	"player.ok":          "OK",
 	"player.play_failed": "The lesson could not start. Try again.",
+	"player.mute":        "Mute",
+	"player.unmute":      "Unmute",
+	"player.volume":      "Volume",
 
 	// 6.2 admin
 	"admin.cancel":                     "Cancel",
@@ -234,7 +237,9 @@ var messagesEN = map[string]string{
 	"admin.settings.import_switch":     "Students can import cassettes",
 	"admin.settings.import_hint":       "When this is off, only parents can import.",
 	"admin.settings.volume":            "Volume",
-	"admin.settings.volume_hint":       "The loudness of the lessons and of the exercise prompts, for every profile.",
+	"admin.settings.volume_hint":       "The loudness of the lessons and of the exercise prompts, for every profile. Students can also change it while a lesson plays.",
+	"admin.settings.mute_switch":       "Mute the sound",
+	"admin.settings.mute_hint":         "Silences the lessons and the exercise prompts. The volume is kept, so the same loudness comes back when this is off.",
 	"admin.settings.phone":             "Phone",
 	"admin.settings.phone_hint":        "The page that takes the photos of the exercises is served to the phone on your home network.",
 	"admin.settings.port":              "Port",

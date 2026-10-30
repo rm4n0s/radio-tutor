@@ -1,6 +1,6 @@
 // Package settings keeps the app settings of Radio Tutor in settings.json
 // (SPEC §12.4): the language of the UI, whether students may import cassettes,
-// the phone page's port and interface, the volume of the sound, and the
+// the phone page's port and interface, the volume of the sound and whether it is muted, and the
 // cassettes hidden from each student.
 package settings
 
@@ -44,6 +44,9 @@ type Settings struct {
 	// Volume is the volume of all the sound the app plays, for every profile:
 	// 0 (silence) to 100 (SPEC §8.1).
 	Volume int `json:"volume"`
+	// Muted silences all the sound without changing Volume, so that unmuting
+	// restores the same level (SPEC §8.1).
+	Muted bool `json:"muted"`
 	// HiddenCassettes lists, per username, the ids of the cassettes hidden from
 	// that student.
 	HiddenCassettes map[string][]string `json:"hidden_cassettes"`
@@ -51,7 +54,7 @@ type Settings struct {
 
 // Defaults returns the settings of a first run: the language from the locale
 // (the LANG variable: Greek for "el...", else English), students may import,
-// port 8737, automatic interface, full volume, nothing hidden.
+// port 8737, automatic interface, full volume, not muted, nothing hidden.
 func Defaults(locale string) Settings {
 	return Settings{
 		Format:            formatVersion,
