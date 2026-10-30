@@ -9,6 +9,7 @@ import (
 	"github.com/rm4n0s/glutter/ui"
 	"github.com/rm4n0s/glutter/widgets"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
 )
 
 // TestButtonLabelsKeepTheThemeFont checks that the large label size the theme
@@ -16,6 +17,9 @@ import (
 // style: the label keeps the theme's font family and weight and the button's
 // foreground color, and is really drawn. Glutter before 1.9.6 drew no label.
 func TestButtonLabelsKeepTheThemeFont(t *testing.T) {
+	// The Linux typography uses Roboto, which gluttertest bundles; the Windows
+	// one asks for Segoe UI, which a test has no copy of.
+	testutil.UseLinux(t)
 	theme := app.NewTheme()
 	cs := theme.ColorScheme
 	// The reference: the label style a button gets from a theme without the
