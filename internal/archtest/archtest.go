@@ -28,6 +28,8 @@ const (
 	toolsPrefix = "scripts/"
 	audioDir    = "internal/core/audio"
 	audioTag    = "radiotutor_audio"
+	wineDir     = "cmd/radio-tutor"
+	wineTag     = "radiotutor_wine"
 )
 
 // httpAllowed lists the core packages (directories relative to the module root)
@@ -89,7 +91,7 @@ func Check(files []File) []Violation {
 				}
 			}
 			if imp == "os/exec" && !execAllowed(f, dir) {
-				out = append(out, Violation{f.Path, imp, "os/exec is only for the audio test helpers behind the " + audioTag + " tag and for the developer tools under " + toolsPrefix})
+				out = append(out, Violation{f.Path, imp, "os/exec is only for the audio test helpers behind the " + audioTag + " tag, the Wine smoke test of cmd/radio-tutor behind the " + wineTag + " tag and the developer tools under " + toolsPrefix})
 			}
 		}
 	}
@@ -103,11 +105,15 @@ func Check(files []File) []Violation {
 }
 
 // execAllowed reports whether the file may import os/exec: a test helper of
-// internal/core/audio behind the radiotutor_audio build tag, or a developer
-// tool under scripts/ (such as the sample cassette's generator), which is not
+// internal/core/audio behind the radiotutor_audio build tag, the Wine smoke
+// test of cmd/radio-tutor behind the radiotutor_wine tag (it starts Wine through
+// scripts/wine-exec.sh, SPEC §16), or a developer tool under scripts/ (such as the sample cassette's generator), which is not
 // part of the application.
 func execAllowed(f File, dir string) bool {
 	if strings.HasPrefix(f.Path, toolsPrefix) {
+		return true
+	}
+	if dir == wineDir && isTestFile(f.Path) && strings.Contains(f.BuildTags, wineTag) {
 		return true
 	}
 	return dir == audioDir && isTestFile(f.Path) && strings.Contains(f.BuildTags, audioTag)
