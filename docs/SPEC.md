@@ -117,6 +117,7 @@ internal/core/i18n               the UI string catalog (en, el)
 internal/gui/app                 the app shell, navigation, theme, login, first run
 internal/gui/admin               admin screens
 internal/gui/student             student screens: shelf, cassette, worksheet, results
+internal/gui/desktop             wires the screens of the GUI packages into the app shell and runs it (the screen packages import app, so app cannot import them)
 internal/gui/player              the lesson player widget
 internal/gui/svgcheck            renders SVG layers through Glutter's svg.Parse for the validator
 internal/gui/testutil            test helpers for widget and golden tests

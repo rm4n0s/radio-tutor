@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/rm4n0s/errors"
+	"github.com/rm4n0s/radio-tutor/internal/core/archive"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 	"github.com/rm4n0s/radio-tutor/internal/core/logging"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
+	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage"
 )
@@ -29,6 +31,15 @@ type Env struct {
 	Profiles *profile.Store
 	// Settings are the app settings.
 	Settings *settings.Store
+	// Archive is the store of the installed cassettes.
+	Archive *archive.Store
+	// Progress is the store of the students' save files.
+	Progress *progress.Store
+	// ChooseFile asks the user for a file (the Import button); the default is
+	// DesktopFileChooser. Tests replace it.
+	ChooseFile FileChooser
+	// Screens are the screens of the other GUI packages that the shell opens.
+	Screens Screens
 	// Notices are the messages for the admin that startup produced (a broken
 	// file that was set aside); the home of the admin shows them.
 	Notices []i18n.Message
@@ -44,6 +55,13 @@ type StartOptions struct {
 	Getenv func(string) string
 	// ProfileOptions are passed to profile.Open (tests use few hash iterations).
 	ProfileOptions []profile.Option
+	// Render checks the SVG files of the cassettes that are imported (nil skips
+	// that check).
+	Render archive.RenderChecker
+	// ChooseFile replaces DesktopFileChooser (tests).
+	ChooseFile FileChooser
+	// Screens are the screens of the other GUI packages.
+	Screens Screens
 	// Now gives the time used to name a quarantined file; the default is time.Now.
 	Now func() time.Time
 }
@@ -56,6 +74,9 @@ type StartOptions struct {
 // storage.QuarantineBroken, logged, and reported in Env.Notices; the app starts
 // with the defaults or no profiles. Failures are returned as the storage,
 // logging, settings and profile packages made them (AlreadyRunning among them).
+//
+// It also opens the cassette store (finishing or undoing an interrupted import,
+// SPEC §6.2) and the progress store.
 //
 // The caller calls Env.Close when the application ends.
 func Start(ctx context.Context, opts StartOptions) (*Env, error) {
@@ -92,6 +113,18 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 		env.Close()
 		return nil, err
 	}
+	env.Archive = archive.NewStore(paths, opts.Render)
+	if err := env.Archive.Recover(ctx); err != nil {
+		// An interrupted import or removal that cannot be finished must not
+		// keep the app from starting; the cassette store lists what is there.
+		logger.Error("recovering the cassettes folder failed", "err", err)
+	}
+	env.Progress = progress.NewStore(paths)
+	env.ChooseFile = opts.ChooseFile
+	if env.ChooseFile == nil {
+		env.ChooseFile = DesktopFileChooser
+	}
+	env.Screens = opts.Screens
 	logger.Info("started", "config", paths.Config, "data", paths.Data, "state", paths.State)
 	return env, nil
 }

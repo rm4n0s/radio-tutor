@@ -18,8 +18,14 @@ const appID = "dev.radiotutor.app"
 // "Radio Tutor is already running" (so a launcher without a terminal is not
 // silent) and returns the storage error AlreadyRunning, which the command turns
 // into the message on stderr and exit code 2 (SPEC §4).
-func Run(ctx context.Context) error {
-	env, err := Start(ctx, StartOptions{})
+//
+// Run shows the placeholder screens of this package; package desktop calls
+// RunWith with the real ones.
+func Run(ctx context.Context) error { return RunWith(ctx, StartOptions{}) }
+
+// RunWith is Run with the options of Start (the screens, the SVG checker).
+func RunWith(ctx context.Context, opts StartOptions) error {
+	env, err := Start(ctx, opts)
 	if err != nil {
 		if appErr, ok := errors.FromError(err); ok && appErr.Tag == "AlreadyRunning" {
 			// Failing to show the window (no display, a terminal run) must not

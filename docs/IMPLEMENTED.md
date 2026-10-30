@@ -440,7 +440,37 @@ Tests:
 
 Deviations from the plan and spec (SPEC §14 edited on this branch): the JSON objects have a `warning` field (always present); `validate` prints a summary on stderr in text mode; `pack` takes `--force` in its usage line and validates with the renderer first, printing refusals on stderr.
 
+## 6.3 Student screens
+Date: 2026-10-30.
+
+Built:
+- `internal/gui/student`:
+  - `Shelf` (`NewShelf(username, screens)`, the home of a student and what Play as me pushes): cards (cover drawn with `svg.NewSvgPictureMemory` from `cover.svg`, a book on a colored box while loading, when missing or when it cannot be drawn; title, subject, `LinearProgressIndicator` of passed exercises plus completed lessons over all items, "2 of 5 done"), hidden cassettes (`settings.HiddenCassettes[username]`) and broken ones left out, the student's name and Log out in the app bar, an empty and a load-failed message. Four cards fit a row of the smallest window. Tapping a card pushes the cassette screen and the shelf reads its numbers again when that screen closes.
+  - Import (`importflow.go`): the **Import a cassette** button (shown to an admin always and to a student when `students_can_import`) calls `Env.ChooseFile`, then `Store.Import` on a `State.Go` goroutine under a context cancelled by the **Cancel** button (shown with a spinner and "Adding the cassette..." meanwhile). `confirmUpgrade` runs on that goroutine: it opens the dialog on the UI thread through `SetState`/`ShowDialog` and blocks on a channel until the user answers (or the import is cancelled). Results: installed / upgraded / already installed / newer installed / declined are snack bars (the title of the cassette comes from the store), an invalid cassette is a dialog with every problem as `path: message` (the first 40, then "... and N more"), a failure is "ask a parent" for a student and message plus tag for an admin, a missing file dialog has its own text; a cancel is silent. The shelf reloads after an install or upgrade.
+  - `Cassette` (`NewCassette(username, id, screens)`): header with cover, subject and progress; **Continue** (`progress.Continue`); the items in order: lessons with a play icon, each worksheet as one row with a chip per exercise (its label and a mark), a mark at the end of every row (lock for locked, check for completed/passed, flag for needs review, nothing for available) with the state's name as tooltip, locked rows greyed. A locked lesson or worksheet (all its exercises locked) only shows the snack bar "Finish the items before this one first.". Opening an item pushes the screen and saves `last_item` (`progress.SetLastItem`; the first exercise for a worksheet); the cassette is read again when the pushed screen is popped. Loading (`loadCassette`): `Store.Get`, `cassette.Load`, the save file (a broken one is set aside by the progress store, logged, and the cassette starts again), **`progress.Migrate` only when the file's `cassette_version` is older than the installed version** (the manager's rule from step 4.3; the merge is saved), `States`, `Continue`.
+  - `Screens{Lesson, Worksheet}`: the hooks for 6.4 and 6.5 (`LessonRequest{Username, Cassette, FS, LessonID}`, `WorksheetRequest{Username, Cassette, FS, Worksheet}` return the widget of the route; a nil hook shows "will open here soon"). `HomeBuilder(screens)` returns the `func(username) m.Widget` that goes into `app.Screens.Student`.
+- `internal/gui/app`:
+  - `Env` gains `Archive` (`archive.Store`, `Recover` called once in `Start`; a failure is logged and the app starts), `Progress` (`progress.Store`), `ChooseFile` and `Screens`; `StartOptions` gains `Render` (the `archive.RenderChecker`; step 1.6's `svgcheck` goes here), `ChooseFile` and `Screens`.
+  - `Screens{Student}`: the shell cannot import `student` (it imports `app` for the Scope, navigation and theme), so the shell calls this function when it has one and keeps the placeholder otherwise. The admin's Play as me (6.2) pushes `scope.Env().Screens.Student(username)`.
+  - `FileChooser` / `FileQuestion` / `DesktopFileChooser` (Glutter's `desktop.OpenFiles`, filters `*.cassette` and all files) / `FileChooserUnavailable(err)`; `RunWith(ctx, StartOptions)` (`Run` calls it with the defaults).
+- `internal/gui/desktop`: `Screens()` and `Run(ctx)`, the real wiring (6.4, 6.5 and 6.2 add their screens in `Screens`). **`cmd/radio-tutor/main.go` still calls `app.Run`, which shows the placeholder student home: it has to call `desktop.Run` (one line and an import; I did not touch `cmd` because step 1.6 works there).**
+- `internal/gui/testutil`: `Options.Screens` and `Options.ChooseFile` (the default chooser fails the test, so a test never opens the desktop dialog).
+- i18n: the `student.*` keys in English and Greek.
+
+Tests:
+- Shelf: installed cassettes with covers and progress (2 of 5), hidden for this student only, a broken cassette left out, nothing installed, the import button follows `students_can_import`, opening a cassette and reading the numbers again on return, a load failure, Greek.
+- Import with an injected chooser: valid, invalid (the dialog shows the problems of `Store.Import`, nothing in the store), upgrade confirmed and declined (the dialog names both versions, nothing changes before the answer, progress kept), same and older version, a cancelled file dialog, a missing file, no file dialog, a failing dialog, cancelling a running import, the failure messages for admin and student.
+- Cassette screen: the marks for four progress fixtures (new student, lesson plus one exercise, whole worksheet passed, needs review under free navigation), Continue (new student, last item open, no last item, locked last item ignored, last exercise, all lessons done), locked taps (lesson, both worksheets) show only the message and do not change `last_item`, opening items saves `last_item`, the progress is read again when the item closes, the 6.4/6.5 hooks get their requests, merging an older save file and leaving a newer one, an invalid cassette, Greek.
+- `load.go` units (`countDone`, `worksheetState`, broken save file set aside, missing cover, cancel) and the route test of `StudentCassetteInvalid`.
+- `app`: `Start` opens the stores and recovers an interrupted import, `Home` shows `Screens.Student`, `DesktopFileChooser` against Glutter's fake desktop (chosen, cancelled, unavailable), `FileChooserUnavailable`.
+- Goldens (looked at): `shelf_en`, `shelf_el`, `shelf_empty_en`, `cassette_en`, `cassette_el`, `cassette_review_en`.
+
+Deviations from the spec: SPEC §5 lists the new package `internal/gui/desktop`. Nothing else.
+
 Manual checks: none.
 
 Later:
 - `Checker` could pass the app's text engine (`PictureWith`) when the player has one; the default Roboto path is enough to find drawing errors.
+- Play as me (6.2) pushes `Env.Screens.Student(username)`; the admin's import (6.2) can reuse the import flow of `importflow.go` (it is unexported now; export it when 6.2 needs it).
+- `cmd/radio-tutor` has to call `desktop.Run`, and `desktop`/`Start` has to pass the `svgcheck` render checker of step 1.6 as `StartOptions.Render` (until then an imported cassette is not checked for drawable SVGs).
+- The cassette screen could scroll to the item Continue points to.

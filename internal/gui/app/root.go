@@ -93,7 +93,8 @@ func (s *rootState) Build(m.BuildContext) m.Widget {
 
 // Home is the first route: it shows the first-run screen when there is no
 // admin, the login screen when nobody is logged in, and the home of the
-// logged-in user.
+// logged-in user (Env.Screens.Student for a student, the placeholder when
+// there is none).
 type Home struct{ m.StatelessWidget }
 
 // NewHome returns the home route's widget.
@@ -107,6 +108,8 @@ func (h *Home) Build(bc m.BuildContext) m.Widget {
 	switch session := scope.Session(); {
 	case session != nil && session.Role == profile.RoleAdmin:
 		return NewAdminHome()
+	case session != nil && scope.Env().Screens.Student != nil:
+		return scope.Env().Screens.Student(session.Username)
 	case session != nil:
 		return NewStudentHome()
 	case scope.Env().Profiles.NeedsFirstAdmin():

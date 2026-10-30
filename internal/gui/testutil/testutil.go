@@ -51,6 +51,11 @@ type Options struct {
 	Locale string
 	// Size is the size of the window; the default is DefaultSize.
 	Size m.Size
+	// Screens are the screens of the other GUI packages (app.StartOptions).
+	Screens app.Screens
+	// ChooseFile answers the file dialogs; the default fails the test, because a
+	// test must not open the dialog of the desktop.
+	ChooseFile app.FileChooser
 	// Before runs on the environment after it started and before the window
 	// opens, for example to make profiles.
 	Before func(env *app.Env)
@@ -62,6 +67,13 @@ type Options struct {
 func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 	t.Helper()
 	paths := storagetest.Isolate(t)
+	choose := opts.ChooseFile
+	if choose == nil {
+		choose = func(context.Context, m.BuildContext, app.FileQuestion) (string, bool, error) {
+			t.Error("the app opened a file dialog and the test gave no ChooseFile")
+			return "", false, nil
+		}
+	}
 	locale := opts.Locale
 	if locale == "" {
 		locale = "en_US.UTF-8"
@@ -77,6 +89,8 @@ func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 			return os.Getenv(name)
 		},
 		ProfileOptions: []profile.Option{profile.WithIterations(hashIterations)},
+		Screens:        opts.Screens,
+		ChooseFile:     choose,
 	})
 	if err != nil {
 		t.Fatalf("testutil.NewEnv: %v", err)
