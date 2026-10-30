@@ -2,27 +2,41 @@
 // server on the local network that serves the page where the child takes
 // photos of the solutions, receives the photos and hands them over.
 //
-// The server does not know where photos are stored. A caller opens a token
-// with Open and gives it Handlers; when an upload completes, the photos are
-// normalized (grading.NormalizePhoto) and passed to Handlers.Received, which
-// stores them and may refuse them.
+// # Links and offers
+//
+// A caller makes a Link for a student with OpenLink; the link is the phone's
+// address (the QR code) and stays open between submissions. When a submission
+// is ready for photos, the caller Offers it on the link with Handlers: the
+// phone page, which is waiting, switches to the exercises by itself. When the
+// photos arrive they are normalized (grading.NormalizePhoto) and passed to
+// Handlers.Received, which stores them and may refuse them; the page goes back
+// to waiting and the link stays. An Offer that the caller Withdraws (the
+// submission was cancelled) sends the page back to waiting too.
+//
+// The server does not know where photos are stored, nor who the student is: a
+// caller that ties a link to a student ends it (Link.End) when the student logs
+// out.
+//
+// A link ends by Link.End, by Server.Stop, and when no offer has ended on it
+// for the link idle time (LinkIdleTTL); a link with an offer waiting for photos
+// does not end by idling.
 //
 // # Threads
 //
 // Every Handlers callback runs on a goroutine of the HTTP server, never on the
-// UI thread, and callbacks of different tokens (or of one token, for a page
-// that is opened twice) may run at the same time. A GUI that wants to show an
-// event Posts it to the UI thread (CLAUDE.md "Go conventions").
+// UI thread, and callbacks of different offers (or of one offer, for a page
+// that is opened on two phones) may run at the same time. A GUI that wants to
+// show an event Posts it to the UI thread (CLAUDE.md "Go conventions").
 //
 // # Status codes
 //
-// A token that is unknown, expired, revoked or already used answers 410 with a
-// friendly page (SPEC §10.2); other paths answer 404. An upload that is
-// refused answers: 400 (no photo, or not a multipart form), 409 (the token is
-// receiving another upload), 413 (more than MaxPhotos files, a file or the
-// total above its limit, or a photo with more than grading.MaxPhotoPixels
-// pixels), 415 (not a JPEG or PNG photo), 422 (the photo cannot be decoded),
-// 429 (rate limit) or 500.
+// A link that is unknown, ended or idle answers 410 with a friendly page
+// (SPEC §10.2); other paths answer 404. An upload that is refused answers: 400
+// (no photo, or not a multipart form), 409 (the offer is not the current one,
+// or the offer is receiving another upload), 410 (the link ended), 413 (more
+// than MaxPhotos files, a file or the total above its limit, or a photo with
+// more than grading.MaxPhotoPixels pixels), 415 (not a JPEG or PNG photo), 422
+// (the photo cannot be decoded), 429 (rate limit) or 500.
 package phone
 
 import (
@@ -34,11 +48,9 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 )
 
@@ -52,8 +64,16 @@ const (
 	MaxPhotoBytes = 20 << 20
 	// MaxTotalBytes is the largest total size of the files of one upload.
 	MaxTotalBytes = 80 << 20
-	// TokenTTL is how long a token is valid.
-	TokenTTL = 30 * time.Minute
+	// LinkIdleTTL is how long a link lives when no offer is waiting on it: it
+	// counts from the creation of the link or from the last time an offer
+	// ended on it (photos sent, or withdrawn).
+	LinkIdleTTL = 60 * time.Minute
+	// PollTimeout is how long the server holds a state request that has
+	// nothing new to answer.
+	PollTimeout = 25 * time.Second
+	// SeenWithin is how long after its last request a phone counts as having
+	// the link open (Link.Seen).
+	SeenWithin = 30 * time.Second
 	// RequestsPerMinute is the most requests one remote address may make in a
 	// minute.
 	RequestsPerMinute = 30
@@ -68,15 +88,19 @@ const maxAddresses = 4096
 // Options configure a Server. The zero value is valid and gives the defaults of
 // SPEC §10.2; the other fields exist for tests.
 type Options struct {
-	// Lang is the language of the pages that belong to no token (404, expired
-	// and unknown tokens). Default English; see Server.SetLang.
+	// Lang is the language of the pages that belong to no link (404, expired
+	// and unknown links). Default English; see Server.SetLang.
 	Lang i18n.Lang
 	// ListenHost is the address the server binds to. Default "0.0.0.0".
 	ListenHost string
-	// Clock returns the current time. Default time.Now.
+	// Clock returns the current time. Default time.Now. It decides when a link
+	// is idle and whether a phone was seen; the hold of a state request uses
+	// the real time (PollTimeout).
 	Clock func() time.Time
-	// TokenTTL is how long a token is valid. Default the constant TokenTTL.
-	TokenTTL time.Duration
+	// LinkIdleTTL overrides the constant of the same name.
+	LinkIdleTTL time.Duration
+	// PollTimeout overrides the constant of the same name.
+	PollTimeout time.Duration
 	// Random is the source of the token bytes. Default crypto/rand.
 	Random io.Reader
 	// Log receives the server's log lines. Default: discarded.
@@ -90,10 +114,8 @@ type Options struct {
 	RequestsPerMinute int
 }
 
-// PageData is what the phone page shows for one token.
+// PageData is what the phone page shows for one offer.
 type PageData struct {
-	// Lang is the language of the page (the app's language).
-	Lang i18n.Lang
 	// Title is the cassette's title.
 	Title string
 	// Exercises are the exercises of the submission, in the order shown.
@@ -111,30 +133,23 @@ type PageExercise struct {
 	Prompt string
 }
 
-// Handlers receive the events of one token. Any of them may be nil. They run on
+// Handlers receive the events of one offer. Any of them may be nil. They run on
 // server goroutines (see the package documentation).
 type Handlers struct {
-	// Opened is called each time the page of the token is opened (a GET).
+	// Opened is called once for the offer, the first time a phone asks for
+	// the page or for news while the offer is waiting (not when a phone was
+	// already there when the offer was made: Link.Offer says so).
 	Opened func()
-	// Started is called when an upload of the token is accepted and its body
+	// Started is called when an upload of the offer is accepted and its body
 	// starts to be read.
 	Started func()
 	// Received is called when a whole upload has been read and normalized,
 	// with the photos as JPEG data in the order they were sent. The context
 	// is not cancelled when the phone disconnects. Returning nil completes the
-	// submission: the token is used up and the page shows "Sent!". Returning an
+	// offer: it is no longer waiting and the page shows "Sent!". Returning an
 	// error (the submission was cancelled, the photos could not be stored)
-	// revokes the token and the page shows the expired message.
+	// sends the page back to waiting with a friendly message.
 	Received func(ctx context.Context, photos [][]byte) error
-}
-
-// entry is an open token.
-type entry struct {
-	view     pageView
-	lang     i18n.Lang
-	handlers Handlers
-	expires  time.Time
-	busy     bool // an upload of the token is being received
 }
 
 // Server is the phone server. Use New. All methods are safe for concurrent use.
@@ -146,7 +161,7 @@ type Server struct {
 
 	mu      sync.Mutex
 	lang    i18n.Lang
-	tokens  map[string]*entry
+	links   map[string]*link
 	srv     *http.Server
 	ln      net.Listener
 	runCtx  context.Context
@@ -161,8 +176,11 @@ func New(opts Options) *Server {
 	if opts.ListenHost == "" {
 		opts.ListenHost = "0.0.0.0"
 	}
-	if opts.TokenTTL <= 0 {
-		opts.TokenTTL = TokenTTL
+	if opts.LinkIdleTTL <= 0 {
+		opts.LinkIdleTTL = LinkIdleTTL
+	}
+	if opts.PollTimeout <= 0 {
+		opts.PollTimeout = PollTimeout
 	}
 	if opts.Random == nil {
 		opts.Random = rand.Reader
@@ -189,11 +207,11 @@ func New(opts Options) *Server {
 		tmpl:    pageTemplates,
 		limiter: newLimiter(opts.Clock, opts.RequestsPerMinute, maxAddresses),
 		lang:    lang,
-		tokens:  map[string]*entry{},
+		links:   map[string]*link{},
 	}
 }
 
-// SetLang sets the language of the pages that belong to no token.
+// SetLang sets the language of the pages that belong to no link.
 func (s *Server) SetLang(l i18n.Lang) {
 	if !l.Valid() {
 		return
@@ -203,62 +221,6 @@ func (s *Server) SetLang(l i18n.Lang) {
 	s.mu.Unlock()
 }
 
-// Open makes a token for a submission and returns it with the URL the phone
-// opens: http://<host>:<port>/s/<token>. host is the LAN address (DetectLAN).
-// The token is valid for the token TTL, until its photos are received, or until
-// Close. The server must be running.
-func (s *Server) Open(host string, page PageData, h Handlers) (token, url string, err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.ln == nil {
-		return "", "", errors.New("PhoneNotRunning", "the phone server is not running")
-	}
-	raw := make([]byte, tokenBytes)
-	if _, err := io.ReadFull(s.opts.Random, raw); err != nil {
-		return "", "", errors.NewErr("PhoneTokenFailed", err)
-	}
-	token = tokenEncoding.EncodeToString(raw)
-	now := s.clock()
-	for t, e := range s.tokens {
-		if !now.Before(e.expires) && !e.busy {
-			delete(s.tokens, t)
-		}
-	}
-	if !page.Lang.Valid() {
-		page.Lang = i18n.EN
-	}
-	s.tokens[token] = &entry{
-		view:     newPageView(page),
-		lang:     page.Lang,
-		handlers: h,
-		expires:  now.Add(s.opts.TokenTTL),
-	}
-	port := s.ln.Addr().(*net.TCPAddr).Port
-	return token, "http://" + net.JoinHostPort(host, strconv.Itoa(port)) + "/s/" + token, nil
-}
-
-// Close revokes a token. A page that is open on a phone shows the expired
-// message when it sends. Closing an unknown token does nothing.
-func (s *Server) Close(token string) {
-	s.mu.Lock()
-	delete(s.tokens, token)
-	s.mu.Unlock()
-}
-
 // tokenEncoding is how tokens are written (SPEC §10.1): base32, no padding,
 // lowercase letters being easier to type.
 var tokenEncoding = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567").WithPadding(base32.NoPadding)
-
-// find returns the token's entry when the token is open and not expired; an
-// expired entry is dropped. The caller holds s.mu.
-func (s *Server) find(token string) *entry {
-	e, ok := s.tokens[token]
-	if !ok {
-		return nil
-	}
-	if !s.clock().Before(e.expires) {
-		delete(s.tokens, token)
-		return nil
-	}
-	return e
-}

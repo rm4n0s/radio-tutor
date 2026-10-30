@@ -113,3 +113,7 @@ progress { display: block; width: 100%; height: 1rem; margin-top: 1rem; }
 .state { text-align: center; padding: 3rem 1rem; }
 .state-mark { font-size: 5rem; margin: 0; color: #1f8f4e; }
 .state-text { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0; }
+.state-hint { margin: 1rem 0 0; color: #4a5365; }
+.waiting-mark { color: #2f5fd0; }
+.cassette-title { color: #4a5365; font-size: 1.125rem; font-weight: 600; text-align: center; margin: 0.25rem 0 0; }
+#offline { margin: 0 0 1rem; background: #fff6d6; color: #5c4400; text-align: center; }

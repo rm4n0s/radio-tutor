@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/rm4n0s/errors"
+	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 )
 
 // fakeClock is a clock the tests move by hand.
@@ -180,6 +181,10 @@ type testServer struct {
 	*Server
 	clock *fakeClock
 	base  string
+
+	mu     sync.Mutex
+	offers map[string]*Offer // the offer made by open, by link token
+	links  map[string]*Link
 }
 
 func startServer(t *testing.T, opts Options) *testServer {
@@ -203,17 +208,47 @@ func startServer(t *testing.T, opts Options) *testServer {
 			t.Errorf("Stop: %v", err)
 		}
 	})
-	return &testServer{Server: s, clock: clock, base: "http://127.0.0.1:" + strconv.Itoa(s.Port())}
+	return &testServer{
+		Server: s, clock: clock, base: "http://127.0.0.1:" + strconv.Itoa(s.Port()),
+		offers: map[string]*Offer{}, links: map[string]*Link{},
+	}
 }
 
-// open makes a token with a simple page.
-func (ts *testServer) open(t *testing.T, h Handlers) (token string) {
+// testPage is the page the tests offer.
+var testPage = PageData{Title: "Cassette", Exercises: []PageExercise{{Label: "1", Title: "Add", Prompt: "2+2"}}}
+
+// newLink makes a link.
+func (ts *testServer) newLink(t *testing.T) *Link {
 	t.Helper()
-	token, _, err := ts.Open("127.0.0.1", PageData{Title: "Cassette", Exercises: []PageExercise{{Label: "1", Title: "Add", Prompt: "2+2"}}}, h)
+	k, err := ts.OpenLink("127.0.0.1", i18n.EN)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return token
+	ts.mu.Lock()
+	ts.links[k.Token] = k
+	ts.mu.Unlock()
+	return k
+}
+
+// offer offers testPage on a link and remembers the offer for upload.
+func (ts *testServer) offer(t *testing.T, k *Link, h Handlers) *Offer {
+	t.Helper()
+	o, _, err := k.Offer(testPage, h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts.mu.Lock()
+	ts.offers[k.Token] = o
+	ts.mu.Unlock()
+	return o
+}
+
+// open makes a link with an offer of a simple page and returns its token.
+func (ts *testServer) open(t *testing.T, h Handlers) (token string) {
+	t.Helper()
+	k := ts.newLink(t)
+	ts.offer(t, k, h)
+	return k.Token
 }
 
 // get fetches a path and returns the status and the body.
@@ -231,11 +266,24 @@ func (ts *testServer) get(t *testing.T, path string) (int, string, http.Header) 
 	return resp.StatusCode, string(body), resp.Header
 }
 
-// upload posts a multipart form to the photos path of the token.
+// upload posts a multipart form to the photos path of the link, for the offer
+// that open or offer made last (offer 1 when there is none).
 func (ts *testServer) upload(t *testing.T, token string, files []file) (int, string) {
 	t.Helper()
+	ts.mu.Lock()
+	id := uint64(1)
+	if o := ts.offers[token]; o != nil {
+		id = o.ID()
+	}
+	ts.mu.Unlock()
+	return ts.uploadOffer(t, token, id, files)
+}
+
+// uploadOffer posts a multipart form for the named offer.
+func (ts *testServer) uploadOffer(t *testing.T, token string, offer uint64, files []file) (int, string) {
+	t.Helper()
 	body, ct := multipartBody(t, files)
-	return ts.post(t, "/s/"+token+"/photos", ct, body)
+	return ts.post(t, "/p/"+token+"/photos?offer="+strconv.FormatUint(offer, 10), ct, body)
 }
 
 func (ts *testServer) post(t *testing.T, path, contentType string, body io.Reader) (int, string) {
@@ -269,3 +317,23 @@ func wantRoute(t *testing.T, err error, route string) {
 
 // bufCopy copies r into a strings.Builder.
 func bufCopy(w *strings.Builder, r io.Reader) (int64, error) { return io.Copy(w, r) }
+
+// waitFor polls cond until it holds, or fails the test after five seconds.
+func waitFor(t *testing.T, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !cond() {
+		if time.Now().After(deadline) {
+			t.Fatal("the condition did not come true")
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+}
+
+// contextWithCancel returns a context that is cancelled when the test ends.
+func contextWithCancel(t *testing.T) (context.Context, context.CancelFunc) {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	return ctx, cancel
+}

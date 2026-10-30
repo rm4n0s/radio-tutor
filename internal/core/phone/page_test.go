@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -45,13 +46,13 @@ func TestRenderFailures(t *testing.T) {
 	wantRoute(t, err, "renderMessage.PhoneMessageRenderFailed")
 }
 
-func TestPageViewUsesPhoneTexts(t *testing.T) {
-	v := newPageView(PageData{Lang: i18n.EL, Title: "T"})
-	if v.Lang != "el" || v.Text["phone.take"] == "" {
-		t.Errorf("view = %+v", v)
+func TestPhoneTextUsesPhoneKeys(t *testing.T) {
+	text := phoneText(i18n.EL)
+	if text["phone.take"] == "" || text["phone.waiting"] == "" {
+		t.Errorf("text = %v", text)
 	}
-	for key := range v.Text {
-		if len(key) < 6 || key[:6] != "phone." {
+	for key := range text {
+		if !strings.HasPrefix(key, "phone.") {
 			t.Errorf("key %q is not a phone key", key)
 		}
 	}

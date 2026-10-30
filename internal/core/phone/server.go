@@ -114,7 +114,7 @@ func (s *Server) stop(ctx context.Context, srv *http.Server) error {
 	}
 	serving := s.serving
 	s.srv, s.ln, s.runCtx, s.serving = nil, nil, nil, nil
-	clear(s.tokens)
+	s.endLinks() // wakes the held state requests, so that Shutdown does not wait for them
 	s.mu.Unlock()
 	err := srv.Shutdown(ctx)
 	if err != nil {
@@ -126,12 +126,13 @@ func (s *Server) stop(ctx context.Context, srv *http.Server) error {
 	return nil
 }
 
-// routes builds the handler (SPEC §10.2): the page, the upload and the static
-// files; anything else is 404.
+// routes builds the handler (SPEC §10.2): the page, the state, the upload and
+// the static files; anything else is 404.
 func (s *Server) routes(static map[string]staticFile) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /s/{token}", s.handlePage)
-	mux.HandleFunc("POST /s/{token}/photos", s.handleUpload)
+	mux.HandleFunc("GET /p/{token}", s.handlePage)
+	mux.HandleFunc("GET /p/{token}/state", s.handleState)
+	mux.HandleFunc("POST /p/{token}/photos", s.handleUpload)
 	mux.HandleFunc("GET /static/{name}", func(w http.ResponseWriter, r *http.Request) {
 		f, ok := static[r.PathValue("name")]
 		if !ok {
@@ -161,7 +162,7 @@ func (s *Server) guard(next http.Handler) http.Handler {
 		if ok, wait := s.limiter.allow(host); !ok {
 			secs := int((wait + time.Second - 1) / time.Second)
 			h.Set("Retry-After", strconv.Itoa(secs))
-			if strings.HasSuffix(r.URL.Path, "/photos") {
+			if strings.HasSuffix(r.URL.Path, "/photos") || strings.HasSuffix(r.URL.Path, "/state") {
 				s.writeJSON(w, http.StatusTooManyRequests, s.currentLang(), reply{Error: "phone.error.rate"})
 			} else {
 				http.Error(w, i18n.For(s.currentLang()).T("phone.error.rate"), http.StatusTooManyRequests)
@@ -192,22 +193,99 @@ func (s *Server) gone(w http.ResponseWriter) {
 	}
 }
 
-// handlePage serves the page of a token.
+// handlePage serves the page of a link: the shell, the texts and the state the
+// page starts from.
 func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	e := s.find(r.PathValue("token"))
-	s.mu.Unlock()
-	if e == nil {
+	l := s.findLink(r.PathValue("token"))
+	if l == nil {
 		s.gone(w)
 		return
 	}
-	if err := renderPage(s.tmpl, w, e.view); err != nil {
+	l.mu.Lock()
+	opened := l.touchLocked(s.clock())
+	view := pageView{Lang: string(l.lang), MaxPhotos: MaxPhotos, State: l.state(), Text: l.text}
+	l.mu.Unlock()
+	if err := renderPage(s.tmpl, w, view); err != nil {
 		s.opts.Log.Error("phone page failed", "err", err)
-		http.Error(w, i18n.For(e.lang).T("phone.error.server"), http.StatusInternalServerError)
+		http.Error(w, i18n.For(l.lang).T("phone.error.server"), http.StatusInternalServerError)
 		return
 	}
-	if e.handlers.Opened != nil && r.Method == http.MethodGet {
-		e.handlers.Opened()
+	if opened != nil {
+		opened()
+	}
+}
+
+// handleState answers the long poll of the page (SPEC §10.2): it answers at
+// once when the state differs from the version the page knows (v), otherwise it
+// holds the request until the state changes, the poll timeout passes or the
+// phone hangs up.
+func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("token")
+	l := s.findLink(token)
+	if l == nil {
+		s.writeState(w, http.StatusGone, stateView{Expired: true})
+		return
+	}
+	known, _ := strconv.ParseUint(r.URL.Query().Get("v"), 10, 64) // a bad number is 0: answer at once
+	l.mu.Lock()
+	opened := l.touchLocked(s.clock())
+	l.polling++
+	l.mu.Unlock()
+	if opened != nil {
+		opened()
+	}
+	defer func() {
+		l.mu.Lock()
+		l.polling--
+		l.seenAt = s.clock()
+		l.mu.Unlock()
+	}()
+	hold := time.NewTimer(s.opts.PollTimeout)
+	defer hold.Stop()
+	for {
+		l.mu.Lock()
+		if l.version != known || l.ended {
+			st := l.state()
+			l.mu.Unlock()
+			s.answerState(w, st)
+			return
+		}
+		changed := l.changed
+		l.mu.Unlock()
+		select {
+		case <-changed:
+		case <-hold.C:
+			// The link may have gone idle while the request was held.
+			if s.findLink(token) != l {
+				s.writeState(w, http.StatusGone, stateView{Expired: true})
+				return
+			}
+			l.mu.Lock()
+			st := l.state()
+			l.mu.Unlock()
+			s.answerState(w, st)
+			return
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+// answerState writes a state: 410 when the link ended.
+func (s *Server) answerState(w http.ResponseWriter, st stateView) {
+	status := http.StatusOK
+	if st.Expired {
+		status = http.StatusGone
+	}
+	s.writeState(w, status, st)
+}
+
+// writeState writes a state as JSON.
+func (s *Server) writeState(w http.ResponseWriter, status int, st stateView) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(st); err != nil {
+		s.opts.Log.Debug("phone state reply failed", "err", err)
 	}
 }
 
@@ -217,6 +295,9 @@ type reply struct {
 	OK      bool   `json:"ok"`
 	Error   string `json:"error,omitempty"`
 	Expired bool   `json:"expired,omitempty"`
+	// Stale is true when the submission is not the one waiting for photos
+	// any more.
+	Stale bool `json:"stale,omitempty"`
 }
 
 // writeJSON writes a reply, translating its error key into lang.

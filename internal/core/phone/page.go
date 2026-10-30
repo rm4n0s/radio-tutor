@@ -42,42 +42,37 @@ func readStatic(fsys fs.FS) (map[string]staticFile, error) {
 	return out, nil
 }
 
-// pageView is what the page template renders for one token.
+// pageView is what the page template renders: the shell of the page, the
+// texts for the script and the state the page starts from.
 type pageView struct {
 	Lang      string
-	Title     string
 	MaxPhotos int
-	Exercises []exerciseView
+	State     stateView
 	// Text is the "phone." part of the catalog; the template uses it and the
 	// script reads it as JSON.
 	Text map[string]string
 }
 
-type exerciseView struct {
-	Label, Title string
-	// Lines are the lines of the prompt.
-	Lines []string
-}
-
-// newPageView prepares the page of a token. The page is rendered from it for
-// every GET, so the work is done once.
-func newPageView(p PageData) pageView {
-	cat := i18n.For(p.Lang)
+// phoneText is the "phone." part of the catalog of lang.
+func phoneText(lang i18n.Lang) map[string]string {
+	cat := i18n.For(lang)
 	text := map[string]string{}
 	for _, key := range i18n.Keys(cat.Lang()) {
 		if strings.HasPrefix(key, "phone.") {
 			text[key] = cat.T(key)
 		}
 	}
-	v := pageView{Lang: string(cat.Lang()), Title: p.Title, MaxPhotos: MaxPhotos, Text: text}
-	for _, ex := range p.Exercises {
-		v.Exercises = append(v.Exercises, exerciseView{
-			Label: ex.Label,
-			Title: ex.Title,
-			Lines: promptLines(ex.Prompt),
-		})
+	return text
+}
+
+// exerciseViews prepares the exercises of an offer. The state is built from
+// them for every request, so the work is done once.
+func exerciseViews(exercises []PageExercise) []exerciseView {
+	var out []exerciseView
+	for _, ex := range exercises {
+		out = append(out, exerciseView{Label: ex.Label, Title: ex.Title, Lines: promptLines(ex.Prompt)})
 	}
-	return v
+	return out
 }
 
 // promptLines splits a prompt into lines, dropping empty text at the ends.
