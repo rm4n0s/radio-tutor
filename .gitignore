@@ -38,9 +38,8 @@ go.work.sum
 # Radio Tutor: cassettes made outside the test data folders
 *.cassette
 !**/testdata/**/*.cassette
-!examples/cassettes/*.cassette
 
-# The school books the example cassettes follow (copyrighted, never committed)
+# Books and other PDFs put in the root (copyrighted, never committed)
 /*.pdf
 .wine-test/
 .scratch/

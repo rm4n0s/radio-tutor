@@ -43,7 +43,6 @@ Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go 
 - `internal/archtest/` checks the package boundaries and forbidden imports (SPEC §5)
 - The UI uses Glutter's `widgets` and `material` packages (SPEC D6)
 - `testdata/cassettes/` holds the sample cassette's sources; `scripts/make-sample-cassette.sh` builds it
-- `examples/cassettes/` holds the example cassettes made from the Greek 5th-grade Physics chapters (each as a folder, a packed `.cassette` and `<name>-src/` with its narration script); `cmd/radio-tutor/examples_test.go` validates every `.cassette` there
 - `docs/SPEC.md` is the specification; `docs/CASSETTE-FORMAT.md` is the cassette format; `docs/CASSETTE-AUTHORING-PROMPT.md` is the prompt template parents give to an AI agent to make cassettes; `docs/IMPLEMENTATION.md` is the step-by-step plan; `docs/IMPLEMENTED.md` logs finished steps
 - `scripts/` holds helper scripts
 - Tests live next to the code (`foo_test.go`); golden images live in `testdata/goldens/` of their package
