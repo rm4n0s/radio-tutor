@@ -7,6 +7,7 @@ import (
 	"context"
 	"image"
 	"image/png"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -119,6 +120,11 @@ func remove(ctx context.Context, e Entry, p PlatformEnv) ([]string, error) {
 // files. It fails with the tags IconDecodeFailed, IconNotSquare, IconTooSmall and
 // IconEncodeFailed.
 func scaleIcons(data []byte, sizes []int) ([][]byte, error) {
+	return scaleIconsWith(data, sizes, png.Encode)
+}
+
+// scaleIconsWith is scaleIcons with the PNG encoder given as a function.
+func scaleIconsWith(data []byte, sizes []int, encode func(io.Writer, image.Image) error) ([][]byte, error) {
 	src, err := png.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, errors.NewErr("IconDecodeFailed", err)
@@ -139,7 +145,7 @@ func scaleIcons(data []byte, sizes []int) ([][]byte, error) {
 		dst := image.NewNRGBA(image.Rect(0, 0, s, s))
 		xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, b, xdraw.Src, nil)
 		var buf bytes.Buffer
-		if err := png.Encode(&buf, dst); err != nil {
+		if err := encode(&buf, dst); err != nil {
 			return nil, errors.NewErr("IconEncodeFailed", err).SetMetadata("size", s)
 		}
 		out = append(out, buf.Bytes())

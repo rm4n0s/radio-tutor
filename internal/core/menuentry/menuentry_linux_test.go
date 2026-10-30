@@ -5,13 +5,16 @@ package menuentry
 import (
 	"bytes"
 	"context"
+	"image"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 )
 
@@ -210,7 +213,7 @@ func TestInstallErrors(t *testing.T) {
 				e.IconPNG = []byte("not a picture")
 				return e, context.Background()
 			},
-			route: "Install->install->scaleIcons.IconDecodeFailed",
+			route: "Install->install->scaleIcons->scaleIconsWith.IconDecodeFailed",
 		},
 		{
 			name: "icon that is not square",
@@ -219,7 +222,7 @@ func TestInstallErrors(t *testing.T) {
 				e.IconPNG = testRectIcon(t, 300, 256)
 				return e, context.Background()
 			},
-			route: "Install->install->scaleIcons.IconNotSquare",
+			route: "Install->install->scaleIcons->scaleIconsWith.IconNotSquare",
 		},
 		{
 			name: "icon that is small",
@@ -228,7 +231,7 @@ func TestInstallErrors(t *testing.T) {
 				e.IconPNG = testIcon(t, 64)
 				return e, context.Background()
 			},
-			route: "Install->install->scaleIcons.IconTooSmall",
+			route: "Install->install->scaleIcons->scaleIconsWith.IconTooSmall",
 		},
 		{
 			name: "data folder is a file",
@@ -297,4 +300,20 @@ func TestRemoveErrors(t *testing.T) {
 		_, err := Remove(context.Background(), e, DefaultEnv())
 		hasRoute(t, err, "Remove->remove.EntryFileRemoveFailed")
 	})
+}
+
+// testRectIcon is a PNG that is not square.
+func testRectIcon(t testing.TB, w, h int) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewNRGBA(image.Rect(0, 0, w, h))); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func TestScaleIconsEncodeFailure(t *testing.T) {
+	boom := errors.New("Boom", "the encoder failed")
+	_, err := scaleIconsWith(testIcon(t, 256), []int{48}, func(io.Writer, image.Image) error { return boom })
+	hasRoute(t, err, "scaleIconsWith.IconEncodeFailed")
 }

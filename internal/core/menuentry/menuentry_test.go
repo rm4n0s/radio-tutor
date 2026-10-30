@@ -195,13 +195,3 @@ func TestInstallRefusals(t *testing.T) {
 		})
 	}
 }
-
-// testRectIcon is a PNG that is not square.
-func testRectIcon(t testing.TB, w, h int) []byte {
-	t.Helper()
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, image.NewNRGBA(image.Rect(0, 0, w, h))); err != nil {
-		t.Fatal(err)
-	}
-	return buf.Bytes()
-}
