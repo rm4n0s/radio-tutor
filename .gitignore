@@ -39,3 +39,6 @@ go.work.sum
 *.cassette
 !**/testdata/**/*.cassette
 !examples/cassettes/*.cassette
+
+# The school books the example cassettes follow (copyrighted, never committed)
+/*.pdf
