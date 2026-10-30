@@ -31,7 +31,7 @@ func RunWith(ctx context.Context, opts StartOptions) error {
 		if appErr, ok := errors.FromError(err); ok && appErr.Tag == "AlreadyRunning" {
 			// Failing to show the window (no display, a terminal run) must not
 			// hide the AlreadyRunning error, so the window's own error is dropped.
-			_ = m.RunApp(NewQuitOnDone(ctx, NewAlreadyRunning(i18n.FromLocale(os.Getenv("LANG")))), windowOpts(Title, AlreadyRunningSize, AlreadyRunningSize, nil))
+			_ = m.RunApp(NewQuitOnDone(ctx, NewAlreadyRunning(i18n.FromLocale(processLocale()))), windowOpts(Title, AlreadyRunningSize, AlreadyRunningSize, nil))
 		}
 		return err
 	}
@@ -50,4 +50,13 @@ func windowOpts(title string, size, minSize m.Size, env *Env) m.RunAppOpts {
 		opts.Logger = env.Log
 	}
 	return opts
+}
+
+// processLocale is the locale of the process: LANG, or what the operating system
+// reports when LANG is empty.
+func processLocale() string {
+	if locale := os.Getenv("LANG"); locale != "" {
+		return locale
+	}
+	return systemLocale()
 }

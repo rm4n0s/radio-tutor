@@ -78,9 +78,10 @@ type Env struct {
 
 // StartOptions are the optional parameters of Start.
 type StartOptions struct {
-	// Getenv reads the environment; the default is os.Getenv. Start reads LANG,
-	// RADIO_TUTOR_DEBUG and, through storage.ResolveFrom, HOME and the XDG
-	// variables.
+	// Getenv reads the environment; the default is os.Getenv. Start reads LANG
+	// (with the default, an empty LANG falls back to the user's locale on
+	// Windows), RADIO_TUTOR_DEBUG and, through storage.ResolveFrom, HOME and the
+	// XDG variables on Linux, LOCALAPPDATA and USERPROFILE on Windows.
 	Getenv func(string) string
 	// ProfileOptions are passed to profile.Open (tests use few hash iterations).
 	ProfileOptions []profile.Option
@@ -147,7 +148,11 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 	env.Log = logger
 	env.closers = append(env.closers, func() { closeLog(logger, logCloser) })
 
-	if err := env.openSettings(ctx, getenv("LANG"), now); err != nil {
+	locale := getenv("LANG")
+	if locale == "" && opts.Getenv == nil {
+		locale = systemLocale() // Windows has no LANG
+	}
+	if err := env.openSettings(ctx, locale, now); err != nil {
 		env.Close()
 		return nil, err
 	}

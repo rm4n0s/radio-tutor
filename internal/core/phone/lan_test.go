@@ -126,7 +126,7 @@ func TestChooseLAN(t *testing.T) {
 			}
 			got, err := ChooseLAN(route, tc.ifaces, tc.preferred)
 			if tc.noNetwork {
-				wantRoute(t, err, "ChooseLAN.PhoneNoNetwork")
+				wantRoute(t, err, "chooseLAN.PhoneNoNetwork")
 				return
 			}
 			if err != nil {
@@ -183,7 +183,7 @@ func TestDetectLAN(t *testing.T) {
 	got, err := DetectLAN(context.Background(), "")
 	if err != nil {
 		// A machine without a network (a sandbox) has none to offer.
-		wantRoute(t, err, "ChooseLAN.PhoneNoNetwork")
+		wantRoute(t, err, "chooseLAN.PhoneNoNetwork")
 		return
 	}
 	if !got.IP.To4().IsPrivate() {
@@ -205,6 +205,9 @@ func TestVirtualInterface(t *testing.T) {
 	}{
 		{"docker0", true}, {"br-1a2b3c", true}, {"veth9f", true}, {"virbr0", true}, {"lo", true},
 		{"tun0", true}, {"tap1", true}, {"wg0", true},
+		{"vEthernet (Default Switch)", true}, {"Loopback Pseudo-Interface 1", true}, {"VMware Network Adapter VMnet1", true},
+		{"VirtualBox Host-Only Network", true}, {"Bluetooth Network Connection", true},
+		{"Ethernet", false}, {"Wi-Fi", false}, {"Ethernet 2", false},
 		{"wlp3s0", false}, {"enp2s0", false}, {"wlan0", false}, {"eth0", false}, {"br0", false}, {"", false},
 	}
 	for _, tc := range tests {

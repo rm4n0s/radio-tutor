@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -40,6 +41,11 @@ func listDir(t *testing.T, dir string) []string {
 	return names
 }
 
+// unixModes is true where permission bits mean something (not on Windows).
+// storagetest.UnixModes is the same, which this package's own tests cannot
+// import (storagetest imports storage).
+const unixModes = runtime.GOOS != "windows"
+
 func TestWriteJSONAtomicRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "sub", "deeper", "doc.json")
 	want := doc{Format: 1, Name: "Ada"}
@@ -57,14 +63,14 @@ func TestWriteJSONAtomicRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != FileMode {
+	if unixModes && info.Mode().Perm() != FileMode {
 		t.Errorf("file mode %v, want %v", info.Mode().Perm(), os.FileMode(FileMode))
 	}
 	dirInfo, err := os.Stat(filepath.Dir(path))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dirInfo.Mode().Perm() != DirMode {
+	if unixModes && dirInfo.Mode().Perm() != DirMode {
 		t.Errorf("folder mode %v, want %v", dirInfo.Mode().Perm(), os.FileMode(DirMode))
 	}
 	if names := listDir(t, filepath.Dir(path)); !reflect.DeepEqual(names, []string{"doc.json"}) {
@@ -213,6 +219,9 @@ func TestWriteJSONAtomicErrors(t *testing.T) {
 			name: "folder is read-only",
 			ctx:  context.Background(),
 			path: func(t *testing.T) string {
+				if !unixModes {
+					t.Skip("Windows keeps no Unix permission bits: a read-only folder still takes new files")
+				}
 				if os.Geteuid() == 0 {
 					t.Skip("root ignores folder modes")
 				}
@@ -383,7 +392,7 @@ func TestEnsureDir(t *testing.T) {
 		t.Fatalf("EnsureDir again: %v", err)
 	}
 	info, err := os.Stat(dir)
-	if err != nil || !info.IsDir() || info.Mode().Perm() != DirMode {
+	if err != nil || !info.IsDir() || (unixModes && info.Mode().Perm() != DirMode) {
 		t.Errorf("folder: %v, %v", info, err)
 	}
 }

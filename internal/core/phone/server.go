@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/rm4n0s/errors"
@@ -45,7 +44,7 @@ func (s *Server) Start(ctx context.Context, port int) error {
 	var lc net.ListenConfig
 	ln, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
-		if errors.Is(err, syscall.EADDRINUSE) {
+		if isAddrInUse(err) {
 			return errors.NewErr("PhonePortInUse", err).SetMetadata("port", port)
 		}
 		return errors.NewErr("PhoneListenFailed", err).SetMetadata("port", port)

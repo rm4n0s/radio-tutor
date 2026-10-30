@@ -5,16 +5,12 @@ import (
 	"context"
 	"io"
 	"net"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/rm4n0s/errors"
 )
-
-// RouteTablePath is the file ParseDefaultRoutes reads on Linux.
-const RouteTablePath = "/proc/net/route"
 
 // Interface is a network interface as the LAN address choice needs it. Tests
 // build them by hand; ListInterfaces reads the real ones.
@@ -94,15 +90,23 @@ func ParseDefaultRoutes(r io.Reader) ([]string, error) {
 // has the default route. A route table that cannot be read is ignored. With no
 // such address the error has the tag PhoneNoNetwork.
 func ChooseLAN(route io.Reader, ifaces []Interface, preferred string) (LANAddr, error) {
+	var defaults []string
+	if route != nil {
+		if names, err := ParseDefaultRoutes(route); err == nil {
+			defaults = names
+		}
+	}
+	return chooseLAN(defaults, ifaces, preferred)
+}
+
+// chooseLAN is ChooseLAN with the names of the interfaces that have a default
+// route already known, the one with the lowest metric first.
+func chooseLAN(defaults []string, ifaces []Interface, preferred string) (LANAddr, error) {
 	var order []string
 	if preferred != "" {
 		order = append(order, preferred)
 	}
-	if route != nil {
-		if names, err := ParseDefaultRoutes(route); err == nil {
-			order = append(order, names...)
-		}
-	}
+	order = append(order, defaults...)
 	byName := make(map[string]Interface, len(ifaces))
 	for _, ifc := range ifaces {
 		if _, dup := byName[ifc.Name]; !dup {
@@ -128,14 +132,22 @@ func ChooseLAN(route io.Reader, ifaces []Interface, preferred string) (LANAddr, 
 	return LANAddr{}, errors.New("PhoneNoNetwork", "this computer has no private IPv4 address on an interface that is up", "preferred", preferred)
 }
 
-// virtualPrefixes are the beginnings of the names of interfaces that never
-// reach a phone: containers, bridges, virtual machines, loopback and tunnels.
-var virtualPrefixes = []string{"docker", "br-", "veth", "virbr", "lo", "tun", "tap", "wg"}
+// virtualPrefixes are the lowercase beginnings of the names of interfaces that
+// never reach a phone: containers, bridges, virtual machines, loopback and
+// tunnels. The first group is Linux, the second Windows (vEthernet is Hyper-V
+// and WSL, the others the pseudo-interfaces and the virtual machine adapters).
+var virtualPrefixes = []string{
+	"docker", "br-", "veth", "virbr", "lo", "tun", "tap", "wg",
+	"vethernet", "loopback", "virtualbox", "vmware", "bluetooth", "isatap", "teredo",
+}
 
 // VirtualInterface reports whether the interface name looks like a virtual
-// interface (Docker, bridges, veth pairs, libvirt, loopback, VPN tunnels):
-// its name starts with docker, br-, veth, virbr, lo, tun, tap or wg.
+// interface (Docker, bridges, veth pairs, libvirt, loopback, VPN tunnels,
+// Hyper-V and virtual machine adapters): its name, in any letter case, starts
+// with docker, br-, veth, virbr, lo, tun, tap, wg, vethernet, loopback,
+// virtualbox, vmware, bluetooth, isatap or teredo.
 func VirtualInterface(name string) bool {
+	name = strings.ToLower(name)
 	for _, p := range virtualPrefixes {
 		if strings.HasPrefix(name, p) {
 			return true
@@ -177,9 +189,11 @@ func listInterfaces(system func() ([]net.Interface, error)) ([]Interface, error)
 	return out, nil
 }
 
-// DetectLAN chooses the LAN address of this computer: ChooseLAN with the real
-// route table (/proc/net/route, ignored when it cannot be opened) and the real
-// interfaces. preferred is the setting phone.interface.
+// DetectLAN chooses the LAN address of this computer: ChooseLAN with the
+// default route of the operating system (defaultRouteInterfaces: the route table
+// /proc/net/route on Linux, the interface that carries traffic to the internet
+// on Windows; ignored when it cannot be found) and the real interfaces.
+// preferred is the setting phone.interface.
 func DetectLAN(ctx context.Context, preferred string) (LANAddr, error) {
 	if err := ctx.Err(); err != nil {
 		return LANAddr{}, errors.NewErr("PhoneDetectCanceled", err)
@@ -188,10 +202,5 @@ func DetectLAN(ctx context.Context, preferred string) (LANAddr, error) {
 	if err != nil {
 		return LANAddr{}, err
 	}
-	var route io.Reader
-	if f, err := os.Open(RouteTablePath); err == nil {
-		defer func() { _ = f.Close() }()
-		route = f
-	}
-	return ChooseLAN(route, ifaces, preferred)
+	return chooseLAN(defaultRouteInterfaces(ifaces), ifaces, preferred)
 }

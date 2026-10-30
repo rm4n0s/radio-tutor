@@ -3,7 +3,6 @@ package storage
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/rm4n0s/errors"
@@ -19,7 +18,7 @@ func TestLockRefusesSecondHolder(t *testing.T) {
 	info, err := os.Stat(paths.LockFile())
 	if err != nil {
 		t.Errorf("lock file: %v", err)
-	} else if runtime.GOOS != "windows" && info.Mode().Perm() != FileMode {
+	} else if unixModes && info.Mode().Perm() != FileMode {
 		t.Errorf("lock file mode %v, want %v", info.Mode().Perm(), os.FileMode(FileMode))
 	}
 
