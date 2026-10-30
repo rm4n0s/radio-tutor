@@ -10,6 +10,7 @@ import (
 	"github.com/rm4n0s/errors"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 )
 
 func TestDefaults(t *testing.T) {
@@ -120,7 +121,7 @@ func TestUpdatePersistsAndValidates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != storage.FileMode {
+	if storagetest.UnixModes && info.Mode().Perm() != storage.FileMode {
 		t.Errorf("mode = %v", info.Mode().Perm())
 	}
 	again, err := Open(ctx, path, "")

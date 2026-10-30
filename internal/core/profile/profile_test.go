@@ -437,7 +437,7 @@ func TestPersistence(t *testing.T) {
 	mustCreate(t, s, "kid", RoleStudent, "1234")
 
 	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != storage.FileMode {
+	if err != nil || (storagetest.UnixModes && info.Mode().Perm() != storage.FileMode) {
 		t.Fatalf("profiles.json: %v, %v", info, err)
 	}
 	data, err := os.ReadFile(path)

@@ -85,10 +85,10 @@ func TestSaveLoadRoundTripAndFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := progressFile(paths, "ann")
-	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != storage.FileMode {
+	if info, err := os.Stat(path); err != nil || (storagetest.UnixModes && info.Mode().Perm() != storage.FileMode) {
 		t.Errorf("file: %v, %v", info, err)
 	}
-	if info, err := os.Stat(filepath.Dir(path)); err != nil || info.Mode().Perm() != storage.DirMode {
+	if info, err := os.Stat(filepath.Dir(path)); err != nil || (storagetest.UnixModes && info.Mode().Perm() != storage.DirMode) {
 		t.Errorf("folder: %v, %v", info, err)
 	}
 
@@ -274,9 +274,7 @@ func TestLoadFailures(t *testing.T) {
 		}
 	})
 	t.Run("quarantine fails", func(t *testing.T) {
-		if os.Geteuid() == 0 {
-			t.Skip("root ignores folder permissions")
-		}
+		storagetest.SkipIfModesDoNotBlock(t)
 		s, paths := newStore(t)
 		path := progressFile(paths, "ann")
 		writeRaw(t, path, "{ nope")
@@ -540,14 +538,13 @@ func TestDeleteAllFailures(t *testing.T) {
 		wantTag(t, s.DeleteAll(cctx, "ann", cassetteID), "ProgressDeleteCancelled", "Store.DeleteAll.ProgressDeleteCancelled")
 	})
 	t.Run("the student's folder is a file", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		s, paths := newStore(t)
 		writeRaw(t, filepath.Join(paths.ProgressDir(), "ann"), "x")
 		wantTag(t, s.DeleteAll(ctx, "ann", cassetteID), "ProgressDirReadFailed", "Store.DeleteAll->removeCassetteFiles.ProgressDirReadFailed")
 	})
 	t.Run("the file cannot be removed", func(t *testing.T) {
-		if os.Geteuid() == 0 {
-			t.Skip("root ignores folder permissions")
-		}
+		storagetest.SkipIfModesDoNotBlock(t)
 		s, paths := newStore(t)
 		seed(t, s, "ann", cassetteID)
 		dir := filepath.Join(paths.ProgressDir(), "ann")
@@ -583,7 +580,7 @@ func TestDeleteUser(t *testing.T) {
 	cancel()
 	wantTag(t, s.DeleteUser(cctx, "bob"), "ProgressUserDeleteCancelled", "Store.DeleteUser.ProgressUserDeleteCancelled")
 
-	if os.Geteuid() != 0 {
+	if os.Geteuid() != 0 && storagetest.UnixModes {
 		dir := filepath.Join(paths.ProgressDir(), "bob")
 		if err := os.Chmod(dir, 0o500); err != nil {
 			t.Fatal(err)
@@ -633,14 +630,13 @@ func TestDeleteCassette(t *testing.T) {
 func TestDeleteCassetteFailures(t *testing.T) {
 	ctx := context.Background()
 	t.Run("the progress folder is a file", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		s, paths := newStore(t)
 		writeRaw(t, paths.ProgressDir(), "x")
 		wantTag(t, s.DeleteCassette(ctx, cassetteID), "ProgressUsersListFailed", "Store.DeleteCassette.ProgressUsersListFailed")
 	})
 	t.Run("a student's folder fails", func(t *testing.T) {
-		if os.Geteuid() == 0 {
-			t.Skip("root ignores folder permissions")
-		}
+		storagetest.SkipIfModesDoNotBlock(t)
 		s, paths := newStore(t)
 		seed(t, s, "ann", cassetteID)
 		dir := filepath.Join(paths.ProgressDir(), "ann")

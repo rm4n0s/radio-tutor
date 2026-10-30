@@ -90,11 +90,11 @@ func TestNewLevels(t *testing.T) {
 				t.Errorf("last entry = %v", last)
 			}
 			info, err := os.Stat(paths.LogFile())
-			if err != nil || info.Mode().Perm() != storage.FileMode {
+			if err != nil || (storagetest.UnixModes && info.Mode().Perm() != storage.FileMode) {
 				t.Errorf("log file: %v, %v", info, err)
 			}
 			dirInfo, err := os.Stat(paths.State)
-			if err != nil || dirInfo.Mode().Perm() != storage.DirMode {
+			if err != nil || (storagetest.UnixModes && dirInfo.Mode().Perm() != storage.DirMode) {
 				t.Errorf("state folder: %v, %v", dirInfo, err)
 			}
 		})
@@ -205,7 +205,7 @@ func TestRotation(t *testing.T) {
 			}
 			for n := range got {
 				info, err := os.Stat(filepath.Join(dir, n))
-				if err != nil || info.Mode().Perm() != storage.FileMode {
+				if err != nil || (storagetest.UnixModes && info.Mode().Perm() != storage.FileMode) {
 					t.Errorf("%s: %v, %v", n, info, err)
 				}
 			}

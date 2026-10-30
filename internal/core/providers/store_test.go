@@ -93,6 +93,9 @@ func TestOpen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if strings.Contains(tt.route, "TooOpen") {
+				storagetest.SkipWithoutUnixModes(t) // Windows has a DACL, not mode bits (TestStoreWritesPrivateFile)
+			}
 			path := filepath.Join(t.TempDir(), "providers.json")
 			if tt.file != "-" {
 				writeFile(t, path, tt.file, tt.mode)
@@ -132,6 +135,7 @@ func TestOpenFailures(t *testing.T) {
 		wantRoute(t, err, "Open.ProvidersOpenCancelled")
 	})
 	t.Run("stat fails", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		dir := t.TempDir()
 		blocker := filepath.Join(dir, "file")
 		writeFile(t, blocker, "x", 0o600)
@@ -314,14 +318,14 @@ func TestStoreWritesPrivateFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o600 {
+	if storagetest.UnixModes && info.Mode().Perm() != 0o600 {
 		t.Errorf("providers.json mode = %v, want 0600", info.Mode().Perm())
 	}
 	dirInfo, err := os.Stat(filepath.Dir(path))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dirInfo.Mode().Perm() != storage.DirMode {
+	if storagetest.UnixModes && dirInfo.Mode().Perm() != storage.DirMode {
 		t.Errorf("config folder mode = %v, want %v", dirInfo.Mode().Perm(), os.FileMode(storage.DirMode))
 	}
 	var f struct {

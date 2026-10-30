@@ -31,6 +31,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/providers"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 	"github.com/rm4n0s/radio-tutor/internal/core/submission"
 	"github.com/rm4n0s/radio-tutor/internal/gui/admin"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
@@ -463,7 +464,7 @@ func TestWalkthrough(t *testing.T) {
 	}
 	submissionID := p.Submissions[0].ID
 	photo := filepath.Join(w.Paths.PhotosDir(), "mia", sampleID, submissionID, "1.jpg")
-	if info, err := os.Stat(photo); err != nil || info.Mode().Perm() != 0o600 {
+	if info, err := os.Stat(photo); err != nil || (storagetest.UnixModes && info.Mode().Perm() != 0o600) {
 		t.Errorf("the stored photo: %v, %v", info, err)
 	}
 	for _, id := range []string{exShade, exWhich} {

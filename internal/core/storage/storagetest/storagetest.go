@@ -3,6 +3,7 @@
 package storagetest
 
 import (
+	"os"
 	"runtime"
 	"testing"
 
@@ -43,5 +44,31 @@ func SkipWithoutUnixModes(t testing.TB) {
 	t.Helper()
 	if !UnixModes {
 		t.Skip("Windows keeps no Unix permission bits: a mode neither shows nor blocks anything there")
+	}
+}
+
+// SkipOnWindows skips the test on Windows, saying why: for a test that forces a
+// failure in a way Windows does not fail (a read-only folder that still takes
+// files, a path through a file that reports "not found" instead of "not a
+// folder", a file that is open and can still be removed) or that needs a Unix
+// facility.
+func SkipOnWindows(t testing.TB, why string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("not on Windows: " + why)
+	}
+}
+
+// SkipIfModesDoNotBlock skips the test where a read-only folder or a file with
+// no permissions (os.Chmod) does not stop its owner: for root on Linux, and on
+// Windows, which has no permission bits. For a test that forces a failure with
+// os.Chmod.
+func SkipIfModesDoNotBlock(t testing.TB) {
+	t.Helper()
+	if !UnixModes {
+		t.Skip("Windows keeps no Unix permission bits: a read-only folder still takes new files")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores folder and file modes")
 	}
 }

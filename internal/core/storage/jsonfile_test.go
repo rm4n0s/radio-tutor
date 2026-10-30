@@ -99,6 +99,8 @@ func TestWriteJSONAtomicFailures(t *testing.T) {
 				}
 				return boom
 			}
+		case "protect":
+			ops.protect = func(string) error { return boom }
 		case "sync":
 			ops.sync = func(*os.File) error { return boom }
 		case "close":
@@ -117,6 +119,7 @@ func TestWriteJSONAtomicFailures(t *testing.T) {
 		oldIsKept bool
 		newIsKept bool // the rename happened, the failure is after it
 	}{
+		{"protect", "protect", "writeJSONAtomic.FilePrivateFailed", true, false},
 		{"write", "write", "writeJSONAtomic.TempFileWriteFailed", true, false},
 		{"sync", "sync", "writeJSONAtomic.TempFileSyncFailed", true, false},
 		{"close", "close", "writeJSONAtomic.TempFileCloseFailed", true, false},

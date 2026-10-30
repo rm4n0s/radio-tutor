@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/rm4n0s/errors"
+
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 )
 
 func TestPackDeterministic(t *testing.T) {
@@ -56,7 +58,7 @@ func TestPackFormat(t *testing.T) {
 		t.Fatalf("%v %v", err, ps)
 	}
 	info, err := os.Stat(out)
-	if err != nil || info.Mode().Perm() != 0o644 {
+	if err != nil || (storagetest.UnixModes && info.Mode().Perm() != 0o644) {
 		t.Errorf("mode = %v, %v", info.Mode(), err)
 	}
 	zr, err := zip.OpenReader(out)
@@ -204,6 +206,7 @@ func TestPackRefusals(t *testing.T) {
 		hasRoute(t, err, "Pack.ArchivePackFolderStatFailed")
 	})
 	t.Run("an output that cannot be looked at", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		file := filepath.Join(t.TempDir(), "file")
 		if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
 			t.Fatal(err)

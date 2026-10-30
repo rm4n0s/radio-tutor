@@ -362,6 +362,9 @@ func (e *env) photoPath(s *Session) string {
 // wantMode fails unless the path has the permission bits.
 func wantMode(t *testing.T, path string, want os.FileMode) {
 	t.Helper()
+	if !storagetest.UnixModes {
+		return // Windows has no permission bits
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)
@@ -374,9 +377,7 @@ func wantMode(t *testing.T, path string, want os.FileMode) {
 // skipIfRoot skips a test that needs file permissions to be enforced.
 func skipIfRoot(t *testing.T) {
 	t.Helper()
-	if os.Geteuid() == 0 {
-		t.Skip("file permissions are not enforced for root")
-	}
+	storagetest.SkipIfModesDoNotBlock(t)
 }
 
 // contains reports whether text has all the parts.

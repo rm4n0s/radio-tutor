@@ -8,6 +8,7 @@ import (
 
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/testutil"
 )
@@ -24,9 +25,7 @@ func dataEnv(t *testing.T) *app.Env {
 // anywhere (root).
 func lockedFolder(t *testing.T, dir string) {
 	t.Helper()
-	if os.Geteuid() == 0 {
-		t.Skip("root can remove everything")
-	}
+	storagetest.SkipIfModesDoNotBlock(t)
 	inner := filepath.Join(dir, "inner")
 	if err := os.MkdirAll(inner, 0o700); err != nil {
 		t.Fatal(err)

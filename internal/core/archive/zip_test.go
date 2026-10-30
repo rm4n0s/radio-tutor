@@ -14,6 +14,8 @@ import (
 	"testing/fstest"
 
 	"github.com/rm4n0s/errors"
+
+	"github.com/rm4n0s/radio-tutor/internal/core/storage/storagetest"
 )
 
 // openFiles opens the zip at path and returns the files of the view, the
@@ -280,9 +282,7 @@ func TestOpenZipErrors(t *testing.T) {
 		}
 	})
 	t.Run("a file that cannot be opened", func(t *testing.T) {
-		if os.Geteuid() == 0 {
-			t.Skip("root can read anything")
-		}
+		storagetest.SkipIfModesDoNotBlock(t)
 		path := buildZip(t, zent{name: "cassette.json", data: []byte("{}")})
 		if err := os.Chmod(path, 0); err != nil {
 			t.Fatal(err)

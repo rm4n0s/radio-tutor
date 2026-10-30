@@ -124,6 +124,9 @@ func post(t *testing.T, url string, photo []byte) (int, string) {
 // wantMode fails unless the path has the permission bits.
 func wantMode(t *testing.T, path string, want os.FileMode) {
 	t.Helper()
+	if !storagetest.UnixModes {
+		return // Windows has no permission bits
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)

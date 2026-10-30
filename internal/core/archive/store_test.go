@@ -122,7 +122,7 @@ func TestStoreImportAndGet(t *testing.T) {
 		if d.IsDir() {
 			want = 0o700
 		}
-		if info.Mode().Perm() != want {
+		if storagetest.UnixModes && info.Mode().Perm() != want {
 			t.Errorf("%s has mode %v, want %v", p, info.Mode().Perm(), want)
 		}
 		return nil
@@ -392,9 +392,7 @@ func TestStoreImportErrors(t *testing.T) {
 		}
 	})
 	t.Run("the cassettes folder cannot be created", func(t *testing.T) {
-		if os.Geteuid() == 0 {
-			t.Skip("root can write anywhere")
-		}
+		storagetest.SkipIfModesDoNotBlock(t)
 		paths := storagetest.Isolate(t)
 		if err := os.MkdirAll(paths.Data, 0o500); err != nil {
 			t.Fatal(err)
@@ -405,6 +403,7 @@ func TestStoreImportErrors(t *testing.T) {
 		hasRoute(t, err, "DirCreateFailed")
 	})
 	t.Run("the data folder is a file", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		paths := storagetest.Isolate(t)
 		if err := os.WriteFile(paths.Data, []byte("x"), 0o600); err != nil {
 			t.Fatal(err)
@@ -721,6 +720,7 @@ func TestStoreFileOperationFailures(t *testing.T) {
 
 func TestStoreReadFailures(t *testing.T) {
 	t.Run("the cassettes folder is a file", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		paths := storagetest.Isolate(t)
 		if err := os.MkdirAll(paths.Data, 0o700); err != nil {
 			t.Fatal(err)
@@ -736,6 +736,7 @@ func TestStoreReadFailures(t *testing.T) {
 		hasRoute(t, s.Recover(context.Background()), "Store.Recover.StoreRecoverListFailed")
 	})
 	t.Run("an installed file is not a folder", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a file can be replaced by a folder on Windows")
 		s, paths := newTestStore(t)
 		if err := os.MkdirAll(paths.CassettesDir(), 0o700); err != nil {
 			t.Fatal(err)

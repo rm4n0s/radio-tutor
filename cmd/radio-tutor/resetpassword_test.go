@@ -207,6 +207,7 @@ func TestResetPasswordStorageFailures(t *testing.T) {
 		}
 	})
 	t.Run("state folder that cannot be made", func(t *testing.T) {
+		storagetest.SkipOnWindows(t, "a path through a file reports not found, not not-a-folder")
 		paths := storagetest.Isolate(t)
 		if err := os.WriteFile(paths.State, nil, 0o600); err != nil { // a file where the folder goes
 			t.Fatal(err)

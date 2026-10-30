@@ -49,11 +49,22 @@ func syncDirectory(string) error { return nil }
 // PC nor the Users group see it (SYSTEM and administrators can still take
 // ownership, as on every Windows file). The error comes from the Win32 call.
 func protectFile(path string) error {
-	user, err := windows.GetCurrentProcessToken().GetTokenUser()
+	acl, err := ownerOnlyACL()
 	if err != nil {
 		return err
 	}
-	acl, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
+	return windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION, nil, nil, acl, nil)
+}
+
+// ownerOnlyACL makes the access control list of protectFile: one entry, which
+// allows the user of the current process every right.
+func ownerOnlyACL() (*windows.ACL, error) {
+	user, err := windows.GetCurrentProcessToken().GetTokenUser()
+	if err != nil {
+		return nil, err
+	}
+	return windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
 		AccessPermissions: fileAllAccess,
 		AccessMode:        windows.GRANT_ACCESS,
 		Inheritance:       windows.NO_INHERITANCE,
@@ -63,9 +74,4 @@ func protectFile(path string) error {
 			TrusteeValue: windows.TrusteeValueFromSID(user.User.Sid),
 		},
 	}}, nil)
-	if err != nil {
-		return err
-	}
-	return windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT,
-		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION, nil, nil, acl, nil)
 }
