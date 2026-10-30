@@ -235,26 +235,31 @@ func initCOM() (func(), error) {
 	return nil, err
 }
 
-// saveShortcut writes the shortcut file at path (the shell's IShellLinkW and
-// IPersistFile). It fails with the tag ShortcutFailed, whose "step" metadata says
-// which call failed.
+// saveShortcut writes the shortcut file at path. It fails with the tag
+// ShortcutFailed, whose "step" metadata says which call of the shell failed.
 func saveShortcut(path string, s shortcut) error {
+	if step, err := writeShortcut(path, s); err != nil {
+		return errors.NewErr("ShortcutFailed", err).SetMetadata("step", step, "path", path)
+	}
+	return nil
+}
+
+// writeShortcut makes the shell's link object (IShellLinkW), fills it and saves it
+// with IPersistFile. On a failure it returns the name of the step that failed.
+func writeShortcut(path string, s shortcut) (step string, err error) {
 	// COM objects belong to the thread that made them.
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	fail := func(step string, err error) error {
-		return errors.NewErr("ShortcutFailed", err).SetMetadata("step", step, "path", path)
-	}
 
 	uninit, err := initCOM()
 	if err != nil {
-		return fail("CoInitializeEx", err)
+		return "CoInitializeEx", err
 	}
 	defer uninit()
 
 	link, err := createShellLink()
 	if err != nil {
-		return fail("CoCreateInstance", err)
+		return "CoCreateInstance", err
 	}
 	defer link.release()
 
@@ -272,34 +277,34 @@ func saveShortcut(path string, s shortcut) error {
 	} {
 		p, err := windows.UTF16PtrFromString(step.value)
 		if err != nil {
-			return fail(step.name, err)
+			return step.name, err
 		}
 		args := append([]uintptr{uintptr(unsafe.Pointer(p))}, step.extra...)
 		if err := link.call(step.index, args...); err != nil {
-			return fail(step.name, err)
+			return step.name, err
 		}
 	}
 
 	if s.appID != "" {
 		if err := setAppUserModelID(link, s.appID); err != nil {
-			return fail("SetAppUserModelID", err)
+			return "SetAppUserModelID", err
 		}
 	}
 
 	file, err := link.queryInterface(&iidPersistFile)
 	if err != nil {
-		return fail("QueryInterface IPersistFile", err)
+		return "QueryInterface IPersistFile", err
 	}
 	defer file.release()
 	p, err := windows.UTF16PtrFromString(path)
 	if err != nil {
-		return fail("Save", err)
+		return "Save", err
 	}
 	const remember = 1 // fRemember: the file becomes the current one of the object
 	if err := file.call(vtFileSave, uintptr(unsafe.Pointer(p)), remember); err != nil {
-		return fail("Save", err)
+		return "Save", err
 	}
-	return nil
+	return "", nil
 }
 
 // setAppUserModelID sets System.AppUserModel.ID of the link through its
