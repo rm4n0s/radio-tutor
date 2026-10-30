@@ -41,6 +41,8 @@ type Server struct {
 	nextStream   uint32
 	received     map[uint32]int // bytes of audio data received, by stream
 	corked       map[uint32]bool
+	playback     map[uint32]bool // the playback streams
+	flow         int             // bytes per second the server asks for while a playback stream is uncorked; 0: only on SendRequest
 	commands     []uint32
 	ignore       map[uint32]bool
 	reject       map[uint32]uint32
@@ -63,13 +65,15 @@ func NewServer(t testing.TB) *Server {
 		addr:     "unix:" + ln.Addr().String(),
 		received: map[uint32]int{},
 		corked:   map[uint32]bool{},
+		playback: map[uint32]bool{},
 		quit:     make(chan struct{}),
 		ignore:   map[uint32]bool{},
 		reject:   map[uint32]uint32{},
 		latency:  10000,
 	}
-	s.wg.Add(1)
+	s.wg.Add(2)
 	go s.acceptLoop()
+	go s.flowLoop()
 	t.Cleanup(s.Close)
 	return s
 }
@@ -124,6 +128,43 @@ func (s *Server) Reject(op uint32, code proto.Error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.reject[op] = uint32(code)
+}
+
+// Flow makes the server behave like a device that plays bytesPerSecond: every
+// 10 ms it asks every uncorked playback stream for the bytes played in that
+// time. Without it the server only asks when the test calls SendRequest.
+func (s *Server) Flow(bytesPerSecond int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.flow = bytesPerSecond
+}
+
+// flowLoop sends the requests of Flow.
+func (s *Server) flowLoop() {
+	defer s.wg.Done()
+	t := time.NewTicker(10 * time.Millisecond)
+	defer t.Stop()
+	for {
+		select {
+		case <-s.quit:
+			return
+		case <-t.C:
+		}
+		s.mu.Lock()
+		var streams []uint32
+		if s.flow > 0 {
+			for idx := range s.playback {
+				if !s.corked[idx] {
+					streams = append(streams, idx)
+				}
+			}
+		}
+		length := uint32(s.flow / 100)
+		s.mu.Unlock()
+		for _, idx := range streams {
+			s.SendRequest(idx, length)
+		}
+	}
 }
 
 // SetLatency sets the latency the server reports to the latency query.
@@ -304,6 +345,7 @@ func (s *Server) command(c *conn, op, tag uint32, args []byte) {
 		stream := s.nextStream
 		s.nextStream++
 		s.corked[stream] = true
+		s.playback[stream] = true
 		s.mu.Unlock()
 		reply(func(e *enc) {
 			e.u32(stream).u32(100 + stream).u32(bufferTarget)

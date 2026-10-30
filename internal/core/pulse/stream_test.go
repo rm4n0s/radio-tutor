@@ -454,7 +454,7 @@ func TestNewClientErrors(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected *errors.Error, got %T (%v)", err, err)
 		}
-		if !appErr.HasRoute("Connect.PulseDialFailed") {
+		if !appErr.HasRoute("NewClient->Connect->connect.PulseDialFailed") {
 			t.Errorf("unexpected failure path: %s", appErr.Route())
 		}
 	})
