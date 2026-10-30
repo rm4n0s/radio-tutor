@@ -15,6 +15,7 @@ func TestErrorMessage(t *testing.T) {
 		want     i18n.Message
 	}{
 		{"username", errors.New("UsernameInvalid", "x"), true, i18n.M("err.username_invalid")},
+		{"username reserved", errors.New("UsernameReserved", "x"), false, i18n.M("err.username_reserved")},
 		{"display name", errors.New("DisplayNameInvalid", "x"), true, i18n.M("err.display_name_invalid")},
 		{"password short", errors.New("PasswordTooShort", "x", "min", 8), true, i18n.M("err.password_short", "min", "8")},
 		{"taken", errors.New("UsernameTaken", "x"), false, i18n.M("err.username_taken")},

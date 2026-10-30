@@ -81,7 +81,7 @@ func Load(ctx context.Context, fsys fs.FS) (*Cassette, []problem.Problem, error)
 		if it.Type == ItemExercise {
 			position++
 		}
-		if (it.Type != ItemLesson && it.Type != ItemExercise) || !idPattern.MatchString(it.ID) || listed[ItemLesson][it.ID] || listed[ItemExercise][it.ID] {
+		if (it.Type != ItemLesson && it.Type != ItemExercise) || !ValidID(it.ID) || listed[ItemLesson][it.ID] || listed[ItemExercise][it.ID] {
 			continue // reported by Manifest.validate
 		}
 		listed[it.Type][it.ID] = true

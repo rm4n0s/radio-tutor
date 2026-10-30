@@ -74,6 +74,7 @@ var messagesEL = map[string]string{
 
 	// Errors.
 	"err.username_invalid":     "Το όνομα χρήστη θέλει 2 έως 32 χαρακτήρες: γράμματα a-z, ψηφία και _.",
+	"err.username_reserved":    "Αυτό το όνομα χρήστη δεν μπορεί να χρησιμοποιηθεί στα Windows (είναι όνομα όπως con, nul, aux ή com1). Διάλεξε άλλο.",
 	"err.display_name_invalid": "Το όνομα εμφάνισης θέλει 1 έως 40 χαρακτήρες.",
 	"err.password_short":       "Ο κωδικός θέλει τουλάχιστον {min} χαρακτήρες.",
 	"err.passwords_differ":     "Οι δύο κωδικοί δεν είναι ίδιοι.",

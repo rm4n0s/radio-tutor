@@ -8,6 +8,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/rm4n0s/radio-tutor/internal/core/problem"
+	"github.com/rm4n0s/radio-tutor/internal/core/storage"
 )
 
 // The limits of CASSETTE-FORMAT §3.
@@ -41,16 +42,18 @@ var (
 
 // ValidID reports whether s is a valid lesson or exercise id (the id rule of
 // CASSETTE-FORMAT §2). An id is also the name of the item's folder, so a valid
-// id never holds a slash or a dot.
+// id never holds a slash or a dot, and is not a name Windows reserves for a
+// device (con, nul, com1...).
 func ValidID(s string) bool {
-	return idPattern.MatchString(s)
+	return idPattern.MatchString(s) && !storage.ReservedName(s)
 }
 
 // ValidCassetteID reports whether s is a valid cassette id (the reverse-domain
 // rule of CASSETTE-FORMAT §2). It holds no slash, no underscore and no
-// backslash, so it is safe as the name of a folder.
+// backslash, and does not start with a name Windows reserves for a device, so it
+// is safe as the name of a folder on Linux and on Windows.
 func ValidCassetteID(s string) bool {
-	return cassetteIDPattern.MatchString(s)
+	return cassetteIDPattern.MatchString(s) && !storage.ReservedName(s)
 }
 
 // ItemType says what a manifest item is.
@@ -135,6 +138,8 @@ func (m *Manifest) validate(l *problem.List) {
 	checkFormat(l, m.Format)
 	if !cassetteIDPattern.MatchString(m.ID) {
 		l.Errorf("id", "%q is not a cassette id: reverse-domain style such as org.family-smith.math.fractions-1 (lowercase letters, digits and hyphens, at least two dot-separated parts)", m.ID)
+	} else if storage.ReservedName(m.ID) {
+		l.Errorf("id", "%q starts with a name Windows reserves for a device (con, prn, aux, nul, com1 to com9, lpt1 to lpt9), which cannot be a folder there", m.ID)
 	}
 	checkText(l, "title", m.Title, 1, MaxTitleRunes)
 	checkText(l, "description", m.Description, 0, MaxDescriptionRunes)
@@ -156,6 +161,8 @@ func (m *Manifest) validate(l *problem.List) {
 		switch first, dup := used[it.ID]; {
 		case !idPattern.MatchString(it.ID):
 			l.Errorf(path+".id", "%q is not an id: 1 to 63 characters, lowercase letters, digits and hyphens, not starting with a hyphen", it.ID)
+		case storage.ReservedName(it.ID):
+			l.Errorf(path+".id", "%q is a name Windows reserves for a device (con, prn, aux, nul, com1 to com9, lpt1 to lpt9), which cannot be a folder there", it.ID)
 		case dup:
 			l.Errorf(path+".id", "%q is already used by items[%d]; ids are unique across lessons and exercises", it.ID, first)
 		default:

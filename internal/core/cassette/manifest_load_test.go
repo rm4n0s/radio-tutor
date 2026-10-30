@@ -25,6 +25,15 @@ func TestValidIDs(t *testing.T) {
 		{"Upper", false, false},
 		{"org.x_tmp-1", false, false},
 		{"-a", false, false},
+		{"con", false, false},
+		{"nul", false, false},
+		{"com1", false, false},
+		{"lpt9", false, false},
+		{"aux", false, false},
+		{"con.family.math", false, false},
+		{"aux.example.x", false, false},
+		{"org.example.con", false, true},
+		{"console", true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {

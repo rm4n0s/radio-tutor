@@ -75,6 +75,7 @@ var messagesEN = map[string]string{
 
 	// Errors.
 	"err.username_invalid":     "The username needs 2 to 32 characters: letters a-z, digits and _.",
+	"err.username_reserved":    "This username cannot be used on Windows (it is a name such as con, nul, aux or com1). Choose another.",
 	"err.display_name_invalid": "The name shown needs 1 to 40 characters.",
 	"err.password_short":       "The password needs at least {min} characters.",
 	"err.passwords_differ":     "The two passwords are not the same.",

@@ -215,13 +215,16 @@ func checkPassword(role Role, password string) error {
 // Create adds a profile. The username is lower-cased and must match
 // ^[a-z0-9_]{2,32}$, the display name (trimmed) is 1 to 40 characters, the
 // password has at least the role's minimum length. Tags: UsernameInvalid,
-// DisplayNameInvalid, RoleInvalid, PasswordTooShort, UsernameTaken, plus the
+// UsernameReserved, DisplayNameInvalid, RoleInvalid, PasswordTooShort, UsernameTaken, plus the
 // failures of hashing and of the atomic write.
 func (s *Store) Create(ctx context.Context, username, displayName string, role Role, password string) (Profile, error) {
 	username = strings.ToLower(username)
 	displayName = strings.TrimSpace(displayName)
 	if !usernamePattern.MatchString(username) {
 		return Profile{}, errors.New("UsernameInvalid", "username must be 2 to 32 characters: a-z, 0-9 and _", "username", username)
+	}
+	if storage.ReservedName(username) {
+		return Profile{}, errors.New("UsernameReserved", "this username is a name Windows reserves for a device (con, prn, aux, nul, com1 to com9, lpt1 to lpt9); choose another", "username", username)
 	}
 	if !validDisplayName(displayName) {
 		return Profile{}, errors.New("DisplayNameInvalid", "display name must be 1 to 40 characters")

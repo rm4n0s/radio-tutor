@@ -26,6 +26,8 @@ func errorMessage(err error, detailed bool) i18n.Message {
 	switch appErr.Tag {
 	case "UsernameInvalid":
 		return i18n.M("err.username_invalid")
+	case "UsernameReserved":
+		return i18n.M("err.username_reserved")
 	case "DisplayNameInvalid":
 		return i18n.M("err.display_name_invalid")
 	case "PasswordTooShort":
