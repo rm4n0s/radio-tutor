@@ -7,6 +7,7 @@ package desktop
 import (
 	"context"
 
+	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/gui/admin"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 	"github.com/rm4n0s/radio-tutor/internal/gui/player"
@@ -23,7 +24,9 @@ func Screens() app.Screens {
 			Lesson:    player.Builder(),
 			Worksheet: worksheet.Builder(),
 		}),
-		Admin: admin.HomeBuilder(admin.Screens{}),
+		Admin: admin.HomeBuilder(admin.Screens{
+			Progress: func() m.Widget { return admin.NewProgress() },
+		}),
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 
 	m "github.com/rm4n0s/glutter/material"
-	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
 )
 
@@ -59,7 +58,7 @@ func (s *homeState) reload() {
 // load counts and shows the number; it runs on a goroutine.
 func (s *homeState) load(ctx context.Context, env *app.Env) {
 	gen := s.generation.Add(1)
-	n, err := countReviews(ctx, env)
+	counts, err := scanWaiting(ctx, env, nil)
 	if err != nil {
 		if ctx.Err() == nil {
 			env.Log.Error("counting the exercises to review failed", "err", err)
@@ -68,42 +67,9 @@ func (s *homeState) load(ctx context.Context, env *app.Env) {
 	}
 	s.SetState(func() {
 		if s.generation.Load() == gen {
-			s.reviews = n
+			s.reviews = counts.total()
 		}
 	})
-}
-
-// countReviews counts the exercises in needs_review in the save files of every
-// profile for every installed cassette (SPEC §12.3).
-func countReviews(ctx context.Context, env *app.Env) (int, error) {
-	installed, err := env.Archive.List(ctx)
-	if err != nil {
-		return 0, err
-	}
-	n := 0
-	for _, p := range env.Profiles.List() {
-		for _, in := range installed {
-			if in.Broken {
-				continue
-			}
-			// A broken save file is set aside by Load, which returns a fresh
-			// Progress with the error; the error is for the screens that show
-			// the progress, this count goes on.
-			prog, err := env.Progress.Load(ctx, p.Username, in.ID)
-			if prog == nil {
-				if err != nil {
-					return 0, err
-				}
-				continue
-			}
-			for _, ep := range prog.Exercises {
-				if ep.State == progress.StateNeedsReview {
-					n++
-				}
-			}
-		}
-	}
-	return n, nil
 }
 
 // open pushes a screen and counts again when it closes.

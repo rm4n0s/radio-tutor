@@ -401,7 +401,7 @@ List of profiles with role and creation date; **Add**, **Rename**, **Reset passw
 
 ### 12.3 Progress
 
-Pick a student, then a cassette: the items in order with their states, attempts, hints shown, the dates; the per-cassette switches skip lessons and free navigation; the overrides of §7.7. Below, the submissions, newest first: date, exercises, provider and its kind, status; opening one shows its photos (zoomable, full size), the page notes, and per exercise the verdict, transcription, feedback and notes for the parent, with the override buttons. **Delete photos** per submission. Exercises in `needs_review` are listed first, and the admin home shows how many are waiting.
+Pick a student, then a cassette: the items in order with their states, attempts, hints shown, the dates; the per-cassette switches skip lessons and free navigation; the overrides of §7.7. Below, the submissions, newest first: date, exercises, provider and its kind, status; opening one shows its photos (zoomable, full size), the page notes, and per exercise the verdict, transcription, feedback and notes for the parent, with the override buttons. **Delete photos** per submission. Exercises in `needs_review` are listed first (a "Waiting for you" section), and the admin home shows how many are waiting: the exercises that the unlock rule (§7.3) shows as `needs_review`, over every profile and every installed cassette that can be read. A cassette that is not installed can be looked at (read-only, "Not installed") but is not counted, because nothing can be decided about it. **Delete all photos** of a student is also on the student's page; deleting photos keeps the submission records and clears their photo lists.
 
 ### 12.4 Settings
 
