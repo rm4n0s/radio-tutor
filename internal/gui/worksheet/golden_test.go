@@ -142,6 +142,9 @@ func TestResultNeedsReviewGolden(t *testing.T) {
 	if !h.HasKey(KeyReviewPrefix + exShade) {
 		t.Fatal("the exercise whose tries ran out has no message for a parent")
 	}
+	if !h.has("A parent will look at this exercise. You can go on!") {
+		t.Error("the results do not tell the child that a parent will look and that they can go on")
+	}
 	h.MatchesGolden("results_review_en")
 }
 

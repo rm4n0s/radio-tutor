@@ -226,6 +226,31 @@ func TestCassetteScreenOpensItemsAndRemembersTheLastOne(t *testing.T) {
 	}
 }
 
+// TestCassetteScreenGoesOnPastAWorksheetThatWaitsForAParent: when the attempts at
+// an exercise run out, the child is not stopped; the next lesson opens, the
+// exercise is marked as waiting for a parent, and Continue leads on.
+func TestCassetteScreenGoesOnPastAWorksheetThatWaitsForAParent(t *testing.T) {
+	waiting := func(p *progress.Progress) {
+		halfDone(p)
+		p.Exercises[exShade] = progress.ExerciseProgress{Attempts: 3}
+		p.Exercises[exName] = progress.ExerciseProgress{State: progress.StatePassed, Attempts: 1}
+	}
+	a := pump(t, config{size: size(tallWindow), setup: install1(waiting)})
+	waitShelf(t, a)
+	openCassette(t, a, fractionsID)
+	if !hasMark(a, KeyExercisePrefix+exShade, reviewTooltip) || !hasMark(a, WorksheetKey(0)+KeyStateSuffix, reviewTooltip) {
+		t.Error("the exercise that waits for a parent is not marked")
+	}
+	if hasMark(a, KeyItemPrefix+lesson2+KeyStateSuffix, lockedTooltip) {
+		t.Error("the lesson after the worksheet is locked")
+	}
+	a.TapKey(KeyItemPrefix + lesson2)
+	a.WaitForText(t, `The lesson "Adding fractions" will open here soon.`)
+	if has(a, lockedMessage) {
+		t.Error("the lesson after the worksheet says it is locked")
+	}
+}
+
 func TestCassetteScreenReadsTheProgressAgainWhenTheItemCloses(t *testing.T) {
 	a := pump(t, config{size: size(tallWindow), setup: install1(nil)})
 	waitShelf(t, a)

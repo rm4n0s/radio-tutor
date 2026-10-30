@@ -68,7 +68,7 @@ func TestWorksheetNeedsReviewAndAttemptsLeft(t *testing.T) {
 		lessonDone(p)
 		p.Exercises[exShade] = progress.ExerciseProgress{State: progress.StateNeedsReview, Attempts: 3}
 	}})
-	if !h.has("Ask a parent to look at this exercise.") {
+	if !h.has("A parent will look at this exercise. You can go on!") {
 		t.Error("the exercise that needs a review has no message")
 	}
 	// The exercise with a limit shows its tries; the one without does not.

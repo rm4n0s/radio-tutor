@@ -221,7 +221,8 @@ func trailingMark(theme *m.ThemeData, scope *app.Scope, state progress.ItemState
 }
 
 // stateMark is the icon of a state with a tooltip that names it: a lock for
-// locked, a check for completed and passed, a flag for needs review. An item
+// locked, a check for completed and passed, an hourglass for needs review (a parent will
+// look at it; it does not lock what follows). An item
 // that is simply available has none (nil).
 func stateMark(theme *m.ThemeData, scope *app.Scope, state progress.ItemState, key string) m.Widget {
 	var icon m.IconData
@@ -232,7 +233,7 @@ func stateMark(theme *m.ThemeData, scope *app.Scope, state progress.ItemState, k
 	case progress.StateCompleted, progress.StatePassed:
 		icon, color = m.Icons.CheckCircle(), theme.ColorScheme.Primary
 	case progress.StateNeedsReview:
-		icon, color = m.Icons.Flag(), theme.ColorScheme.Error
+		icon, color = m.Icons.HourglassEmpty(), theme.ColorScheme.Tertiary
 	default:
 		return nil
 	}

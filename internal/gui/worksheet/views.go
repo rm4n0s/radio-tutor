@@ -195,7 +195,7 @@ func resultRow(bc m.BuildContext, scope *app.Scope, ex *cassette.Exercise, r pro
 			scope.T("flow.new_hint", "text", ex.Hints[ch.HintShown-1])))
 	}
 	if ch.NeedsReview || ch.Ignored == progress.IgnoredNeedsReview {
-		text = append(text, gap(8), resultLine(theme, KeyReviewPrefix+r.ExerciseID, m.Icons.Flag(), theme.ColorScheme.Error(), scope.T("worksheet.needs_review")))
+		text = append(text, gap(8), resultLine(theme, KeyReviewPrefix+r.ExerciseID, m.Icons.HourglassEmpty(), theme.ColorScheme.Tertiary(), scope.T("worksheet.needs_review")))
 	}
 	row := []m.Widget{
 		badge(bc, KeyBadgePrefix+"result-"+r.ExerciseID, ex.Label, false),

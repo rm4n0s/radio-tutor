@@ -156,7 +156,7 @@ func (s *screenState) statusLines(bc m.BuildContext, scope *app.Scope, ex exerci
 	case progress.StatePassed:
 		out = append(out, line(m.Icons.Star(), theme.ColorScheme.Primary(), scope.T("student.state.passed")))
 	case progress.StateNeedsReview:
-		out = append(out, line(m.Icons.Flag(), theme.ColorScheme.Error(), scope.T("worksheet.needs_review")))
+		out = append(out, line(m.Icons.HourglassEmpty(), theme.ColorScheme.Tertiary(), scope.T("worksheet.needs_review")))
 	case progress.StateLocked:
 		out = append(out, line(m.Icons.Lock(), theme.ColorScheme.OnSurfaceVariant(), scope.T("student.state.locked")))
 	case progress.StateAvailable:
