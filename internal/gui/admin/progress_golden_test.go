@@ -21,14 +21,6 @@ func settleImages(a *testutil.App) {
 	}
 }
 
-// inUTC makes the dates of the goldens the same on every machine.
-func inUTC(t *testing.T) {
-	t.Helper()
-	old := time.Local
-	time.Local = time.UTC
-	t.Cleanup(func() { time.Local = old })
-}
-
 func TestProgressGoldens(t *testing.T) {
 	withGone := func(t *testing.T, env *app.Env) {
 		richSetup(t, env)
@@ -87,7 +79,6 @@ func TestProgressGoldens(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			inUTC(t)
 			// The window is tall while the test taps its way to the screen, then
 			// it gets the size of the golden.
 			a := pumpProgress(t, config{locale: tt.locale, setup: tt.setup})

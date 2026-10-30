@@ -44,9 +44,10 @@ func (s *testDialogState) DidChangeDependencies() {
 		return
 	}
 	s.started = true
-	cfg, log := s.Widget().cfg, app.ScopeOf(s.Context()).Env().Log
+	cfg, env := s.Widget().cfg, app.ScopeOf(s.Context()).Env()
+	log, version := env.Log, env.Version
 	s.Go(func(ctx context.Context) {
-		res, err := providers.Test(ctx, cfg)
+		res, err := providers.Test(ctx, cfg, version)
 		if ctx.Err() != nil {
 			return
 		}

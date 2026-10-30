@@ -22,7 +22,7 @@ func TestBuild(t *testing.T) {
 		t.Run(string(tt.mode), func(t *testing.T) {
 			c := validConfig("Local")
 			c.StructuredOutput = tt.mode
-			p, lenient, err := Build(c, nil)
+			p, lenient, err := Build(c, "", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -61,7 +61,7 @@ func TestBuildErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := validConfig("Local")
 			tt.change(&c)
-			p, lenient, err := Build(c, nil)
+			p, lenient, err := Build(c, "", nil)
 			if p != nil || lenient {
 				t.Errorf("Build returned a provider (%v) or lenient (%v) with an error", p, lenient)
 			}

@@ -120,7 +120,9 @@ internal/gui/student             student screens: shelf, cassette, worksheet, re
 internal/gui/desktop             wires the screens of the GUI packages into the app shell and runs it (the screen packages import app, so app cannot import them)
 internal/gui/player              the lesson player widget
 internal/gui/svgcheck            renders SVG layers through Glutter's svg.Parse for the validator
+internal/gui/marks               how a grading verdict looks (icon, color, words), shared by the results the child sees and the submissions the parent reviews
 internal/gui/testutil            test helpers for widget and golden tests
+internal/core/e2e                the end-to-end test of the core (tests only)
 internal/archtest                package boundary tests
 ```
 

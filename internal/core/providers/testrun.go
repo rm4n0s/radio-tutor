@@ -33,13 +33,14 @@ type TestResult struct {
 
 // Test sends the embedded test image ("2 + 3 = 5") with a one-exercise request
 // to the provider and reports whether a valid reply came back, its verdict and
-// the time it took (SPEC §11.6). The call is bounded by the provider's timeout
+// the time it took (SPEC §11.6). version is the app version for the User-Agent
+// (see Build). The call is bounded by the provider's timeout
 // and by ctx. A provider that fails or answers badly is a normal result (OK
 // false, Err set); the returned error is only for a test that could not be made:
 // a config that does not pass Build's checks, or an image that cannot be
 // prepared. The Grader returns exactly one result for the one exercise.
-func Test(ctx context.Context, cfg Config) (TestResult, error) {
-	provider, lenient, err := Build(cfg, nil)
+func Test(ctx context.Context, cfg Config, version string) (TestResult, error) {
+	provider, lenient, err := Build(cfg, version, nil)
 	if err != nil {
 		return TestResult{}, err
 	}

@@ -134,7 +134,7 @@ func (s *cassettePageState) submissionRow(bc m.BuildContext, scope *app.Scope, s
 	person := s.Widget().person
 	lines := []m.Widget{
 		m.NewRow([]m.Widget{
-			m.NewExpanded(bold(bc, formatTime(sub.CreatedAt))),
+			m.NewExpanded(bold(bc, formatTime(scope.Env().Location, sub.CreatedAt))),
 			hgap(8),
 			statusText(bc, scope, sub.Status),
 		}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter}),
@@ -218,7 +218,7 @@ func (s *submissionPageState) Build(bc m.BuildContext) m.Widget {
 	case s.data == nil:
 		children = []m.Widget{m.NewCenter(m.NewCircularProgressIndicator())}
 	default:
-		title = scope.T("admin.submission.title", "date", formatTime(sub.CreatedAt))
+		title = scope.T("admin.submission.title", "date", formatTime(scope.Env().Location, sub.CreatedAt))
 		children = s.content(bc, scope, sub)
 	}
 	return m.NewScaffold(m.ScaffoldOpts{

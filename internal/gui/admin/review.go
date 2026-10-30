@@ -6,6 +6,7 @@ import (
 	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/marks"
 )
 
 // The sections of the progress page, which keep the keys of an item that is
@@ -34,11 +35,13 @@ func OverrideKey(section string, action progress.Action, id string) string {
 	return "override-" + section + "-" + string(action) + "-" + id
 }
 
-// timeLayout is how the dates are shown: the local time of the computer.
+// timeLayout is how the dates are shown.
 const timeLayout = "2006-01-02 15:04"
 
-// formatTime is a time as the admin sees it.
-func formatTime(t time.Time) string { return t.Local().Format(timeLayout) }
+// formatTime is a time as the admin sees it, in the time zone of the
+// environment (app.Env.Location: the local time of the computer, a fixed zone
+// in tests).
+func formatTime(loc *time.Location, t time.Time) string { return t.In(loc).Format(timeLayout) }
 
 // itemView is what the card of one lesson or exercise shows.
 type itemView struct {
@@ -87,7 +90,7 @@ func (v itemView) details(scope *app.Scope) []string {
 	var lines []string
 	if v.lesson {
 		if v.lp.Completed() {
-			lines = append(lines, scope.T("admin.progress.completed_on", "date", formatTime(v.lp.CompletedAt)))
+			lines = append(lines, scope.T("admin.progress.completed_on", "date", formatTime(scope.Env().Location, v.lp.CompletedAt)))
 		} else {
 			lines = append(lines, scope.T("admin.progress.not_completed"))
 		}
@@ -107,7 +110,7 @@ func (v itemView) details(scope *app.Scope) []string {
 		if v.ep.PassedBy == progress.PassedByParent {
 			key = "admin.progress.passed_by_parent"
 		}
-		lines = append(lines, scope.T(key, "date", formatTime(v.ep.PassedAt)))
+		lines = append(lines, scope.T(key, "date", formatTime(scope.Env().Location, v.ep.PassedAt)))
 	}
 	return lines
 }
@@ -189,45 +192,8 @@ func itemCard(bc m.BuildContext, scope *app.Scope, section string, v itemView, a
 		m.CardOpts{Key: m.NewValueKey(ItemKey(section, v.id)), Margin: m.NewEdgeInsetsAll(0)})
 }
 
-// verdictLook is how a verdict is shown: a mark in a colored circle. It is the
-// same as in the results the child sees (package worksheet): a check for correct,
-// ~ for partial, a cross for incorrect and ? for the rest.
-type verdictLook struct {
-	icon  m.IconData
-	text  string // shown instead of the icon (for ~ and ?)
-	color m.Color
-}
-
-// lookOf returns how the verdict is shown.
-func lookOf(scheme *m.ColorScheme, v progress.Verdict) verdictLook {
-	switch v {
-	case progress.VerdictCorrect:
-		return verdictLook{icon: m.Icons.Check(), color: m.NewColor(0xFF2E7D32)}
-	case progress.VerdictPartial:
-		return verdictLook{text: "~", color: m.NewColor(0xFFE65100)}
-	case progress.VerdictIncorrect:
-		return verdictLook{icon: m.Icons.Close(), color: scheme.Error()}
-	}
-	return verdictLook{text: "?", color: scheme.Outline()}
-}
-
 // verdictMark is the round mark of a verdict.
 func verdictMark(bc m.BuildContext, key string, v progress.Verdict) m.Widget {
-	const size = 48.0
 	theme := m.ThemeOf(bc)
-	lk := lookOf(theme.ColorScheme, v)
-	white := m.NewColor(0xFFFFFFFF)
-	var inner m.Widget
-	if lk.text != "" {
-		inner = m.NewText(lk.text, m.TextOpts{Style: theme.TextTheme.HeadlineMedium.CopyWith(m.TextStyleCopy{Color: m.Some(white), FontWeight: m.FontWeightW700})})
-	} else {
-		inner = m.NewIcon(lk.icon, m.IconOpts{Size: m.Some(30.0), Color: m.Some(white)})
-	}
-	return m.NewContainer(inner, m.ContainerOpts{
-		Key:        m.NewValueKey(key),
-		Width:      m.Some(size),
-		Height:     m.Some(size),
-		Alignment:  m.AlignmentCenter,
-		Decoration: m.NewBoxDecoration(m.BoxDecorationOpts{Color: m.Some(lk.color), Shape: m.BoxShapeCircle}),
-	})
+	return marks.Mark(key, marks.LookOf(theme.ColorScheme, v), marks.Size{Box: 48, Icon: 30, Text: theme.TextTheme.HeadlineMedium})
 }

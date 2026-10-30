@@ -64,6 +64,13 @@ type Env struct {
 	// default is audio.SystemClock. Tests that play on an audio.FakeSink pass
 	// the audio.FakeClock the sink runs on.
 	AudioClock audio.Clock
+	// Version is the app version, which goes into the User-Agent of the
+	// requests to the AI providers; empty means "dev".
+	Version string
+	// Location is the time zone the screens show dates and times in; the
+	// default is time.Local. Tests pass a fixed zone, so that no test changes
+	// the process-wide time.Local.
+	Location *time.Location
 
 	closers      []func()
 	noSoundShown atomic.Bool
@@ -91,6 +98,12 @@ type StartOptions struct {
 	// AudioClock replaces audio.SystemClock as the clock of the lesson player
 	// (tests).
 	AudioClock audio.Clock
+	// Version is the app version (from the build information of the command);
+	// it goes into the User-Agent of the AI provider requests.
+	Version string
+	// Location replaces time.Local as the time zone of the dates the screens
+	// show (tests).
+	Location *time.Location
 	// Now gives the time used to name a quarantined file; the default is time.Now.
 	Now func() time.Time
 }
@@ -125,7 +138,7 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 	if err != nil {
 		return nil, err
 	}
-	env := &Env{Paths: paths, closers: []func(){unlock}}
+	env := &Env{Paths: paths, Version: opts.Version, closers: []func(){unlock}}
 	logger, logCloser, err := logging.New(paths, getenv(DebugVariable) == "1")
 	if err != nil {
 		env.Close()
@@ -163,6 +176,10 @@ func Start(ctx context.Context, opts StartOptions) (*Env, error) {
 	env.AudioClock = opts.AudioClock
 	if env.AudioClock == nil {
 		env.AudioClock = audio.SystemClock()
+	}
+	env.Location = opts.Location
+	if env.Location == nil {
+		env.Location = time.Local
 	}
 	logger.Info("started", "config", paths.Config, "data", paths.Data, "state", paths.State)
 	return env, nil

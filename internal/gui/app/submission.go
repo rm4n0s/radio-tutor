@@ -83,6 +83,7 @@ func (e *Env) openSubmission(ctx context.Context, opts SubmissionOptions) {
 		Clock:         opts.Clock,
 		Log:           e.Log,
 		DetectLAN:     opts.DetectLAN,
+		Version:       e.Version,
 		BuildProvider: opts.BuildProvider,
 	})
 	svc := e.Submission

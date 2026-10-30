@@ -12,6 +12,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/submission"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/marks"
 )
 
 const (
@@ -142,47 +143,10 @@ func (s *flowState) gradingView(bc m.BuildContext, scope *app.Scope) m.Widget {
 	}, m.ColumnOpts{MainAxisSize: m.MainAxisSizeMin}))
 }
 
-// verdictLook is how a verdict is shown: its big mark and its words.
-type verdictLook struct {
-	icon  m.IconData
-	text  string // shown instead of the icon (for ~ and ?)
-	color m.Color
-	key   string // the i18n key of the words
-}
-
-// look returns how the verdict is shown (SPEC §10.1): a check for correct, ~ for
-// partial, a cross for incorrect and ? for unreadable and not found.
-func look(scheme *m.ColorScheme, v progress.Verdict) verdictLook {
-	switch v {
-	case progress.VerdictCorrect:
-		return verdictLook{icon: m.Icons.Check(), color: m.NewColor(0xFF2E7D32), key: "flow.verdict.correct"}
-	case progress.VerdictPartial:
-		return verdictLook{text: "~", color: m.NewColor(0xFFE65100), key: "flow.verdict.partial"}
-	case progress.VerdictIncorrect:
-		return verdictLook{icon: m.Icons.Close(), color: scheme.Error(), key: "flow.verdict.incorrect"}
-	case progress.VerdictNotFound:
-		return verdictLook{text: "?", color: scheme.Outline(), key: "flow.verdict.not_found"}
-	}
-	return verdictLook{text: "?", color: scheme.Outline(), key: "flow.verdict.unreadable"}
-}
-
-// mark is the big mark of a result.
-func mark(bc m.BuildContext, scope *app.Scope, key string, lk verdictLook) m.Widget {
-	var inner m.Widget
-	if lk.text != "" {
-		inner = m.NewText(lk.text, m.TextOpts{Style: m.ThemeOf(bc).TextTheme.HeadlineLarge.CopyWith(m.TextStyleCopy{
-			Color: m.Some(m.NewColor(0xFFFFFFFF)), FontWeight: m.FontWeightW700,
-		})})
-	} else {
-		inner = m.NewIcon(lk.icon, m.IconOpts{Size: m.Some(36.0), Color: m.Some(m.NewColor(0xFFFFFFFF))})
-	}
-	return m.NewTooltip(m.NewContainer(inner, m.ContainerOpts{
-		Key:        m.NewValueKey(key),
-		Width:      m.Some(markSize),
-		Height:     m.Some(markSize),
-		Alignment:  m.AlignmentCenter,
-		Decoration: m.NewBoxDecoration(m.BoxDecorationOpts{Color: m.Some(lk.color), Shape: m.BoxShapeCircle}),
-	}), m.TooltipOpts{Message: scope.T(lk.key)})
+// mark is the big mark of a result, with a tooltip that says the words.
+func mark(bc m.BuildContext, scope *app.Scope, key string, lk marks.Look) m.Widget {
+	return m.NewTooltip(marks.Mark(key, lk, marks.Size{Box: markSize, Icon: 36, Text: m.ThemeOf(bc).TextTheme.HeadlineLarge}),
+		m.TooltipOpts{Message: scope.T(lk.Words)})
 }
 
 // resultsView is the results screen (SPEC §10.1): a row per exercise with its
@@ -220,9 +184,9 @@ func (s *flowState) resultsView(bc m.BuildContext, scope *app.Scope) m.Widget {
 // resultRow is the row of one exercise in the results.
 func resultRow(bc m.BuildContext, scope *app.Scope, ex *cassette.Exercise, r progress.Result, ch progress.ExerciseChange) m.Widget {
 	theme := m.ThemeOf(bc)
-	lk := look(theme.ColorScheme, r.Verdict)
+	lk := marks.LookOf(theme.ColorScheme, r.Verdict)
 	words := theme.TextTheme.TitleLarge.CopyWith(m.TextStyleCopy{FontWeight: m.FontWeightW600})
-	text := []m.Widget{m.NewText(scope.T(lk.key), m.TextOpts{Style: words})}
+	text := []m.Widget{m.NewText(scope.T(lk.Words), m.TextOpts{Style: words})}
 	if r.FeedbackForChild != "" {
 		text = append(text, gap(4), m.NewText(r.FeedbackForChild, m.TextOpts{Key: m.NewValueKey(KeyFeedbackPrefix + r.ExerciseID), Style: theme.TextTheme.BodyLarge}))
 	}

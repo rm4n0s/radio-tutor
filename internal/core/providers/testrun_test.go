@@ -23,6 +23,7 @@ type chatServer struct {
 	mu     sync.Mutex
 	bodies []map[string]any
 	auth   []string
+	agents []string
 }
 
 func (c *chatServer) requests() ([]map[string]any, []string) {
@@ -50,6 +51,7 @@ func newChatServer(t *testing.T, h func(w http.ResponseWriter, n int)) *chatServ
 		cs.mu.Lock()
 		cs.bodies = append(cs.bodies, body)
 		cs.auth = append(cs.auth, r.Header.Get("Authorization"))
+		cs.agents = append(cs.agents, r.Header.Get("User-Agent"))
 		n := len(cs.bodies)
 		cs.mu.Unlock()
 		h(w, n)
@@ -79,7 +81,7 @@ func serverConfig(cs *chatServer) Config {
 
 func TestTestSuccess(t *testing.T) {
 	cs := newChatServer(t, func(w http.ResponseWriter, _ int) { reply(w, "vision-1-2026", goodReply) })
-	res, err := Test(context.Background(), serverConfig(cs))
+	res, err := Test(context.Background(), serverConfig(cs), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +142,7 @@ func TestTestWithoutKeyAndLenientModes(t *testing.T) {
 			cs := newChatServer(t, func(w http.ResponseWriter, _ int) { reply(w, "", tt.reply) })
 			cfg := serverConfig(cs)
 			cfg.APIKey, cfg.StructuredOutput = "", tt.mode
-			res, err := Test(context.Background(), cfg)
+			res, err := Test(context.Background(), cfg, "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -162,7 +164,7 @@ func TestTestDowngrade(t *testing.T) {
 		}
 		reply(w, "", "```json\n"+goodReply+"\n```")
 	})
-	res, err := Test(context.Background(), serverConfig(cs))
+	res, err := Test(context.Background(), serverConfig(cs), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +195,7 @@ func TestTestProviderFailures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cs := newChatServer(t, tt.handler)
-			res, err := Test(context.Background(), serverConfig(cs))
+			res, err := Test(context.Background(), serverConfig(cs), "")
 			if err != nil {
 				t.Fatalf("a failing provider is a result, not an error: %v", err)
 			}
@@ -222,7 +224,7 @@ func TestTestUnreachableServer(t *testing.T) {
 	cfg := validConfig("Gone")
 	cfg.BaseURL = srv.URL + "/v1"
 	srv.Close() // the port now refuses connections
-	res, err := Test(context.Background(), cfg)
+	res, err := Test(context.Background(), cfg, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +248,7 @@ func TestTestTimeoutAndCancel(t *testing.T) {
 	t.Run("provider timeout", func(t *testing.T) {
 		cfg := serverConfig(cs)
 		cfg.TimeoutSeconds = 1
-		res, err := Test(context.Background(), cfg)
+		res, err := Test(context.Background(), cfg, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -258,7 +260,7 @@ func TestTestTimeoutAndCancel(t *testing.T) {
 	t.Run("cancelled", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
-		res, err := Test(ctx, serverConfig(cs))
+		res, err := Test(ctx, serverConfig(cs), "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,7 +272,7 @@ func TestTestTimeoutAndCancel(t *testing.T) {
 	t.Run("cancelled before the image is prepared", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, err := Test(ctx, serverConfig(cs))
+		_, err := Test(ctx, serverConfig(cs), "")
 		if err == nil {
 			t.Fatal("expected an error for a test that could not be made")
 		}
@@ -281,9 +283,32 @@ func TestTestTimeoutAndCancel(t *testing.T) {
 func TestTestInvalidConfig(t *testing.T) {
 	c := validConfig("X")
 	c.Kind = ""
-	res, err := Test(context.Background(), c)
+	res, err := Test(context.Background(), c, "")
 	wantRoute(t, err, "Test->Build->normalize.ProviderKindInvalid")
 	if res.OK || res.Err != nil {
 		t.Errorf("result = %+v", res)
+	}
+}
+
+func TestTestSendsTheVersionInTheUserAgent(t *testing.T) {
+	tests := []struct {
+		version string
+		want    string
+	}{
+		{"1.4.2", "radio-tutor/1.4.2"},
+		{"", "radio-tutor/dev"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			cs := newChatServer(t, func(w http.ResponseWriter, _ int) { reply(w, "vision-1", goodReply) })
+			if _, err := Test(context.Background(), serverConfig(cs), tt.version); err != nil {
+				t.Fatal(err)
+			}
+			cs.mu.Lock()
+			defer cs.mu.Unlock()
+			if len(cs.agents) != 1 || cs.agents[0] != tt.want {
+				t.Errorf("User-Agent = %q, want %q", cs.agents, tt.want)
+			}
+		})
 	}
 }

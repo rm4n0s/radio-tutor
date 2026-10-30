@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/rm4n0s/glutter/gluttertest"
 	m "github.com/rm4n0s/glutter/material"
@@ -206,8 +207,8 @@ func TestItemsShowAttemptsHintsAndDates(t *testing.T) {
 	a := pumpProgress(t, config{setup: richSetup})
 	openCassettePageOf(t, a, "mia", fractionsID)
 	for _, text := range []string{
-		"Lesson: What is a fraction?", "Played 2 times", "Completed on " + formatTime(at(17, 2, 11)),
-		"Exercise 1: Shade the half", "Attempts: 2 of 3", "Hints shown: 1", "Passed by the AI on " + formatTime(at(17, 20, 40)),
+		"Lesson: What is a fraction?", "Played 2 times", "Completed on " + formatTime(time.UTC, at(17, 2, 11)),
+		"Exercise 1: Shade the half", "Attempts: 2 of 3", "Hints shown: 1", "Passed by the AI on " + formatTime(time.UTC, at(17, 20, 40)),
 		"Attempts: 0", "Attempts: 5 of 5", "Hints shown: 2", "Not completed",
 	} {
 		if !has(a, text) {
@@ -378,7 +379,7 @@ func TestSubmissionsListNewestFirstWithProviderKinds(t *testing.T) {
 		t.Errorf("the submissions are not newest first: %v %v %v", y("20261030T190000-0001"), y(subNewer), y(subOlder))
 	}
 	for _, text := range []string{
-		formatTime(at(17, 19, 55)), "Exercises: 1, B2", "Exercises: 3", "Home Ollama", "Local", "OpenAI", "Cloud",
+		formatTime(time.UTC, at(17, 19, 55)), "Exercises: 1, B2", "Exercises: 3", "Home Ollama", "Local", "OpenAI", "Cloud",
 		"Gone AI", "Removed provider", "Graded", "Failed",
 	} {
 		if !has(a, text) {

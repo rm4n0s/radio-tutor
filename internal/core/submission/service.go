@@ -98,8 +98,12 @@ type Options struct {
 	// DetectLAN finds the address for the phone's URL. Default
 	// phone.DetectLAN.
 	DetectLAN func(ctx context.Context, preferred string) (phone.LANAddr, error)
+	// Version is the app version for the User-Agent of the provider's
+	// requests ("radio-tutor/<version>"); empty means "dev". It is used by
+	// the default BuildProvider.
+	Version string
 	// BuildProvider builds the grading provider from the active config.
-	// Default providers.Build.
+	// Default providers.Build with Version.
 	BuildProvider func(cfg providers.Config, log *slog.Logger) (provider grading.Provider, lenient bool, err error)
 }
 
@@ -138,7 +142,10 @@ func New(ctx context.Context, opts Options) *Service {
 		opts.DetectLAN = phone.DetectLAN
 	}
 	if opts.BuildProvider == nil {
-		opts.BuildProvider = providers.Build
+		version := opts.Version
+		opts.BuildProvider = func(cfg providers.Config, log *slog.Logger) (grading.Provider, bool, error) {
+			return providers.Build(cfg, version, log)
+		}
 	}
 	return &Service{
 		opts:     opts,

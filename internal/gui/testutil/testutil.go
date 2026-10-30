@@ -17,6 +17,7 @@ import (
 	"github.com/rm4n0s/glutter/foundation"
 	"github.com/rm4n0s/glutter/gluttertest"
 	m "github.com/rm4n0s/glutter/material"
+	"github.com/rm4n0s/radio-tutor/internal/core/archive"
 	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/profile"
 	"github.com/rm4n0s/radio-tutor/internal/core/storage"
@@ -66,6 +67,12 @@ type Options struct {
 	// AudioClock is the clock of the lesson player's end timer; tests that
 	// play with an audio.FakeSink pass the audio.FakeClock the sink runs on.
 	AudioClock audio.Clock
+	// Render checks the SVG files of the cassettes that are imported (nil skips
+	// that check; the end-to-end test passes svgcheck.Checker).
+	Render archive.RenderChecker
+	// Location is the time zone the screens show dates in; the default is UTC,
+	// so that dates read the same on every machine.
+	Location *time.Location
 	// Before runs on the environment after it started and before the window
 	// opens, for example to make profiles.
 	Before func(env *app.Env)
@@ -88,6 +95,10 @@ func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 	if locale == "" {
 		locale = "en_US.UTF-8"
 	}
+	location := opts.Location
+	if location == nil {
+		location = time.UTC
+	}
 	env, err := app.Start(context.Background(), app.StartOptions{
 		Getenv: func(name string) string {
 			switch name {
@@ -104,6 +115,8 @@ func NewEnv(t testing.TB, opts Options) (*app.Env, storage.Paths) {
 		SinkFactory:    opts.SinkFactory,
 		Submission:     opts.Submission,
 		AudioClock:     opts.AudioClock,
+		Location:       location,
+		Render:         opts.Render,
 	})
 	if err != nil {
 		t.Fatalf("testutil.NewEnv: %v", err)

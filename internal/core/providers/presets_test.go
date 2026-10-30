@@ -50,7 +50,7 @@ func TestPresets(t *testing.T) {
 			if _, err := validate(c); err != nil {
 				t.Errorf("the preset's config is not valid: %v", err)
 			}
-			if _, _, err := Build(c, nil); err != nil {
+			if _, _, err := Build(c, "", nil); err != nil {
 				t.Errorf("the preset does not build: %v", err)
 			}
 		})

@@ -4,10 +4,7 @@ import (
 	"testing"
 
 	"github.com/rm4n0s/errors"
-	m "github.com/rm4n0s/glutter/material"
-	"github.com/rm4n0s/radio-tutor/internal/core/grading"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
-	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/qrcode"
 )
 
@@ -54,39 +51,6 @@ func TestFailureTexts(t *testing.T) {
 				t.Errorf("details %q, want %q", got, tt.details)
 			}
 		})
-	}
-}
-
-func TestVerdictLooks(t *testing.T) {
-	cat := i18n.For(i18n.EN)
-	scheme := m.NewColorSchemeLight()
-	tests := []struct {
-		verdict progress.Verdict
-		text    string // the character of a text mark; empty for an icon
-		words   string
-	}{
-		{progress.VerdictCorrect, "", "Correct!"},
-		{progress.VerdictPartial, "~", "Almost there"},
-		{progress.VerdictIncorrect, "", "Not yet"},
-		{progress.VerdictUnreadable, "?", "I could not read it"},
-		{progress.VerdictNotFound, "?", "I could not find it on the page"},
-	}
-	for _, tt := range tests {
-		t.Run(string(tt.verdict), func(t *testing.T) {
-			lk := look(scheme, tt.verdict)
-			if lk.text != tt.text {
-				t.Errorf("mark text %q, want %q", lk.text, tt.text)
-			}
-			if got := cat.T(lk.key); got != tt.words {
-				t.Errorf("words %q, want %q", got, tt.words)
-			}
-		})
-	}
-	// Every verdict the grading package knows has a look.
-	for _, v := range []grading.Verdict{grading.VerdictCorrect, grading.VerdictPartial, grading.VerdictIncorrect, grading.VerdictUnreadable, grading.VerdictNotFound} {
-		if look(scheme, progress.Verdict(v)).key == "" {
-			t.Errorf("verdict %s has no words", v)
-		}
 	}
 }
 

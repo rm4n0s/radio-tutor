@@ -26,7 +26,7 @@ func TestRealProvider(t *testing.T) {
 	cfg := Config{Name: "Real", BaseURL: base, Model: model, APIKey: os.Getenv("RADIO_TUTOR_AI_KEY"), Kind: kind}
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 	defer cancel()
-	res, err := Test(ctx, cfg)
+	res, err := Test(ctx, cfg, "")
 	if err != nil {
 		t.Fatal(err)
 	}

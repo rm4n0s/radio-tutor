@@ -32,7 +32,8 @@ func Screens() app.Screens {
 
 // Run starts the application with the real screens and blocks until its window
 // is closed (app.RunWith). Imported cassettes are render-checked with
-// svgcheck.Checker.
-func Run(ctx context.Context) error {
-	return app.RunWith(ctx, app.StartOptions{Screens: Screens(), Render: svgcheck.Checker{}})
+// svgcheck.Checker. version is the app version (the build information of the
+// command); it goes into the User-Agent of the AI provider requests.
+func Run(ctx context.Context, version string) error {
+	return app.RunWith(ctx, app.StartOptions{Screens: Screens(), Render: svgcheck.Checker{}, Version: version})
 }

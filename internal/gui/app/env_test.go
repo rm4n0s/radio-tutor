@@ -265,3 +265,35 @@ func TestStartReleasesTheLockWhenItFails(t *testing.T) {
 	}
 	unlock()
 }
+
+func TestStartVersionAndLocation(t *testing.T) {
+	athens, err := time.LoadLocation("Europe/Athens")
+	if err != nil {
+		t.Skipf("no time zone database: %v", err)
+	}
+	tests := []struct {
+		name         string
+		version      string
+		location     *time.Location
+		wantVersion  string
+		wantLocation *time.Location
+	}{
+		{"defaults", "", nil, "", time.Local},
+		{"given", "2.3.4", athens, "2.3.4", athens},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			storagetest.Isolate(t)
+			opts := startOptions(nil)
+			opts.Version, opts.Location = tt.version, tt.location
+			env, err := app.Start(context.Background(), opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer env.Close()
+			if env.Version != tt.wantVersion || env.Location != tt.wantLocation {
+				t.Errorf("Version %q, Location %v; want %q, %v", env.Version, env.Location, tt.wantVersion, tt.wantLocation)
+			}
+		})
+	}
+}

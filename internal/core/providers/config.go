@@ -128,7 +128,7 @@ func validate(c Config) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	if _, err := openai.New(openaiConfig(c), nil); err != nil {
+	if _, err := openai.New(openaiConfig(c, ""), nil); err != nil {
 		return Config{}, err
 	}
 	return c, nil
