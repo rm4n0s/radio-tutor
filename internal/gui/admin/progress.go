@@ -150,7 +150,10 @@ func waitingBadge(bc m.BuildContext, scope *app.Scope, n int) m.Widget {
 	}, m.RowOpts{MainAxisSize: m.MainAxisSizeMin})
 }
 
-// openScreen pushes a screen and runs then on a goroutine when it closes.
+// openScreen pushes a screen and runs then when it closes. then runs on a
+// goroutine started by the host, not on the UI thread: it may do I/O, but it
+// reaches the state (Context, Widget, Go, ScopeOf, a dialog or a message, any
+// field) only inside SetState.
 func openScreen(host dialogHost, bc m.BuildContext, build m.WidgetBuilder, then func(ctx context.Context)) {
 	ch := app.Push(bc, build)
 	host.Go(func(ctx context.Context) {
@@ -191,13 +194,13 @@ func (s *progressStudentState) DidChangeDependencies() {
 	}
 	s.started = true
 	env := app.ScopeOf(s.Context()).Env()
-	s.Go(func(ctx context.Context) { s.load(ctx, env) })
+	username := s.Widget().person.Username
+	s.Go(func(ctx context.Context) { s.load(ctx, env, username) })
 }
 
-// load lists the cassettes on a goroutine.
-func (s *progressStudentState) load(ctx context.Context, env *app.Env) {
+// load lists the cassettes of the person on a goroutine.
+func (s *progressStudentState) load(ctx context.Context, env *app.Env, username string) {
 	gen := s.generation.Add(1)
-	username := s.Widget().person.Username
 	counts, err := scanWaiting(ctx, env, []string{username})
 	var entries []cassetteEntry
 	if err == nil {
@@ -253,7 +256,7 @@ func (s *progressStudentState) row(bc m.BuildContext, scope *app.Scope, e casset
 	trailing = append(trailing, m.NewIcon(m.Icons.ChevronRight()))
 	person := s.Widget().person
 	open := func() {
-		openScreen(s, bc, func(m.BuildContext) m.Widget { return newCassettePage(person, e.ID) }, func(ctx context.Context) { s.load(ctx, env) })
+		openScreen(s, bc, func(m.BuildContext) m.Widget { return newCassettePage(person, e.ID) }, func(ctx context.Context) { s.load(ctx, env, person.Username) })
 	}
 	return m.NewCard(m.NewInkWell(m.NewPadding(m.NewEdgeInsetsAll(16), m.NewRow([]m.Widget{
 		m.NewIcon(m.Icons.MenuBook(), m.IconOpts{Size: m.Some(32.0)}),

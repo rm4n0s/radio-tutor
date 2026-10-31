@@ -146,7 +146,7 @@ func (s *cassettePageState) submissionRow(bc m.BuildContext, scope *app.Scope, s
 	}
 	id := d.ID
 	open := func() {
-		openScreen(s, bc, func(m.BuildContext) m.Widget { return newSubmissionPage(person, id, sub.ID) }, func(context.Context) { s.reload() })
+		openScreen(s, bc, func(m.BuildContext) m.Widget { return newSubmissionPage(person, id, sub.ID) }, func(context.Context) { s.SetState(s.reload) })
 	}
 	return m.NewCard(m.NewInkWell(m.NewPadding(m.NewEdgeInsetsAll(app.Gap), m.NewColumn(lines, m.ColumnOpts{CrossAxisAlignment: m.CrossAxisAlignmentStretch})),
 		m.InkWellOpts{Key: m.NewValueKey(KeySubmissionPrefix + sub.ID), OnTap: open}),

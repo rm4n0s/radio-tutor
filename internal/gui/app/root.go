@@ -64,9 +64,12 @@ func (s *rootState) setLanguage(l i18n.Lang) {
 	})
 }
 
+// logIn may run on any goroutine, so it reads the widget inside SetState.
 func (s *rootState) logIn(p profile.Profile) {
-	s.Widget().env.Log.Info("login", "username", p.Username, "role", string(p.Role))
-	s.SetState(func() { s.session = &p })
+	s.SetState(func() {
+		s.Widget().env.Log.Info("login", "username", p.Username, "role", string(p.Role))
+		s.session = &p
+	})
 }
 
 func (s *rootState) logOut() {

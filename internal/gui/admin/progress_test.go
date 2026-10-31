@@ -548,3 +548,34 @@ func TestProgressInGreek(t *testing.T) {
 		}
 	}
 }
+
+// The cassette page reads the save file again when the submission page closes,
+// and does it on the UI thread: Glutter reports State.Go from another goroutine
+// as WrongThread, and the test fails for every error it did not take.
+func TestCassettePageReloadsWhenASubmissionCloses(t *testing.T) {
+	tests := []struct {
+		name   string
+		action progress.Action
+		target string
+		want   string // the state the cassette page shows afterwards
+	}{
+		{"mark passed", progress.ActionMarkPassed, exName, "Passed"},
+		{"mark not passed", progress.ActionMarkNotPassed, exShade, "Open"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := pumpProgress(t, config{setup: richSetup})
+			openSubmissionOf(t, a, "mia", fractionsID, subOlder)
+			a.TapKey(OverrideKey(SectionSubmission, tt.action, tt.target))
+			waitSaved(t, a, "mia", fractionsID, "the override to be saved", func(p *progress.Progress) bool { return len(p.Overrides) == 1 })
+			goBack(t, a)
+			waitKey(t, a, KeySkipLessons)
+			a.WaitFor(t, "the cassette page to show the override", func() bool {
+				return textOf(t, a, StateKey(SectionItems, tt.target)) == tt.want
+			})
+			if errs := a.Errors(); len(errs) != 0 {
+				t.Errorf("the framework reported %d error(s): %v", len(errs), errs)
+			}
+		})
+	}
+}
