@@ -24,7 +24,7 @@ Everything stays on the computer, except the photos and the exercise text that a
 
 | Id | Decision | Why |
 |---|---|---|
-| D1 | Go, cgo-free, Linux and Windows desktop (Windows 10 version 1809 or later; D20), UI on Glutter v1.9.7 or newer | the owner's stack; Glutter draws SVG (its §26) and runs on Linux and Windows (its §25) |
+| D1 | Go, cgo-free, Linux and Windows desktop (Windows 10 version 1809 or later; D20), UI on Glutter v1.9.8 or newer | the owner's stack; Glutter draws SVG (its §26) and runs on Linux and Windows (its §25) |
 | D2 | A cassette is a zip file with the extension `.cassette`, format in `docs/CASSETTE-FORMAT.md` | simple to produce for an AI agent with a shell; one file to share |
 | D3 | Animation is Radio Tutor's own keyframe timeline over the top-level groups (`<g id>`) of one SVG scene, not SMIL or CSS animation | Glutter draws static SVG only; a JSON keyframe list is easy for an AI agent to write and for the app to validate; it composes with Glutter's transform, opacity and clip widgets |
 | D4 | One scene and one narration track per lesson; the audio is the lesson's clock | animation and narration never drift apart; longer material is split into more lessons |
@@ -98,7 +98,7 @@ $XDG_STATE_HOME/radio-tutor/
 - Folders are made with mode 0700, files with 0600. Windows has no such mode bits: the folders and files take the ACL of the profile folder they are in (readable by the user, SYSTEM and administrators), and the one file that holds a secret, `providers.json`, gets its own (§11.6).
 - **Replacing a file** on Windows fails while another process has the old one open (a virus scanner, a backup tool), so the rename of an atomic write is retried for about 200 ms (`RenameFailed` if it still fails). A folder cannot be flushed on Windows, so that last `fsync` is skipped there (NTFS journals the rename).
 - One instance runs at a time: the app takes an exclusive lock on the lock file, `flock` on Linux and `LockFileEx` (exclusive, fail at once) on Windows, with the same tag `AlreadyRunning`; a second instance says "Radio Tutor is already running" on stderr and exits with code 2; when it was started with a display (no terminal), a small window shows the same message first.
-- SIGTERM and SIGINT close the app exactly as closing the window does (on Windows, Ctrl+C of a console build, the closing of its console and a log-off or shutdown arrive the same way; a GUI program has no console, so only closing the window ends it): the run ends, the deferred cleanups run (audio stopped, phone server stopped, files flushed, the lock released) and the exit code is 0 (`app.QuitOnDone`).
+- SIGTERM and SIGINT close the app exactly as closing the window does (on Windows, Ctrl+C of a console build, the closing of its console and a log-off or shutdown arrive the same way; a GUI program has no console, so only closing the window ends it): the run ends, the deferred cleanups run (audio stopped, phone server stopped, files flushed, the lock released) and the exit code is 0 (the command's context, cancelled by the signals, is passed to Glutter's `RunAppContext`, which ends the run as a closed window does, and a context that is already done opens no window).
 - A JSON file that cannot be parsed is not overwritten: it is renamed to `<name>.broken-<time>`, the error is logged and shown to the admin, and the app starts with an empty value for it.
 
 ## 5. Architecture and packages

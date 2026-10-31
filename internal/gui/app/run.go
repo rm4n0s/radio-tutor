@@ -16,9 +16,9 @@ import (
 const ID = "dev.radiotutor.app"
 
 // Run starts the application and blocks until its window is closed or ctx is
-// done (SIGTERM and SIGINT cancel it, see QuitOnDone): it calls
-// Start, opens the window with the Root and releases the lock and the log at the
-// end. When another instance holds the lock it shows a small window that says
+// done (SIGTERM and SIGINT cancel it; Glutter's RunAppContext ends the run as a
+// closed window does): it calls Start, opens the window with the Root and
+// releases the lock and the log at the end. When another instance holds the lock it shows a small window that says
 // "Radio Tutor is already running" (so a launcher without a terminal is not
 // silent) and returns the storage error AlreadyRunning, which the command turns
 // into the message on stderr and exit code 2 (SPEC §4).
@@ -34,13 +34,13 @@ func RunWith(ctx context.Context, opts StartOptions) error {
 		if appErr, ok := errors.FromError(err); ok && appErr.Tag == "AlreadyRunning" {
 			// Failing to show the window (no display, a terminal run) must not
 			// hide the AlreadyRunning error, so the window's own error is dropped.
-			_ = m.RunApp(NewQuitOnDone(ctx, NewAlreadyRunning(i18n.FromLocale(processLocale()))), windowOpts(Title, AlreadyRunningSize, AlreadyRunningSize, nil))
+			_ = m.RunAppContext(ctx, NewAlreadyRunning(i18n.FromLocale(processLocale())), windowOpts(Title, AlreadyRunningSize, AlreadyRunningSize, nil))
 		}
 		return err
 	}
 	defer env.Close()
 	minSize := m.Size{Width: MinWindowWidth, Height: MinWindowHeight}
-	return m.RunApp(NewQuitOnDone(ctx, NewRoot(env)), windowOpts(Title, minSize, minSize, env))
+	return m.RunAppContext(ctx, NewRoot(env), windowOpts(Title, minSize, minSize, env))
 }
 
 // windowOpts are the RunApp options of a window.
