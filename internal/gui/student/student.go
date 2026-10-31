@@ -78,6 +78,12 @@ type WorksheetRequest struct {
 	FS fs.FS
 	// Worksheet is the worksheet to show.
 	Worksheet cassette.Worksheet
+	// OpenNext closes the worksheet screen and opens the item that follows the
+	// worksheet in the cassette, after its last exercise (the cassette screen
+	// reads the progress again first, so the item is unlocked by what the
+	// worksheet just saved). It is nil when the worksheet ends the cassette. The
+	// context is the worksheet screen's.
+	OpenNext func(bc m.BuildContext)
 }
 
 // Screens are the screens the student area opens. A nil function gives a

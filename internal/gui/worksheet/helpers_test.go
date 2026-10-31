@@ -114,6 +114,9 @@ type config struct {
 	port int
 	// sink is the audio sink factory; the default fails the test.
 	sink app.SinkFactory
+	// edit changes the request of the worksheet screen before it is built, for
+	// the tests that need their own OpenNext.
+	edit func(req *student.WorksheetRequest)
 }
 
 // harness is the app pumped to the worksheet.
@@ -188,9 +191,14 @@ func pump(t *testing.T, c config) *harness {
 	h := &harness{t: t, provider: &scripted{}, clock: testClock{audio.NewFakeClock(time.Date(2026, 10, 30, 17, 19, 55, 0, time.UTC))}}
 	h.phone = phone.New(phone.Options{ListenHost: "127.0.0.1", Random: &cycle{pattern: []byte("RadioTutor-token")}})
 	h.App = testutil.Pump(t, testutil.Options{
-		Locale:      c.locale,
-		Size:        c.size,
-		Screens:     app.Screens{Student: student.HomeBuilder(student.Screens{Worksheet: Builder()})},
+		Locale: c.locale,
+		Size:   c.size,
+		Screens: app.Screens{Student: student.HomeBuilder(student.Screens{Worksheet: func(req student.WorksheetRequest) m.Widget {
+			if c.edit != nil {
+				c.edit(&req)
+			}
+			return New(req)
+		}})},
 		SinkFactory: c.sink,
 		Submission: app.SubmissionOptions{
 			Phone:         h.phone,
@@ -233,7 +241,7 @@ func pump(t *testing.T, c config) *harness {
 	h.TapKey(student.KeyCardPrefix + fractionsID)
 	h.WaitFor(t, "the cassette screen", func() bool { return h.HasKey(student.KeyContinue) })
 	h.TapKey(student.WorksheetKey(0))
-	h.WaitFor(t, "the worksheet", func() bool { return h.HasKey(KeyCheck) })
+	h.WaitFor(t, "the worksheet", func() bool { return h.HasKey(KeyCheck) || h.HasKey(KeyNext) })
 	return h
 }
 

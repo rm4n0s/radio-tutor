@@ -99,6 +99,28 @@ func TestFullFlowFromTheWorksheetToTheResults(t *testing.T) {
 	}
 }
 
+func TestBackToTheWorksheetShowsNextWhenGradingFinishedIt(t *testing.T) {
+	h := pump(t, config{change: func(p *progress.Progress) {
+		lessonDone(p)
+		p.Exercises[exName] = progress.ExerciseProgress{State: progress.StatePassed, Attempts: 1, PassedBy: progress.PassedByAI}
+	}})
+	if h.HasKey(KeyNext) || !h.has("1 selected") {
+		t.Fatal("the worksheet is finished before the last exercise is graded")
+	}
+	h.provider.use(fake.New("fake", fake.Reply(fake.JSONReply("",
+		result(exShade, grading.VerdictCorrect, "Two equal halves, well done!")))))
+	h.check()
+	if status := upload(t, h.url()); status != 200 {
+		t.Fatalf("upload status %d", status)
+	}
+	h.waitKey(KeyResultPrefix + exShade)
+	h.TapKey(KeyBack)
+	h.WaitFor(t, "the finished worksheet", func() bool { return h.HasKey(KeyNext) })
+	if h.HasKey(KeyCheck) || !h.has("You finished this worksheet!") {
+		t.Error("the worksheet that grading finished still offers Check my answers")
+	}
+}
+
 func TestRetryAfterAFailure(t *testing.T) {
 	h := pump(t, config{})
 	prov := fake.New("fake", fake.Fail(errors.New("OpenAINetwork", "the server cannot be reached")), goodReply())

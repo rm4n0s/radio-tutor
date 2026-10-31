@@ -11,6 +11,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/submission"
 	"github.com/rm4n0s/radio-tutor/internal/gui/app"
+	"github.com/rm4n0s/radio-tutor/internal/gui/student"
 )
 
 // goldenSize is the window of the golden images: the width of the smallest
@@ -51,6 +52,26 @@ func TestWorksheetWithAStateGolden(t *testing.T) {
 	}})
 	h.PumpAndSettle()
 	h.MatchesGolden("worksheet_states_en")
+}
+
+func TestFinishedWorksheetGoldens(t *testing.T) {
+	tests := []struct {
+		name   string
+		locale string
+		change func(p *progress.Progress)
+		edit   func(req *student.WorksheetRequest)
+	}{
+		{"worksheet_finished_en", "en_US.UTF-8", finishedWith(progress.StatePassed, progress.StatePassed), nil},
+		{"worksheet_finished_done_en", "en_US.UTF-8", finishedWith(progress.StateNeedsReview, progress.StatePassed), func(req *student.WorksheetRequest) { req.OpenNext = nil }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := pump(t, config{locale: tt.locale, size: goldenSize, change: tt.change, edit: tt.edit})
+			h.whileBusy("the picture", func() bool { return h.Count(key(KeyCardPrefix+exShade)) > 0 })
+			h.PumpAndSettle()
+			h.MatchesGolden(tt.name)
+		})
+	}
 }
 
 // pumpQR opens the QR dialog with a fixed address: a fixed port and the token

@@ -280,6 +280,11 @@ func (s *cassetteState) open(bc m.BuildContext, v *view, it cassette.Item) {
 			return
 		}
 		req := WorksheetRequest{Username: w.username, Cassette: v.Cassette, FS: v.FS, Worksheet: ws}
+		if len(ws.ExerciseIDs) > 0 {
+			if next, ok := itemAfter(v.Cassette, ws.ExerciseIDs[len(ws.ExerciseIDs)-1]); ok {
+				req.OpenNext = func(bc m.BuildContext) { app.Pop(bc, openAfter{item: next}) }
+			}
+		}
 		builder = func(m.BuildContext) m.Widget {
 			if w.screens.Worksheet != nil {
 				return w.screens.Worksheet(req)

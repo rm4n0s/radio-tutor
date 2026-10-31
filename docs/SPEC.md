@@ -290,6 +290,7 @@ The lesson's time is the audio position: the number of samples the sink has actu
 - A banner tells the child: "Solve the exercises on paper. Write the number of each exercise next to its solution." (the number is the label).
 - **Check my answers** opens a submission (§10) for the exercises the child selects. By default every exercise of the worksheet that is `available` is selected; the child can untick some. In free navigation the child can open any worksheet.
 - At most 10 exercises per submission. A submission while another is open for the same student cancels the first.
+- **A finished worksheet.** When every exercise of the worksheet is `passed` or `needs_review` (both unlock what follows, §7.3), the bar at the bottom shows "You finished this worksheet!" and a **Next** button in place of the selection summary and **Check my answers**. The bar changes as soon as the child returns from the results of the submission that finished the worksheet, because the worksheet reads the progress again. **Next** opens the item after the worksheet (the cassette screen reads the progress again first, as after a lesson's **Next**, §8); when the worksheet is the last item of the cassette, the button says **Done** and goes back to the cassette screen. A worksheet that is not finished keeps **Check my answers**.
 
 ## 10. Submissions and the phone page
 

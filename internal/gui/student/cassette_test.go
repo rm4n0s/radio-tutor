@@ -341,6 +341,57 @@ func TestLessonScreenCanOpenTheNextItem(t *testing.T) {
 	}
 }
 
+func TestWorksheetScreenCanOpenTheNextItem(t *testing.T) {
+	// The fixture is: lesson 1, worksheet 1 (two exercises), lesson 2, worksheet 2
+	// (one exercise), which ends the cassette.
+	allButTheLast := func(p *progress.Progress) {
+		halfDone(p)
+		p.Exercises[exShade] = progress.ExerciseProgress{State: progress.StateNeedsReview, Attempts: 3}
+		p.Exercises[exName] = progress.ExerciseProgress{State: progress.StatePassed, Attempts: 1, PassedBy: progress.PassedByAI}
+		p.Lessons[lesson2] = progress.LessonProgress{CompletedAt: completedAt, Plays: 1}
+	}
+	tests := []struct {
+		name      string
+		worksheet int
+		progress  func(p *progress.Progress)
+		wantNext  bool
+		want      string
+	}{
+		{"lesson 2 follows worksheet 1", 0, allButTheLast, true, `The lesson "Adding fractions" will open here soon.`},
+		{"worksheet 2 ends the cassette", 1, allButTheLast, false, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var sheet WorksheetRequest
+			var sheetCtx m.BuildContext
+			a := pump(t, config{size: size(tallWindow), setup: install1(tt.progress), screens: Screens{
+				Worksheet: func(r WorksheetRequest) m.Widget {
+					sheet = r
+					return m.NewBuilder(func(bc m.BuildContext) m.Widget {
+						sheetCtx = bc
+						return plain("worksheet here")
+					})
+				},
+			}})
+			waitShelf(t, a)
+			openCassette(t, a, fractionsID)
+			a.TapKey(WorksheetKey(tt.worksheet))
+			a.WaitForText(t, "worksheet here")
+			if sheet.Worksheet.Index != tt.worksheet {
+				t.Fatalf("opened worksheet %d, want %d", sheet.Worksheet.Index, tt.worksheet)
+			}
+			if (sheet.OpenNext != nil) != tt.wantNext {
+				t.Fatalf("OpenNext set = %v, want %v", sheet.OpenNext != nil, tt.wantNext)
+			}
+			if !tt.wantNext {
+				return
+			}
+			sheet.OpenNext(sheetCtx)
+			a.WaitForText(t, tt.want)
+		})
+	}
+}
+
 func TestItemAfter(t *testing.T) {
 	c := &cassette.Cassette{Manifest: cassette.Manifest{Items: []cassette.Item{
 		{Type: cassette.ItemLesson, ID: "a"},

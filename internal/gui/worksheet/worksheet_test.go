@@ -10,6 +10,7 @@ import (
 	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/progress"
 	"github.com/rm4n0s/radio-tutor/internal/core/settings"
+	"github.com/rm4n0s/radio-tutor/internal/gui/student"
 )
 
 const bannerText = "Solve the exercises on paper. Write the number of each exercise next to its solution."
@@ -225,4 +226,161 @@ func TestPromptAudioFollowsTheVolumeSetting(t *testing.T) {
 			}
 		})
 	}
+}
+
+// finishedWith sets the two exercises of the first worksheet to the states.
+// Only the first one has a limit of tries (three), so only it can be in
+// needs_review; the second one has none and can only be passed.
+func finishedWith(first, second progress.ItemState) func(p *progress.Progress) {
+	return func(p *progress.Progress) {
+		lessonDone(p)
+		if first != "" {
+			p.Exercises[exShade] = progress.ExerciseProgress{State: first, Attempts: 3}
+		}
+		if second != "" {
+			p.Exercises[exName] = progress.ExerciseProgress{State: second, Attempts: 1}
+		}
+	}
+}
+
+func TestFinishedWorksheetShowsNextInsteadOfCheck(t *testing.T) {
+	tests := []struct {
+		name         string
+		change       func(p *progress.Progress)
+		wantFinished bool
+	}{
+		{"every exercise passed", finishedWith(progress.StatePassed, progress.StatePassed), true},
+		{"one passed, one out of tries", finishedWith(progress.StateNeedsReview, progress.StatePassed), true},
+		{"one exercise is still available", finishedWith(progress.StatePassed, ""), false},
+		{"the one out of tries leaves the other available", finishedWith(progress.StateNeedsReview, ""), false},
+		{"nothing done yet", lessonDone, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := pump(t, config{change: tt.change})
+			h.PumpAndSettle()
+			if got := h.HasKey(KeyNext); got != tt.wantFinished {
+				t.Errorf("Next shown = %v, want %v", got, tt.wantFinished)
+			}
+			if got := h.HasKey(KeyCheck); got == tt.wantFinished {
+				t.Errorf("Check my answers shown = %v, want %v", got, !tt.wantFinished)
+			}
+			if got := h.has("You finished this worksheet!"); got != tt.wantFinished {
+				t.Errorf("the finished text shown = %v, want %v", got, tt.wantFinished)
+			}
+			if tt.wantFinished && (h.has("Check my answers") || h.has("Choose at least one exercise.")) {
+				t.Error("the finished bar still shows the selection")
+			}
+			if tt.wantFinished && !h.has("Next") {
+				t.Error("the button is not labelled Next")
+			}
+		})
+	}
+}
+
+func TestFinishedWorksheetGreek(t *testing.T) {
+	h := pump(t, config{locale: "el_GR.UTF-8", change: finishedWith(progress.StateNeedsReview, progress.StatePassed)})
+	h.PumpAndSettle()
+	for _, text := range []string{"Τελείωσες αυτό το φύλλο ασκήσεων!", "Επόμενο"} {
+		if !h.has(text) {
+			t.Errorf("the Greek finished worksheet does not show %q", text)
+		}
+	}
+	h = pump(t, config{locale: "el_GR.UTF-8", change: finishedWith(progress.StatePassed, progress.StatePassed), edit: func(req *student.WorksheetRequest) { req.OpenNext = nil }})
+	h.PumpAndSettle()
+	if !h.has("Τέλος") {
+		t.Error("the last worksheet does not say Τέλος")
+	}
+}
+
+func TestNextOpensTheItemAfterTheWorksheet(t *testing.T) {
+	tests := []struct {
+		name   string
+		taps   int
+		change func(p *progress.Progress)
+	}{
+		{"one press", 1, finishedWith(progress.StatePassed, progress.StatePassed)},
+		{"a double press calls it once", 2, finishedWith(progress.StateNeedsReview, progress.StatePassed)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var calls int
+			h := pump(t, config{change: tt.change, edit: func(req *student.WorksheetRequest) {
+				req.OpenNext = func(m.BuildContext) { calls++ }
+			}})
+			h.PumpAndSettle()
+			for range tt.taps {
+				h.Tap(key(KeyNext))
+				h.Pump()
+			}
+			if calls != 1 {
+				t.Errorf("OpenNext was called %d times, want 1", calls)
+			}
+			if !h.has("Next") {
+				t.Error("the button is not labelled Next")
+			}
+		})
+	}
+}
+
+func TestNextOpensTheFollowingItemOfTheCassette(t *testing.T) {
+	// The real request from the cassette screen: the lesson after the worksheet
+	// opens (its player is a placeholder in these tests).
+	h := pump(t, config{change: finishedWith(progress.StateNeedsReview, progress.StatePassed)})
+	h.PumpAndSettle()
+	h.Tap(key(KeyNext))
+	h.WaitFor(t, "the next lesson", func() bool { return h.has(`The lesson "Adding fractions" will open here soon.`) })
+	if h.HasKey(KeyNext) {
+		t.Error("the worksheet is still on screen")
+	}
+}
+
+func TestDoneGoesBackWhenTheWorksheetEndsTheCassette(t *testing.T) {
+	tests := []struct {
+		name string
+		taps int
+	}{
+		{"one press", 1},
+		{"a double press pops once", 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := pump(t, config{change: finishedWith(progress.StatePassed, progress.StatePassed), edit: func(req *student.WorksheetRequest) {
+				req.OpenNext = nil
+			}})
+			h.PumpAndSettle()
+			if !h.has("Done") {
+				t.Fatal("the last worksheet does not say Done")
+			}
+			if h.has("Next") {
+				t.Error("the last worksheet says Next")
+			}
+			for range tt.taps {
+				h.Tap(key(KeyNext))
+				h.Pump()
+			}
+			h.WaitFor(t, "the cassette screen", func() bool { return h.HasKey(student.KeyContinue) && !h.HasKey(KeyNext) })
+			h.PumpAndSettle()
+			// A second pop would have left the cassette screen for the shelf.
+			if !h.HasKey(student.KeyContinue) {
+				t.Error("the cassette screen is not on screen")
+			}
+		})
+	}
+}
+
+func TestNextStopsThePromptAudio(t *testing.T) {
+	sink := audio.NewFakeSink(audio.NewFakeClock(time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)))
+	h := pump(t, config{
+		sink:   func(context.Context) (audio.Sink, error) { return sink, nil },
+		change: finishedWith(progress.StatePassed, progress.StatePassed),
+		edit:   func(req *student.WorksheetRequest) { req.OpenNext = func(m.BuildContext) {} },
+	})
+	h.tap(KeySpeakerPrefix + exShade)
+	h.whileBusy("the Stop button", func() bool { return h.has("Stop") })
+	h.tap(KeyNext)
+	h.whileBusy("the sink to stop", func() bool {
+		calls := sink.Calls()
+		return len(calls) > 1 && calls[len(calls)-1] == "stop"
+	})
 }

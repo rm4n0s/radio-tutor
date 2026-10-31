@@ -447,11 +447,15 @@ func TestWalkthrough(t *testing.T) {
 		t.Errorf("the provider was called %d times", len(calls))
 	}
 
-	// Back to the worksheet, which shows both exercises as passed, and back to
-	// the cassette: lesson 2 is unlocked.
+	// Back to the worksheet, which shows both exercises as passed and offers
+	// Next in place of Check my answers, and back to the cassette: lesson 2 is
+	// unlocked.
 	w.tap(worksheet.KeyBack)
-	w.waitKey(worksheet.KeyCheck)
+	w.waitKey(worksheet.KeyNext)
 	w.PumpAndSettle()
+	if w.HasKey(worksheet.KeyCheck) {
+		t.Error("the finished worksheet still offers Check my answers")
+	}
 	w.back()
 	w.waitKey(student.KeyContinue)
 	w.until("lesson 2 to unlock", func() bool { return !w.HasKey(student.KeyItemPrefix + lesson2 + student.KeyStateSuffix) })

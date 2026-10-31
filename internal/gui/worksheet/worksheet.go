@@ -30,6 +30,10 @@ const (
 	// KeyCardPrefix starts the key of the card of an exercise; the exercise id
 	// follows.
 	KeyCardPrefix = "card-"
+	// KeyNext is the key of the Next (or Done) button that replaces Check my
+	// answers when every exercise of the worksheet is passed or waits for a
+	// parent.
+	KeyNext = "next"
 	// KeyBadgePrefix starts the key of the label badge of a card.
 	KeyBadgePrefix = "badge-"
 	// KeySelectPrefix starts the key of the checkbox of a card.
@@ -74,6 +78,7 @@ type screenState struct {
 	selected   map[string]bool
 	audio      *promptAudio
 	playing    string
+	leaving    bool
 }
 
 // DidChangeDependencies starts the first load (the Scope cannot be read in
@@ -214,26 +219,42 @@ func (s *screenState) Build(bc m.BuildContext) m.Widget {
 	})
 }
 
-// content is the scrolling list and the bar with Check my answers.
+// content is the scrolling list and the bar with Check my answers, or with
+// Next when the worksheet is finished.
 func (s *screenState) content(bc m.BuildContext, scope *app.Scope) m.Widget {
 	theme := m.ThemeOf(bc)
 	children := []m.Widget{banner(bc, scope), gap(app.Gap)}
 	for _, ex := range s.sheet.Exercises {
 		children = append(children, s.card(bc, scope, ex), gap(12))
 	}
-	n := len(s.chosen())
-	summary := scope.T("worksheet.selected", "n", strconv.Itoa(n))
-	if n == 0 {
-		summary = scope.T("worksheet.none_selected")
+	var summary string
+	var action m.Widget
+	if s.finished() {
+		label := scope.T("worksheet.next")
+		if s.Widget().req.OpenNext == nil {
+			label = scope.T("worksheet.done")
+		}
+		summary = scope.T("worksheet.finished")
+		action = m.NewFilledButton(s.forward, m.NewText(label), m.FilledButtonOpts{
+			Key:   m.NewValueKey(KeyNext),
+			Style: m.FilledButtonStyleFrom(m.ButtonStyleFromOpts{MinimumSize: m.Some(m.Size{Width: app.ButtonMinWidth, Height: 72})}),
+		})
+	} else {
+		n := len(s.chosen())
+		summary = scope.T("worksheet.selected", "n", strconv.Itoa(n))
+		if n == 0 {
+			summary = scope.T("worksheet.none_selected")
+		}
+		action = m.NewFilledButtonIcon(s.onCheck(n), m.NewText(scope.T("worksheet.check")), m.FilledButtonIconOpts{
+			Icon:  m.NewIcon(m.Icons.PhotoCamera()),
+			Key:   m.NewValueKey(KeyCheck),
+			Style: m.FilledButtonStyleFrom(m.ButtonStyleFromOpts{MinimumSize: m.Some(m.Size{Width: app.ButtonMinWidth, Height: 72})}),
+		})
 	}
 	bar := m.NewMaterial(m.NewPadding(m.NewEdgeInsetsSymmetric(12, app.PagePadding), m.NewRow([]m.Widget{
 		m.NewExpanded(m.NewText(summary, m.TextOpts{Style: theme.TextTheme.TitleMedium})),
 		hgap(app.Gap),
-		m.NewFilledButtonIcon(s.onCheck(n), m.NewText(scope.T("worksheet.check")), m.FilledButtonIconOpts{
-			Icon:  m.NewIcon(m.Icons.PhotoCamera()),
-			Key:   m.NewValueKey(KeyCheck),
-			Style: m.FilledButtonStyleFrom(m.ButtonStyleFromOpts{MinimumSize: m.Some(m.Size{Width: app.ButtonMinWidth, Height: 72})}),
-		}),
+		action,
 	}, m.RowOpts{CrossAxisAlignment: m.CrossAxisAlignmentCenter})), m.MaterialOpts{Elevation: 8, Color: m.Some(theme.ColorScheme.SurfaceContainer())})
 	return m.NewColumn([]m.Widget{
 		m.NewExpanded(pageBody(maxWidth, children)),
@@ -248,4 +269,36 @@ func (s *screenState) onCheck(selected int) func() {
 		return nil
 	}
 	return s.check
+}
+
+// finished reports whether every exercise of the loaded worksheet is passed or
+// waits for a parent (SPEC §7.3 and §9): the item after the worksheet is
+// unlocked then.
+func (s *screenState) finished() bool {
+	if s.sheet == nil || len(s.sheet.Exercises) == 0 {
+		return false
+	}
+	for _, ex := range s.sheet.Exercises {
+		if ex.State != progress.StatePassed && ex.State != progress.StateNeedsReview {
+			return false
+		}
+	}
+	return true
+}
+
+// forward is the handler of Next and Done: it opens the item that follows the
+// worksheet or, when the worksheet ends the cassette, goes back to the cassette
+// screen. It stops the prompt audio, and a second press does nothing.
+func (s *screenState) forward() {
+	if s.leaving {
+		return
+	}
+	s.leaving = true
+	s.audio.Stop()
+	s.playing = ""
+	if next := s.Widget().req.OpenNext; next != nil {
+		next(s.Context())
+		return
+	}
+	app.Pop(s.Context())
 }
