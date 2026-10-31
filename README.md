@@ -2,6 +2,8 @@
 
 Radio Tutor is a desktop tutoring app for children on Linux and Windows. It plays **cassettes**: files with short animated, narrated lessons and paper-and-pencil exercises for one subject (math, a language, history, anything a book teaches). An AI agent can write the cassettes for you from a book or a subject. A vision-capable AI model, in the cloud or on your own computer, checks the child's work from photos. Parents keep control: you create the profiles, choose the AI provider, see every photo and can overrule the AI.
 
+New here? Read the illustrated [tutorial for parents](docs/TUTORIAL.md).
+
 A session of a child:
 
 1. The child logs in with a name and a password and picks a cassette from the shelf.
