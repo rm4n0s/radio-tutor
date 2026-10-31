@@ -18,10 +18,11 @@ const ID = "dev.radiotutor.app"
 // Run starts the application and blocks until its window is closed or ctx is
 // done (SIGTERM and SIGINT cancel it; Glutter's RunAppContext ends the run as a
 // closed window does): it calls Start, opens the window with the Root and
-// releases the lock and the log at the end. When another instance holds the lock it shows a small window that says
-// "Radio Tutor is already running" (so a launcher without a terminal is not
-// silent) and returns the storage error AlreadyRunning, which the command turns
-// into the message on stderr and exit code 2 (SPEC §4).
+// releases the lock and the log at the end. When another instance holds the
+// lock it shows a small window that says "Radio Tutor is already running" (so a
+// launcher without a terminal is not silent) and returns the storage error
+// AlreadyRunning, which the command turns into the message on stderr and exit
+// code 2 (SPEC §4).
 //
 // Run shows the placeholder screens of this package; package desktop calls
 // RunWith with the real ones.
