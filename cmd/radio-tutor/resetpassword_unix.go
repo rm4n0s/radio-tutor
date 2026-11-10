@@ -32,8 +32,8 @@ type termiosOps struct {
 
 func realTermios() termiosOps {
 	return termiosOps{
-		get: func(fd int) (*unix.Termios, error) { return unix.IoctlGetTermios(fd, unix.TCGETS) },
-		set: func(fd int, t *unix.Termios) error { return unix.IoctlSetTermios(fd, unix.TCSETS, t) },
+		get: func(fd int) (*unix.Termios, error) { return unix.IoctlGetTermios(fd, termiosGet) },
+		set: func(fd int, t *unix.Termios) error { return unix.IoctlSetTermios(fd, termiosSet, t) },
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -55,7 +56,7 @@ type Server struct {
 // NewServer starts a fake server for the test.
 func NewServer(t testing.TB) *Server {
 	t.Helper()
-	ln, err := net.Listen("unix", filepath.Join(t.TempDir(), "native"))
+	ln, err := net.Listen("unix", filepath.Join(socketDir(t), "native"))
 	if err != nil {
 		t.Fatalf("pulsetest: listen: %v", err)
 	}
@@ -439,4 +440,20 @@ func (e *enc) bool(v bool) *enc {
 func (e *enc) tm() *enc {
 	*e = append(*e, 'T', 0, 0, 0, 0, 0, 0, 0, 0)
 	return e
+}
+
+// socketDir is a private folder for the socket, whose address holds 104 bytes on macOS: t.TempDir is named after the test and lies
+// under /var/folders/..., which is too long there. It is a folder of /tmp when the temporary folder's own path is long.
+func socketDir(t testing.TB) string {
+	t.Helper()
+	base := ""
+	if len(os.TempDir()) > 30 {
+		base = "/tmp"
+	}
+	dir, err := os.MkdirTemp(base, "pulse")
+	if err != nil {
+		t.Fatalf("pulsetest: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	return dir
 }

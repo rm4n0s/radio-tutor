@@ -1,6 +1,6 @@
 # Radio Tutor
 
-Radio Tutor is a desktop tutoring app for children on Linux and Windows. It plays **cassettes**: files with short animated, narrated lessons and paper-and-pencil exercises for one subject (math, a language, history, anything a book teaches). An AI agent can write the cassettes for you from a book or a subject. A vision-capable AI model, in the cloud or on your own computer, checks the child's work from photos. Parents keep control: you create the profiles, choose the AI provider, see every photo and can overrule the AI.
+Radio Tutor is a desktop tutoring app for children on Linux, Windows and macOS. It plays **cassettes**: files with short animated, narrated lessons and paper-and-pencil exercises for one subject (math, a language, history, anything a book teaches). An AI agent can write the cassettes for you from a book or a subject. A vision-capable AI model, in the cloud or on your own computer, checks the child's work from photos. Parents keep control: you create the profiles, choose the AI provider, see every photo and can overrule the AI.
 
 New here? Read the illustrated [tutorial for parents](docs/TUTORIAL.md).
 
@@ -16,9 +16,9 @@ Everything stays on your computer, except the photos and the exercise text, whic
 
 ## Requirements
 
-- Linux with a desktop session (Wayland or X11) and a graphics driver (Vulkan or OpenGL ES, which any current desktop has), or Windows 10 (version 1809 or later) or 11 on a 64-bit PC (see [Windows](#windows)).
+- Linux with a desktop session (Wayland or X11) and a graphics driver (Vulkan or OpenGL ES, which any current desktop has), or Windows 10 (version 1809 or later) or 11 on a 64-bit PC (see [Windows](#windows)), or macOS 12 or newer on Apple silicon or Intel (see [macOS](#macos)).
 - Go 1.27 to build the program. No C compiler is needed.
-- PulseAudio, or PipeWire with `pipewire-pulse`, for the lesson sound on Linux (Windows needs nothing). Without it the lessons play silently.
+- PulseAudio, or PipeWire with `pipewire-pulse`, for the lesson sound on Linux (Windows and macOS need nothing). Without it the lessons play silently.
 - A phone with a camera on the same Wi-Fi (or network) as the computer.
 - A vision-capable AI provider: a cloud service with your own key, or a local server such as Ollama.
 - To make your own cassettes: an AI agent that can run commands, `ffmpeg` and a text-to-speech program ([details](docs/CASSETTE-AUTHORING-PROMPT.md)).
@@ -111,6 +111,19 @@ ollama serve
 Press **Test** on the provider: the app sends a small picture of "2 + 3 = 5" and shows whether a valid answer came back, the verdict (it should be "correct"), the time and the model. If the server does not support the chosen structured output, Test says which setting works. Fix the address, key or model until it says "It works", then press **Set active**.
 
 API keys are kept in `providers.json`, readable only by you. If the file is readable by others the app refuses to use it and tells you to run `chmod 600` on it.
+
+## macOS
+
+Radio Tutor runs on macOS 12 or newer, on Apple silicon and Intel (Glutter 1.16: AppKit and Metal; no C compiler or other install is needed to run it). Build it like on Linux (`go install github.com/rm4n0s/radio-tutor/cmd/radio-tutor@latest`, Go 1.27 or newer).
+
+![Radio Tutor on macOS](docs/screenshots/macos-glutter-1.16.png)
+
+- **Menu entry.** `radio-tutor -setup-desktop` makes `~/Applications/Radio Tutor.app`, a small application bundle (an `Info.plist`, the icon as an `.icns` file and a launcher script that runs the program you ran, after it sets `LANG` from the language of the system when the Finder gave it none) that Launchpad and Spotlight find; `-remove` takes its files away. Run it from where the program will stay; run it again if you move it.
+- **Sound** goes to the default output device through Core Audio (Glutter's audio). Without a device the lessons play silently.
+- **Language.** An app started from the Finder has no `LANG`, so the launcher script of the bundle sets it from the language of the system (`AppleLocale`). Started from a terminal, the program reads `LANG` as on Linux.
+- **Data folders** follow the XDG rules like on Linux (`~/.config/radio-tutor`, `~/.local/share/radio-tutor`, `~/.local/state/radio-tutor`), not `~/Library`.
+- **Firewall.** The first time the phone page starts, macOS asks whether the program may accept incoming connections: allow it, or the phone cannot open the page.
+- Not checked on a Mac: the recording of a microphone (the app has none), and a long lesson's sound with Bluetooth headphones.
 
 ## Windows
 

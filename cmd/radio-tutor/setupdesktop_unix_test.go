@@ -13,6 +13,8 @@ import (
 func testMenuEnv(t *testing.T, exe string) menuentry.Env {
 	t.Helper()
 	storagetest.Isolate(t)
+	// macOS puts the entry in ~/Applications: that is a throw-away folder too
+	t.Setenv("HOME", t.TempDir())
 	env := menuentry.DefaultEnv()
 	env.Executable = func() (string, error) { return exe, nil }
 	return env

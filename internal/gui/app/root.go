@@ -46,6 +46,7 @@ type rootState struct {
 }
 
 func (s *rootState) InitState() {
+	s.Widget().env.binding.Store(m.WidgetsBindingOf(s.Context()))
 	s.theme = NewTheme()
 	s.lang = s.Widget().env.Settings.Get().Language
 }

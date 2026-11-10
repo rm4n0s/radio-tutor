@@ -3,7 +3,7 @@
 Guidance for Claude Code when working in this repository (Go, hosted on GitHub).
 
 ## Project
-Radio Tutor is a desktop tutoring application for children, written in Go. Its user interface is built on [Glutter](https://github.com/rm4n0s/glutter), a cgo-free GUI toolkit for Go with Flutter's framework API. Radio Tutor targets the Linux desktop and Windows 10/11 (amd64 tested under Wine, arm64 built and vetted only; SPEC D20). Content comes in **cassettes**: zip files with lessons (an SVG scene animated by a timeline and narrated by an audio track, with captions) and exercises. The child solves exercises on paper, takes photos of the page with a phone (the app serves a page on the local network and shows its address as a QR code), and a vision-capable AI model, cloud or offline, grades each solution by the instructions the cassette gives. Parents (admins) manage the students, see the progress and review every photo.
+Radio Tutor is a desktop tutoring application for children, written in Go. Its user interface is built on [Glutter](https://github.com/rm4n0s/glutter), a cgo-free GUI toolkit for Go with Flutter's framework API. Radio Tutor targets the Linux desktop, Windows 10/11 (amd64 tested under Wine, arm64 built and vetted only; SPEC D20) and macOS 12+ (Apple silicon and Intel, tested on a Mac: the system's part is the `_darwin.go` files, and the sound is Glutter's audio, `internal/gui/app/audio_glutter.go`). Content comes in **cassettes**: zip files with lessons (an SVG scene animated by a timeline and narrated by an audio track, with captions) and exercises. The child solves exercises on paper, takes photos of the page with a phone (the app serves a page on the local network and shows its address as a QR code), and a vision-capable AI model, cloud or offline, grades each solution by the instructions the cassette gives. Parents (admins) manage the students, see the progress and review every photo.
 
 **`docs/SPEC.md` is the source of truth**, together with `docs/CASSETTE-FORMAT.md`, which defines the cassette format and is part of the spec. Read the sections that cover a task before starting it. If the code and the spec disagree, or a task needs a decision the spec doesn't make, ask instead of guessing. When a decision changes, update the spec on the same branch.
 
@@ -38,7 +38,7 @@ Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go 
 
 ## Layout
 - `cmd/radio-tutor/` is the app's `main` package (the desktop app and the CLI subcommands)
-- OS-specific code lives in `_linux.go` (constraint `!windows`) and `_windows.go` files with the same function names; shared logic stays in plain files tested on both (SPEC §5)
+- OS-specific code lives in `_unix.go` (constraint `!windows`; a file named `_linux.go` would be left out on macOS), `_windows.go` and `_darwin.go` files with the same function names (a `_unix.go` file that macOS replaces says `!windows && !darwin`); shared logic stays in plain files tested on both (SPEC §5)
 - `internal/core/...` is the core: storage, cassettes, timelines, scenes, audio, profiles, progress, grading, the phone server and the submission service. It never imports Glutter or `internal/gui`, so it is tested without a UI
 - `internal/gui/...` is the UI on Glutter: screens, the lesson player, dialogs. It imports the core, never the other way round
 - `internal/archtest/` checks the package boundaries and forbidden imports (SPEC §5)

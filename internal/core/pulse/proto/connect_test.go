@@ -3,6 +3,7 @@ package proto
 import (
 	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -44,7 +45,13 @@ func TestConnectErrors(t *testing.T) {
 	}
 
 	t.Run("the cookie cannot be read", func(t *testing.T) {
-		sock := filepath.Join(t.TempDir(), "native")
+		// a short path: a Unix socket's address holds 104 bytes on macOS, which t.TempDir's folder is longer than
+		short, err := os.MkdirTemp("/tmp", "pulse")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.RemoveAll(short) })
+		sock := filepath.Join(short, "native")
 		ln, err := net.Listen("unix", sock)
 		if err != nil {
 			t.Fatal(err)

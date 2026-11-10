@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rm4n0s/errors"
+	m "github.com/rm4n0s/glutter/material"
 	"github.com/rm4n0s/radio-tutor/internal/core/archive"
 	"github.com/rm4n0s/radio-tutor/internal/core/audio"
 	"github.com/rm4n0s/radio-tutor/internal/core/i18n"
@@ -74,6 +75,9 @@ type Env struct {
 
 	closers      []func()
 	noSoundShown atomic.Bool
+	// binding is the binding of the running window, which the root gives to the env when it is first built: Glutter's audio of
+	// macOS (audio_glutter.go) is reached through it. nil before the window exists.
+	binding atomic.Pointer[m.WidgetsBinding]
 }
 
 // StartOptions are the optional parameters of Start.

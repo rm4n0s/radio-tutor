@@ -18,14 +18,11 @@ func openPty(t *testing.T) (master, slave *os.File) {
 		t.Skipf("no /dev/ptmx: %v", err)
 	}
 	t.Cleanup(func() { _ = master.Close() })
-	if err := unix.IoctlSetPointerInt(int(master.Fd()), unix.TIOCSPTLCK, 0); err != nil {
-		t.Skipf("cannot unlock the pty: %v", err)
-	}
-	n, err := unix.IoctlGetInt(int(master.Fd()), unix.TIOCGPTN)
+	path, err := ptySlavePath(int(master.Fd()))
 	if err != nil {
-		t.Skipf("cannot name the pty: %v", err)
+		t.Skipf("cannot unlock or name the pty: %v", err)
 	}
-	slave, err = os.OpenFile("/dev/pts/"+itoa(n), os.O_RDWR|unix.O_NOCTTY, 0)
+	slave, err = os.OpenFile(path, os.O_RDWR|unix.O_NOCTTY, 0)
 	if err != nil {
 		t.Skipf("cannot open the pty: %v", err)
 	}
@@ -33,21 +30,10 @@ func openPty(t *testing.T) (master, slave *os.File) {
 	return master, slave
 }
 
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var b []byte
-	for ; n > 0; n /= 10 {
-		b = append([]byte{byte('0' + n%10)}, b...)
-	}
-	return string(b)
-}
-
 func TestTerminalEchoRealTerminal(t *testing.T) {
 	_, slave := openPty(t)
 	fd := int(slave.Fd())
-	before, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+	before, err := unix.IoctlGetTermios(fd, termiosGet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +48,7 @@ func TestTerminalEchoRealTerminal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	during, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+	during, err := unix.IoctlGetTermios(fd, termiosGet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +63,7 @@ func TestTerminalEchoRealTerminal(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	after, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+	after, err := unix.IoctlGetTermios(fd, termiosGet)
 	if err != nil {
 		t.Fatal(err)
 	}
