@@ -5,7 +5,7 @@ go 1.27
 require (
 	github.com/jfreymuth/oggvorbis v1.0.5
 	github.com/rm4n0s/errors v0.2.0
-	github.com/rm4n0s/glutter v1.16.2
+	github.com/rm4n0s/glutter v1.16.3
 	golang.org/x/image v0.47.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0
