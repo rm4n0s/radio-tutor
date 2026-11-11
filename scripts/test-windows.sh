@@ -36,5 +36,8 @@ if [[ ${#args[@]} -eq 0 ]]; then
 	args=(./...)
 fi
 
+# A debug build of Glutter (-tags debug_mode): since Glutter 1.17 a build without tags is a release
+# build, and the GUI tests need its debug-only platform override (internal/gui/testutil.UseLinux).
+# A -tags among the arguments comes later and wins.
 exec env GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
-	go test -exec "$ROOT/scripts/wine-exec.sh" -p 1 "${args[@]}"
+	go test -exec "$ROOT/scripts/wine-exec.sh" -p 1 -tags debug_mode "${args[@]}"

@@ -9,14 +9,14 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 
 ## Commands
 - Build: `go build ./...`. Radio Tutor is cgo-free; `CGO_ENABLED=0 go build ./...` must always work
-- Test all: `GOMEMLIMIT=3GiB go test -race -p 2 ./...` (the race detector needs cgo, so this one needs a C compiler)
+- Test all: `GOMEMLIMIT=3GiB go test -race -p 2 -tags debug_mode ./...` (the race detector needs cgo, so this one needs a C compiler). `-tags debug_mode` makes a debug build of Glutter: since Glutter 1.17 a build without tags is a release build, and the GUI tests need Glutter's debug-only platform override (`internal/gui/testutil.UseLinux` skips them without it)
 - Test the cgo-free path: `CGO_ENABLED=0 go test ./...`
 - Windows build and vet: `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...` (and the same with `GOARCH=arm64`), `GOOS=windows golangci-lint run`
 - Test on Windows, under Wine: `scripts/heavy.sh -- scripts/test-windows.sh` (every package; one package: `scripts/test-windows.sh ./internal/core/storage/...`). Wine runs with a private prefix in `.wine-test/`, with audio drivers disabled and Mesa software rendering only (never the GPU, never a sound): see SPEC §16
 - Build for Windows: `scripts/build-windows.sh [-o dir] [-arch amd64,arm64] [-release]` makes `dist/windows/radio-tutor.exe` (GUI) and `radio-tutor-cli.exe` (console, for the subcommands) with the icon and manifest. Smoke test of the real app under Wine (builds both, first run in English and Greek with Glutter's self-capture, the CLI's `validate` and `pack`): `scripts/heavy.sh -- go test -tags radiotutor_wine -p 1 ./cmd/radio-tutor`. Redraw the icon with `go run ./scripts/icongen`
-- Test one package: `go test ./internal/core/timeline -run TestName -v`
+- Test one package: `go test -tags debug_mode ./internal/core/timeline -run TestName -v`
 - Tests that need a real display or a real audio server: `go test -tags radiotutor_display ./...`, `go test -tags radiotutor_audio ./...`
-- Update golden images: `go test <package> -run Golden -update-goldens` (per package: each package with goldens defines the flag, so `./...` would fail in the others), then review every changed golden
+- Update golden images: `go test -tags debug_mode <package> -run Golden -update-goldens` (per package: each package with goldens defines the flag, so `./...` would fail in the others), then review every changed golden
 - Heavy commands (full test runs, lint, release builds): through `scripts/heavy.sh -- <command>`, see "Memory (OOM)"
 - Vet: `go vet ./...`
 - Lint: `golangci-lint run`
@@ -29,7 +29,7 @@ Radio Tutor is a desktop tutoring application for children, written in Go. Its u
 - After changing dependencies: `go mod tidy`
 
 ## Definition of done
-Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go vet ./...`, `golangci-lint run` and `go test -race ./...`, and fix anything they report. Say so explicitly if any step was skipped or failed. Also:
+Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go vet ./...`, `golangci-lint run` and `go test -race -tags debug_mode ./...`, and fix anything they report. Say so explicitly if any step was skipped or failed. Also:
 - `CGO_ENABLED=0 go build ./...` and `CGO_ENABLED=0 go test ./...` pass (proves the app stays cgo-free)
 - `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...`, `GOOS=windows go vet ./...`, the same build and vet with `GOARCH=arm64`, `GOOS=windows golangci-lint run`, and `scripts/heavy.sh -- scripts/test-windows.sh` pass (the app stays Windows-clean; a test skipped on Windows says why in `t.Skip`), and so does the Wine smoke test `scripts/heavy.sh -- go test -tags radiotutor_wine -p 1 ./cmd/radio-tutor` when the change touches the app's start, the window, the data folders, the build script or the CLI
 - `scripts/error-tags.sh --untested` prints nothing (every error Tag has a test that asserts its route; `docs/ERROR-TAGS-UNTESTED.md` is the only exception list)
@@ -54,7 +54,7 @@ Before reporting a task as finished, run `gofmt` (on `cmd` and `internal`), `go 
 - Pass `context.Context` as the first parameter of anything that does I/O (files, processes, network, AI requests, audio). Name it `ctx`. Name a Glutter `BuildContext` `bc`
 - Tests are table-driven
 - No global mutable state and no singletons. Package-level read-only values are fine and are never reassigned
-- Prefer the standard library. Allowed dependencies: `github.com/rm4n0s/glutter` (v1.9.8 or newer), `github.com/rm4n0s/errors`, what Glutter brings in (`golang.org/x/text`, `golang.org/x/image`, `golang.org/x/sys`, `github.com/go-text/typesetting`, `github.com/godbus/dbus/v5`), `github.com/jfreymuth/oggvorbis` (Ogg Vorbis decoding, with the `github.com/jfreymuth/vorbis` it brings in), and `rsc.io/qr` (QR codes). Audio output through PulseAudio or PipeWire's PulseAudio server uses `internal/core/pulse`, a copy of `github.com/jfreymuth/pulse` v0.1.3 (MIT, license in `internal/core/pulse/LICENSE`) that is project code: it follows these rules, except that it keeps upstream's API without `context.Context` (SPEC §5), and a change to it keeps it comparable with upstream. A step that first imports one of them adds it with `go get <module>@<version>`. Ask before adding any other
+- Prefer the standard library. Allowed dependencies: `github.com/rm4n0s/glutter` (v1.17.0 or newer), `github.com/rm4n0s/errors`, what Glutter brings in (`golang.org/x/text`, `golang.org/x/image`, `golang.org/x/sys`, `github.com/go-text/typesetting`, `github.com/godbus/dbus/v5`), `github.com/jfreymuth/oggvorbis` (Ogg Vorbis decoding, with the `github.com/jfreymuth/vorbis` it brings in), and `rsc.io/qr` (QR codes). Audio output through PulseAudio or PipeWire's PulseAudio server uses `internal/core/pulse`, a copy of `github.com/jfreymuth/pulse` v0.1.3 (MIT, license in `internal/core/pulse/LICENSE`) that is project code: it follows these rules, except that it keeps upstream's API without `context.Context` (SPEC §5), and a change to it keeps it comparable with upstream. A step that first imports one of them adds it with `go get <module>@<version>`. Ask before adding any other
 - AI providers are reached with `net/http` and `encoding/json`; no AI SDKs (SPEC D8)
 - **No cgo**: never write `import "C"`. If a C library is ever needed, ask first
 - Only Glutter's UI thread touches widgets and render objects. Other goroutines (audio, the phone server, grading) hand work over through `SetState` or the binding's `Post`
@@ -128,7 +128,7 @@ Use `github.com/rm4n0s/errors` for all errors. Never use `fmt.Errorf`, and never
 
 ## Memory (OOM)
 A run that uses too much memory is killed by the OS (exit 137) and takes the session with it. Be careful:
-- Run the race tests with `GOMEMLIMIT=3GiB go test -race -p 2 ./...`. At most two heavy test or build commands run at the same time on this machine, counting those of every agent. `scripts/heavy.sh -- <command>` enforces it: it waits for one of two machine-wide slots. Run every full test run (`./...`), `golangci-lint run` and release build through it
+- Run the race tests with `GOMEMLIMIT=3GiB go test -race -p 2 -tags debug_mode ./...`. At most two heavy test or build commands run at the same time on this machine, counting those of every agent. `scripts/heavy.sh -- <command>` enforces it: it waits for one of two machine-wide slots. Run every full test run (`./...`), `golangci-lint run` and release build through it
 - Never run Go fuzzing (`-fuzz`) without `-parallel=1`, a short `-fuzztime` (30s at most) and `GOMEMLIMIT=2GiB`
 - Run the tests of one package while working; run `./...` only for the final checks
 - If a command is killed (137), find out why before running it again: it may be a real memory bug that needs a fix and a regression test

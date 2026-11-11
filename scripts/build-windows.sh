@@ -6,7 +6,7 @@
 #   -o dir        where the files go (default: dist/windows, git-ignored)
 #   -arch list    architectures, comma separated: amd64, arm64 (default: amd64). arm64 is built
 #                 but never run here (SPEC D20)
-#   -release      a release build: -tags glutter_release and -ldflags "-s -w" (smaller, no
+#   -release      a release build, stripped with -ldflags "-s -w" (smaller, no
 #                 debug information)
 #   -version v    the four-part version of the file information (default: 0.0.0.<number of
 #                 commits>; the commit shows in `git describe`, printed at the end)
@@ -35,7 +35,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 out=dist/windows
 arch=amd64
-release=()
+# Glutter's glutter-windows makes a release build unless given -debug (Glutter 1.17); this script
+# keeps its own default, a debug build, and -release drops the -debug.
+mode=(-debug)
 version=""
 
 usage() {
@@ -56,7 +58,7 @@ while [ $# -gt 0 ]; do
 		shift 2
 		;;
 	-release)
-		release=(-release)
+		mode=()
 		shift
 		;;
 	-version)
@@ -89,8 +91,8 @@ common=(-name "Radio Tutor" -app-id dev.radiotutor.app -icon internal/gui/app/ic
 # cgo on for it or point the build at another OS.
 unset GOOS GOARCH
 
-"${wrap[@]}" go run "$tool" build "${release[@]}" "${common[@]}" -o "$out/radio-tutor.exe" ./cmd/radio-tutor
-"${wrap[@]}" go run "$tool" build "${release[@]}" "${common[@]}" -console -o "$out/radio-tutor-cli.exe" ./cmd/radio-tutor
+"${wrap[@]}" go run "$tool" build "${mode[@]}" "${common[@]}" -o "$out/radio-tutor.exe" ./cmd/radio-tutor
+"${wrap[@]}" go run "$tool" build "${mode[@]}" "${common[@]}" -console -o "$out/radio-tutor-cli.exe" ./cmd/radio-tutor
 
 echo "version: $version ($(git describe --tags --always --dirty 2>/dev/null || echo unknown))"
 ls -l "$out"/radio-tutor*.exe
